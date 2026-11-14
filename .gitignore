@@ -1,0 +1,37 @@
+# One .gitignore for the whole workspace: a pattern without a leading "/"
+# matches at any depth (apps/web/node_modules, apps/api/dist, ...).
+# Only what is needed to rebuild the project is committed.
+
+# Dependencies: restored by `pnpm install` from the lockfile
+node_modules
+
+# Build output and caches
+dist
+dist-ssr
+build
+*.tsbuildinfo
+coverage
+
+# Environment variables hold secrets; a committed .env.example documents them
+.env
+.env.*
+!.env.example
+*.local
+
+# Personal instructions for Claude Code, read with CLAUDE.md, never committed
+CLAUDE.local.md
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor and OS files (the recommended extensions list stays shared)
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.sw?
+.DS_Store
+Thumbs.db

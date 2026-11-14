@@ -1,0 +1,41 @@
+// TypeScript configuration for the API. `tsc` type-checks (`pnpm typecheck`)
+// and compiles src/ to dist/ (`pnpm build`); in development tsx runs the
+// sources directly and only strips types, so this file is what catches errors.
+// Reference: https://www.typescriptlang.org/tsconfig
+{
+  "compilerOptions": {
+    // Node 24 supports ES2023 natively: no down-levelling of async/await or classes.
+    "target": "es2023",
+    // No "DOM": browser globals do not exist on the server and must not type-check.
+    "lib": ["ES2023"],
+    // TypeScript 6 loads no @types packages implicitly.
+    "types": ["node"],
+
+    // Follow Node's own ESM rules exactly ("type": "module" in package.json).
+    "module": "nodenext",
+    // Import the real file name ('./app.ts'); tsc rewrites it to './app.js' in dist/.
+    "rewriteRelativeImportExtensions": true,
+    // Type-only imports must say so, so single-file transpilers (tsx) can drop them safely.
+    "verbatimModuleSyntax": true,
+    // Only syntax that type stripping can erase (no enum, namespace, parameter properties):
+    // the same subset Node accepts when it runs .ts files natively.
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force",
+
+    "rootDir": "src",
+    "outDir": "dist",
+    // Stack traces point at the .ts sources when Node runs with --enable-source-maps.
+    "sourceMap": true,
+
+    "strict": true,
+    // array[i] and record[key] are `T | undefined`: an empty list is a real case.
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    // Prefix an unused but required parameter with "_" (e.g. `_req`).
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
