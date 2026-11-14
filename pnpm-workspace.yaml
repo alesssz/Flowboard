@@ -14,3 +14,11 @@ packages:
 #   binary for the current platform.
 allowBuilds:
   esbuild: true
+
+# Versions forced over what the dependency tree asks for.
+#   minimatch: 11 fixes GHSA-g3hv-75wg-m249 (denial of service through crafted
+#   glob patterns, moderate). ESLint and typescript-eslint still ask for 10;
+#   they are development tools matching the project's own patterns, and they
+#   pass with 11. Remove once they require 11.0.1 or later themselves.
+overrides:
+  minimatch: ^11.0.8

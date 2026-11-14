@@ -1,0 +1,20 @@
+# Dependabot: version updates of the GitHub Actions used by the workflows and
+# by the shared setup action, as one pull request a week. Actions are pinned
+# to a commit hash with the release in a comment (`@<sha> # v7.0.1`):
+# Dependabot moves both. The CI run of its branch is the check.
+#
+# npm packages are left out of version updates on purpose: they are updated by
+# hand, a few at a time, with the checks run in between. Their security is
+# watched by Dependabot alerts and security updates (repository settings) and
+# by .github/workflows/audit.yml.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    # `/` covers .github/workflows only; the composite action pins actions too.
+    directories: ['/', '/.github/actions/*']
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ['*']

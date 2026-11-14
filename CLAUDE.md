@@ -11,6 +11,7 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 - Dependency install scripts are blocked by pnpm unless allowlisted in `pnpm-workspace.yaml` (`allowBuilds`). Add an entry only for a package whose script is understood and needed.
 - The development machine is Windows: commands in the docs are written for PowerShell.
 - `.env` files hold secrets: never read or print them; new variables are documented in a committed `.env.example`.
+- **CI and security** ([docs/ci-and-security.md](docs/ci-and-security.md)): GitHub runs `ci.yml` (typecheck, lint, build) on every push and `audit.yml` (`pnpm audit`) weekly and on dependency changes; both share `.github/actions/setup`. Workflows use **only GitHub's own actions**, pinned to a full commit hash with the release in a comment, with `permissions: contents: read` and `persist-credentials: false`. A new action, permission or secret is a decision to document there first. An advisory is fixed (update, or `overrides` in `pnpm-workspace.yaml` with a comment saying why and when to remove it), never silenced. `pnpm github:check` compares the repository's settings on GitHub with the documented ones (read-only, needs `gh`).
 
 ## Code conventions
 

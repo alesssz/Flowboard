@@ -1,0 +1,53 @@
+# Dependency audit: `pnpm audit` against the advisory database, weekly and
+# whenever the dependencies change. A new advisory fails the run, and GitHub
+# emails the owner about a failed scheduled run.
+#
+# Beside Dependabot alerts, not instead: alerts only warn, on GitHub's page,
+# and say nothing about a branch before it reaches main; this run fails the
+# branch that brings a vulnerable version, next to its CI. Advisories fixed by
+# forcing a version are in pnpm-workspace.yaml (overrides), each with its reason.
+name: Audit
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC: a new advisory on a package that did not change.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  # A branch that changes the dependencies fails next to its CI run.
+  push:
+    branches: ['**']
+    paths: [package.json, apps/*/package.json, packages/*/package.json, pnpm-lock.yaml, pnpm-workspace.yaml]
+  # A pull request that changes them from a fork, whose branch never reaches
+  # the push trigger above. Pull requests from branches here were audited on push.
+  pull_request:
+    paths: [package.json, apps/*/package.json, packages/*/package.json, pnpm-lock.yaml, pnpm-workspace.yaml]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Dependency audit
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installed so that `pnpm outdated` compares what is really resolved.
+      - uses: ./.github/actions/setup
+
+      - name: Outdated packages (job summary)
+        # `pnpm outdated` exits 1 when anything is outdated: informative only.
+        run: |
+          {
+            echo '### Outdated packages'
+            echo '```'
+            pnpm outdated --recursive || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Every severity; any advisory fails the run.
+      - name: Audit
+        run: pnpm audit

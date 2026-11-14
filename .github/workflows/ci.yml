@@ -1,0 +1,43 @@
+# Continuous integration: the checks that must pass before a commit (types,
+# lint, production build), run by GitHub on a fresh Linux machine, where
+# nothing installed or left uncommitted on a developer's computer can hide a
+# problem.
+#
+# Runs on a push to any branch, so a branch is checked before it reaches main,
+# and by hand from the Actions tab. Pull requests from forks run nothing until
+# the owner approves them (Settings → Actions, docs/ci-and-security.md).
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+# Read-only token: the job checks out the code and runs checks, nothing else.
+permissions:
+  contents: read
+
+# On a branch a new push cancels the run still going, since only the latest
+# commit matters; on main every commit keeps its run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  checks:
+    name: Types, lint and build
+    runs-on: ubuntu-latest
+    # A stuck run stops here instead of at GitHub's six-hour limit.
+    timeout-minutes: 15
+    steps:
+      # Comes first: it also brings the local setup action below.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The token is not left in .git/config for later steps to read.
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
+      - run: pnpm lint
+      # Catches what only the production build sees (an import Vite cannot
+      # resolve, a tsc emit error in the API).
+      - run: pnpm build

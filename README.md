@@ -1,5 +1,8 @@
 # Flowboard
 
+[![CI](https://github.com/alesssz/Flowboard/actions/workflows/ci.yml/badge.svg)](https://github.com/alesssz/Flowboard/actions/workflows/ci.yml)
+[![Audit](https://github.com/alesssz/Flowboard/actions/workflows/audit.yml/badge.svg)](https://github.com/alesssz/Flowboard/actions/workflows/audit.yml)
+
 A real-time collaborative kanban board: boards, columns and cards you drag around, with every change showing up live for everyone looking at the same board.
 
 React and TypeScript in the browser, Node.js and TypeScript on the server, in a single pnpm workspace that shares types between the two.
@@ -42,9 +45,12 @@ Flowboard/
 │   ├── web/                React single-page app (@flowboard/web)  → apps/web/README.md
 │   └── api/                Express REST API (@flowboard/api)       → apps/api/README.md
 ├── packages/               Internal libraries, e.g. shared types (planned)
+├── docs/                   Developer documentation
+├── scripts/                Repository tooling (GitHub settings check)
+├── .github/                CI and audit workflows, shared setup action, Dependabot
 ├── .githooks/              Git hooks (commit identity check)
 ├── package.json            Workspace-wide scripts
-└── pnpm-workspace.yaml     Workspace definition and allowed install scripts
+└── pnpm-workspace.yaml     Workspace definition, allowed install scripts, version overrides
 ```
 
 ## Getting started
@@ -77,8 +83,14 @@ Run from the repository root; each runs the script of the same name in every pac
 | `pnpm build` | Type-checks and builds every package for production |
 | `pnpm typecheck` | Type-checks every package |
 | `pnpm lint` | Runs ESLint (web app for now) |
+| `pnpm audit` | Checks every dependency against the advisory database |
+| `pnpm github:check` | Compares the repository's GitHub settings with the ones decided (needs [GitHub CLI](https://cli.github.com)) |
 
 One package only: `pnpm --filter @flowboard/api dev`.
+
+## CI and security
+
+Every push runs type-checking, linting and the production build on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
 
 ## Conventions
 
@@ -90,6 +102,7 @@ One package only: `pnpm --filter @flowboard/api dev`.
 
 **Core**
 - [x] pnpm workspace with a Vite + React web app and an Express API
+- [x] CI (types, lint, build), weekly dependency audit, repository security settings
 - [ ] Boards, columns and cards in React (local state)
 - [ ] REST API for boards, columns and cards
 - [ ] PostgreSQL with Prisma
@@ -106,4 +119,4 @@ One package only: `pnpm --filter @flowboard/api dev`.
 - [ ] Attachments on S3-compatible storage
 - [ ] Undo/redo, offline-first PWA, list virtualisation
 - [ ] AI assistant to draft cards
-- [ ] Tests (Vitest, Playwright), CI/CD with GitHub Actions, Docker Compose
+- [ ] Tests (Vitest, Playwright) in CI, continuous deployment, Docker Compose
