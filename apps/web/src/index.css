@@ -19,7 +19,6 @@
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, Consolas, monospace;
 
-  /* Native controls and scrollbars follow the active theme. */
   color-scheme: light dark;
 }
 
@@ -37,7 +36,6 @@
   }
 }
 
-/* Widths include padding and border. */
 *,
 *::before,
 *::after {

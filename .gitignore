@@ -1,8 +1,4 @@
-# One .gitignore for the whole workspace: a pattern without a leading "/"
-# matches at any depth (apps/web/node_modules, apps/api/dist, ...).
-# Only what is needed to rebuild the project is committed.
-
-# Dependencies: restored by `pnpm install` from the lockfile
+# Dependencies
 node_modules
 
 # Build output and caches

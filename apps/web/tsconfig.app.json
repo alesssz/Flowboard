@@ -1,6 +1,4 @@
-// TypeScript for the app code (src/, browser). tsc only type-checks here
-// (noEmit): Vite transpiles the sources, much faster, without checking them.
-// Options shared with the API are explained in apps/api/tsconfig.json.
+// App code (src/, browser). Type-check only: Vite transpiles the sources.
 {
   "compilerOptions": {
     // tsc -b's incremental cache, kept out of the source tree.
@@ -11,17 +9,15 @@
     // import.meta.env and imports of non-code assets (CSS, SVG).
     "types": ["vite/client"],
 
-    // Resolved by Vite, not by Node: bundler rules apply.
     "module": "esnext",
     "moduleResolution": "bundler",
-    // Allowed because nothing is emitted: keeps imports consistent with the API ('./App.tsx').
+    // Imports name the .tsx file, as in the API; allowed because nothing is emitted.
     "allowImportingTsExtensions": true,
     "allowArbitraryExtensions": true,
     // Vite transpiles each file in isolation: type-only imports must be explicit.
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-    // React 17+ automatic runtime: no `import React` in every file.
     "jsx": "react-jsx",
 
     "strict": true,

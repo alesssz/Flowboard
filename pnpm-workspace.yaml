@@ -1,17 +1,11 @@
-# pnpm workspace: every folder with a package.json under apps/ or packages/
-# is a workspace package. One `pnpm install` and one lockfile at the root keep
-# versions consistent across packages, and packages depend on each other
-# through the `workspace:*` protocol (e.g. the planned @flowboard/shared types)
-# without publishing anything.
+# Internal packages depend on each other with the `workspace:*` protocol.
 packages:
   - "apps/*"
   - "packages/*"
 
-# pnpm blocks dependency install scripts unless they are allowlisted here: an
-# install script is arbitrary code run on the developer's machine, a common
-# supply-chain attack vector. Review new requests with `pnpm approve-builds`.
-#   esbuild (used by tsx): its postinstall selects and verifies the native
-#   binary for the current platform.
+# The only dependency install scripts allowed to run; pnpm blocks the rest.
+# Review new requests with `pnpm approve-builds` before adding them here.
+#   esbuild (via tsx): selects and verifies its native binary for the platform.
 allowBuilds:
   esbuild: true
 

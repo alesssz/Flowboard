@@ -1,11 +1,9 @@
 /*
- * Styles of the placeholder start page and its status panel.
- * Class names follow BEM (block__element--modifier): Vite injects imported CSS
- * globally, so the naming convention is what keeps components from clashing.
+ * Placeholder start page and its status panel. Imported CSS is global in
+ * Vite: BEM class names (block__element--modifier) keep components apart.
  */
 
 .welcome {
-  /* At most 560px wide, with a 16px gutter on each side on narrow screens. */
   width: min(560px, 100% - 32px);
   margin: 0 auto;
   padding: 15vh 0 48px;
@@ -27,12 +25,6 @@
 
 .welcome__subtitle {
   margin: 4px 0 0;
-  color: var(--color-text-muted);
-}
-
-.welcome__footer {
-  text-align: center;
-  font-size: 0.9rem;
   color: var(--color-text-muted);
 }
 
@@ -91,7 +83,6 @@
   filter: brightness(1.1);
 }
 
-/* Keyboard users need a visible focus ring: restyled, never removed. */
 .status__retry:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;

@@ -5,21 +5,13 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 
-/**
- * Body of `GET /api/health`, copied from apps/api/src/app.ts. A copy can drift
- * from the original unnoticed; the shared types package will replace it.
- */
+/** Body of `GET /api/health`, duplicated from apps/api/src/app.ts until the shared types package exists. */
 interface HealthResponse {
   status: 'ok';
   timestamp: string;
   uptimeSeconds: number;
 }
 
-/**
- * Connection state as a discriminated union on `kind`: data exists only when
- * online and a reason only when offline, so the impossible combinations that
- * separate loading/data/error variables allow cannot be represented.
- */
 type ApiStatus =
   | { kind: 'loading' }
   | { kind: 'online'; health: HealthResponse }
@@ -38,14 +30,11 @@ export default function App() {
     async function checkHealth() {
       try {
         const response = await fetch('/api/health', { signal: controller.signal });
-
-        // fetch rejects only on network failure; HTTP errors resolve normally.
         if (!response.ok) {
           throw new Error(`The server responded with status ${response.status}`);
         }
 
-        // Unchecked cast: the body is not validated at runtime yet (schema
-        // validation with Zod is planned).
+        // Unchecked cast until responses are validated against shared schemas.
         const health = (await response.json()) as HealthResponse;
         setApiStatus({ kind: 'online', health });
       } catch (error) {
@@ -61,9 +50,8 @@ export default function App() {
     return () => controller.abort();
   }, [attempt]);
 
-  // The loading state is set here, in the event handler, not at the start of
-  // the effect: effects synchronise with external systems, events drive state
-  // changes (React guidance, enforced by the react-hooks lint rules).
+  // The loading state is reset here rather than at the start of the effect,
+  // where a synchronous setState fails react-hooks/set-state-in-effect.
   function handleRetry() {
     setApiStatus({ kind: 'loading' });
     setAttempt((previous) => previous + 1);
@@ -77,10 +65,6 @@ export default function App() {
       </header>
 
       <StatusPanel status={apiStatus} onRetry={handleRetry} />
-
-      <footer className="welcome__footer">
-        <p>Early development: the web app and the API are connected. The board comes next.</p>
-      </footer>
     </main>
   );
 }
@@ -95,7 +79,6 @@ function StatusPanel({ status, onRetry }: StatusPanelProps) {
   switch (status.kind) {
     case 'loading':
       return (
-        // A live region, so screen readers announce the state changes.
         <section className="status status--loading" role="status" aria-live="polite">
           <span className="status__dot" aria-hidden="true" />
           Checking the connection to the API…

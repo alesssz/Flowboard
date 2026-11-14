@@ -11,11 +11,25 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 🚧 **Early development.** The workspace is set up and the web app reaches the API through the development proxy. Next: the first board UI. See the [roadmap](#roadmap).
 
+**This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
+
+## Contents
+
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+- [Scripts](#scripts)
+- [Troubleshooting](#troubleshooting)
+- [CI and security](#ci-and-security)
+- [Conventions](#conventions)
+- [Roadmap](#roadmap)
+
 ## Tech stack
 
 | Area | Technology | Why |
 |---|---|---|
-| Language | [TypeScript](https://www.typescriptlang.org/) 6, `strict` | One language on both sides; type errors are caught in the editor, not in production |
+| Language | [TypeScript](https://www.typescriptlang.org/) 6, `strict` | One language and shared types across the web app and the API |
 | Web app | [React](https://react.dev/) 19 | Component model and ecosystem for a highly interactive UI |
 | Build tool | [Vite](https://vite.dev/) 8 | Instant dev server with hot module replacement, optimised production builds |
 | API | [Node.js](https://nodejs.org/) 24 LTS + [Express](https://expressjs.com/) 5 | Minimal, well-understood HTTP layer; Express 5 forwards async errors natively |
@@ -55,7 +69,7 @@ Flowboard/
 
 ## Getting started
 
-**Prerequisites:** Node.js 24+, pnpm 12+ (the exact version is pinned in `package.json`), Git.
+**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm 12+ (the exact version is pinned in `package.json` and fetched automatically), Git. Optional: [GitHub CLI](https://cli.github.com), for `pnpm github:check`. Commands are written for PowerShell; in bash or zsh they are the same, except environment variables (`PORT=3001 pnpm dev` instead of `$env:PORT=3001`).
 
 ```powershell
 pnpm install                          # every package, from the single lockfile
@@ -71,15 +85,13 @@ Open http://localhost:5173: the status panel reads **API online** when both side
 | API (Express) | http://localhost:3000 |
 | Health check | http://localhost:3000/api/health |
 
-On Windows, if PowerShell refuses to run `pnpm` ("running scripts is disabled on this system"), allow local scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`.
-
 ## Scripts
 
 Run from the repository root; each runs the script of the same name in every package that defines it.
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Starts the web app and the API in parallel, reloading on change. **Does not type-check** |
+| `pnpm dev` | Starts the web app and the API in parallel, reloading on change (transpile only, no type-checking) |
 | `pnpm build` | Type-checks and builds every package for production |
 | `pnpm typecheck` | Type-checks every package |
 | `pnpm lint` | Runs ESLint (web app for now) |
@@ -88,6 +100,18 @@ Run from the repository root; each runs the script of the same name in every pac
 
 One package only: `pnpm --filter @flowboard/api dev`.
 
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| PowerShell: `pnpm.ps1 cannot be loaded because running scripts is disabled on this system` | Windows' default execution policy blocks the `pnpm.ps1` shim. Once per user: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` |
+| `ERR_PNPM_IGNORED_BUILDS` after adding a dependency | pnpm blocked its install script. Review it with `pnpm approve-builds` (select with Space) and commit the `allowBuilds` entry it writes to `pnpm-workspace.yaml`, or leave it blocked |
+| `Cannot start the server on port 3000: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3001`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
+| `Error: Port 5173 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5174). Stop it |
+| The start page shows **API unreachable** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`, then **Retry** |
+| Two `/api/health` requests on every load in development | Expected: StrictMode runs effects twice in development only |
+| `pnpm dev` works but `pnpm typecheck` or CI fails | `pnpm dev` only strips types (tsx, Vite). Type errors show in the editor and in `pnpm typecheck` |
+| `pre-commit: refused, identity is '…'` | The commit identity is not the GitHub noreply address: set it for this clone with `git config user.email "<id>+<user>@users.noreply.github.com"` |
 ## CI and security
 
 Every push runs type-checking, linting and the production build on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
@@ -103,7 +127,7 @@ Every push runs type-checking, linting and the production build on GitHub Action
 **Core**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
-- [ ] Boards, columns and cards in React (local state)
+- [ ] Board UI: boards, columns and cards
 - [ ] REST API for boards, columns and cards
 - [ ] PostgreSQL with Prisma
 - [ ] Shared types and validation (`@flowboard/shared` + Zod)

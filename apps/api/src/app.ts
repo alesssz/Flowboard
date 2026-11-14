@@ -1,16 +1,12 @@
 /**
- * Express application factory: middleware and routes, no network binding.
- *
- * Building the app is kept apart from starting it (index.ts) so tests can
- * drive a fresh instance in-process, e.g. with Supertest, without opening a port.
+ * Express application factory: middleware and routes, without binding a port,
+ * so tests can drive an instance in-process (Supertest). index.ts starts it.
  */
 import express, { type Express } from 'express';
 
 /**
- * Body of `GET /api/health`.
- *
- * The web app keeps a copy of this type until the shared types package
- * (@flowboard/shared) gives both sides a single definition.
+ * Body of `GET /api/health`. Duplicated in apps/web/src/App.tsx until the
+ * shared types package exists.
  */
 export interface HealthResponse {
   status: 'ok';
@@ -20,19 +16,19 @@ export interface HealthResponse {
   uptimeSeconds: number;
 }
 
-/** Builds a new, independent app instance. */
+/** A new, independent app instance. */
 export function createApp(): Express {
   const app = express();
 
-  // Parses JSON request bodies into `req.body`, for the write endpoints to come.
   app.use(express.json());
-
-  // Do not advertise the framework in every response header.
+  // No framework fingerprint in response headers.
   app.disable('x-powered-by');
 
-  // Liveness probe: used by the web app's status panel, and later by the
-  // hosting platform's health checks. Every route lives under /api, the only
-  // prefix the Vite development proxy forwards to this server.
+  /**
+   * GET /api/health — liveness probe for the web app's status panel and, once
+   * deployed, the hosting platform's health checks.
+   * 200 → HealthResponse
+   */
   app.get('/api/health', (_req, res) => {
     const body: HealthResponse = {
       status: 'ok',
@@ -42,9 +38,7 @@ export function createApp(): Express {
     res.json(body);
   });
 
-  // Registered after every route, so only unmatched requests reach it. Express
-  // would answer them with an HTML page; API clients get the same JSON error
-  // shape as everywhere else instead.
+  // Unmatched routes: a JSON 404 in the API's error shape, not Express's HTML page.
   app.use((req, res) => {
     res.status(404).json({
       error: 'Not Found',

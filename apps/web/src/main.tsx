@@ -8,14 +8,12 @@ import App from './App.tsx';
 
 const rootElement = document.getElementById('root');
 
-// An explicit check rather than the template's non-null assertion (`!`): if
-// the mount node in index.html is ever renamed, the error says so.
+// Fails with a clear message, rather than a non-null assertion, if the mount node is renamed.
 if (!rootElement) {
   throw new Error('Mount node #root not found in index.html');
 }
 
-// StrictMode runs effects twice in development to surface missing cleanups:
-// a doubled request in the network panel is expected there, not in production.
+// In development StrictMode runs effects twice: the doubled /api/health request is expected.
 createRoot(rootElement).render(
   <StrictMode>
     <App />

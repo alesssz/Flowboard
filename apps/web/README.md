@@ -11,13 +11,13 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5173. Without the API running, the status panel reads "API unreachable" and offers a retry.
+Open http://localhost:5173. Without the API running, the status panel reads "API unreachable" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
 | Script | Command | Description |
 |---|---|---|
-| `dev` | `vite` | Dev server with hot module replacement. **Does not type-check** |
+| `dev` | `vite` | Dev server with hot module replacement (transpile only, no type-checking) |
 | `build` | `tsc -b && vite build` | Type-checks, then builds to `dist/` |
 | `typecheck` | `tsc -b` | Type-checks the app and the Vite config |
 | `lint` | `eslint .` | Lints the sources |
@@ -41,26 +41,10 @@ apps/web/
 └── eslint.config.js    ESLint flat config
 ```
 
-## Calling the API
-
-Always use **relative URLs under `/api`**:
-
-```ts
-await fetch('/api/health');                         // ✅ same origin, proxied in development
-await fetch('http://localhost:3000/api/health');    // ❌ hard-coded host, cross-origin
-```
-
-## Linting
-
-| Rule set | Checks |
-|---|---|
-| `@eslint/js` recommended | Common JavaScript mistakes |
-| `typescript-eslint` recommended | TypeScript pitfalls (explicit `any`, unused values…) |
-| `react-hooks` | The rules of hooks, effect dependencies, no synchronous state updates in effects |
-| `react-refresh` | Component modules stay compatible with Fast Refresh |
-
 ## Conventions
 
+- The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
+- ESLint runs the recommended rule sets of `@eslint/js` and `typescript-eslint`, plus `react-hooks` and `react-refresh`.
 - Components are functions named in **PascalCase**; their props are typed with `interface XxxProps`.
 - Event handlers are named `handleXxx`; the props that receive them `onXxx`.
 - State with several shapes is a **discriminated union** (see `ApiStatus` in `App.tsx`).

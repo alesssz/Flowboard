@@ -11,13 +11,13 @@ pnpm dev                              # API and web app together
 pnpm --filter @flowboard/api dev      # API only
 ```
 
-The server listens on http://localhost:3000; set `PORT` to change it (`$env:PORT=4000` in PowerShell). The web app's dev proxy targets port 3000, so update `apps/web/vite.config.ts` too.
+The server listens on http://localhost:3000; set `PORT` to change it (`$env:PORT=4000` in PowerShell). The web app's dev proxy targets port 3000, so update `apps/web/vite.config.ts` too. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
 | Script | Command | Description |
 |---|---|---|
-| `dev` | `tsx watch src/index.ts` | Runs the TypeScript sources directly and restarts on change. **Does not type-check** |
+| `dev` | `tsx watch src/index.ts` | Runs the TypeScript sources directly and restarts on change (no type-checking) |
 | `build` | `tsc` | Type-checks and compiles `src/` to `dist/` |
 | `start` | `node dist/index.js` | Runs the compiled build |
 | `typecheck` | `tsc --noEmit` | Type-checks without emitting |

@@ -1,5 +1,3 @@
-# Store and check out every text file with LF line endings, on Windows too
-# (where core.autocrlf would otherwise write CRLF). Keeps diffs free of
-# line-ending noise between machines, and lets .githooks/pre-commit run: with
-# CRLF its first line would ask for an interpreter named "/bin/sh\r".
+# LF everywhere, Windows checkouts included: .githooks/pre-commit cannot run
+# with CRLF ("/bin/sh\r"), and diffs stay free of line-ending noise.
 * text=auto eol=lf

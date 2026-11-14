@@ -1,8 +1,4 @@
-/**
- * Vite configuration: the development server and the production build of the
- * web app. Runs in Node, hence its own tsconfig.node.json.
- * Reference: https://vite.dev/config/
- */
+// https://vite.dev/config/
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 

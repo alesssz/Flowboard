@@ -1,24 +1,21 @@
-// TypeScript configuration for the API. `tsc` type-checks (`pnpm typecheck`)
-// and compiles src/ to dist/ (`pnpm build`); in development tsx runs the
-// sources directly and only strips types, so this file is what catches errors.
-// Reference: https://www.typescriptlang.org/tsconfig
+// API: type-checked by `pnpm typecheck`, compiled to dist/ by `pnpm build`.
+// tsx runs the sources in development without type-checking.
+// https://www.typescriptlang.org/tsconfig
 {
   "compilerOptions": {
-    // Node 24 supports ES2023 natively: no down-levelling of async/await or classes.
+    // Node 24 runs ES2023 natively.
     "target": "es2023",
-    // No "DOM": browser globals do not exist on the server and must not type-check.
+    // No DOM: browser globals must not type-check on the server.
     "lib": ["ES2023"],
     // TypeScript 6 loads no @types packages implicitly.
     "types": ["node"],
 
-    // Follow Node's own ESM rules exactly ("type": "module" in package.json).
     "module": "nodenext",
-    // Import the real file name ('./app.ts'); tsc rewrites it to './app.js' in dist/.
+    // Imports name the .ts file; tsc rewrites them to .js in dist/.
     "rewriteRelativeImportExtensions": true,
-    // Type-only imports must say so, so single-file transpilers (tsx) can drop them safely.
+    // Explicit type-only imports, so tsx can drop them file by file.
     "verbatimModuleSyntax": true,
-    // Only syntax that type stripping can erase (no enum, namespace, parameter properties):
-    // the same subset Node accepts when it runs .ts files natively.
+    // No enum, namespace or parameter properties: the subset Node's type stripping accepts.
     "erasableSyntaxOnly": true,
     "moduleDetection": "force",
 
@@ -28,7 +25,6 @@
     "sourceMap": true,
 
     "strict": true,
-    // array[i] and record[key] are `T | undefined`: an empty list is a real case.
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

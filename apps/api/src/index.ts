@@ -1,18 +1,14 @@
 /**
- * API entry point: reads the configuration, starts the HTTP server and stops
- * it gracefully. Run by tsx in development (`pnpm dev`), and as compiled
- * JavaScript in production (`pnpm build`, then `pnpm start`).
+ * API entry point: configuration, HTTP server, graceful shutdown.
  */
 import { createApp } from './app.ts';
 
-// Hosting platforms assign the port through PORT. The default matches the
-// proxy target in apps/web/vite.config.ts.
+// Hosting platforms assign PORT; 3000 is the dev proxy's target (apps/web/vite.config.ts).
 const PORT = Number(process.env.PORT ?? '3000');
 
 const app = createApp();
 
-// Express 5 hands listen errors (EADDRINUSE: the port is taken) to the
-// callback instead of emitting them on the server, so they are handled here.
+// Express 5 passes listen errors (EADDRINUSE: the port is taken) to this callback.
 const server = app.listen(PORT, (error) => {
   if (error) {
     console.error(`Cannot start the server on port ${PORT}:`, error.message);
@@ -23,10 +19,8 @@ const server = app.listen(PORT, (error) => {
 });
 
 /**
- * Stops accepting connections and lets in-flight requests finish before the
- * process exits. SIGINT is Ctrl+C in a terminal; SIGTERM is what containers
- * and hosting platforms send before a redeploy. Database pools and WebSocket
- * clients will be closed here as well.
+ * Stops accepting connections and exits once in-flight requests finish: on
+ * Ctrl+C (SIGINT), and on the platform's stop signal before a redeploy (SIGTERM).
  */
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`${signal} received, shutting down`);
