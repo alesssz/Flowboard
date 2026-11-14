@@ -23,7 +23,7 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 ## Working rules
 
 - **Everything in the repository is in English**: code, comments, docs, UI text, commit messages.
-- **Comments explain why**, for a developer who knows the stack: decisions, constraints, trade-offs, edge cases, behaviour that is not obvious from the code. No explanations of what the language or the framework does. Each source and configuration file opens with a short header saying what it is for.
+- **Comments are functional and short**, for a developer who knows the stack: a constraint, an edge case, a non-obvious reason, code elsewhere that must change together. No explanations of the language or the framework, and no pointers to docs or READMEs: background and rationale belong in the READMEs and `docs/`. Each source file opens with a one-line header saying what it is for.
 - **A change updates the docs it touches in the same commit**: the root README (status, stack, setup, scripts, troubleshooting, roadmap), the package READMEs (scripts, endpoints, environment variables, structure), `docs/`, this file.
 - **Docs read as a well-kept project, not a course**: setup, commands, configuration, decisions and known problems, written for someone who will run or maintain the project. A problem actually met goes in the root README's Troubleshooting table (symptom, then fix). No tutorials, no explanations of the stack itself.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).

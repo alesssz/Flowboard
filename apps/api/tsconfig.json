@@ -1,6 +1,5 @@
 // API: type-checked by `pnpm typecheck`, compiled to dist/ by `pnpm build`.
 // tsx runs the sources in development without type-checking.
-// https://www.typescriptlang.org/tsconfig
 {
   "compilerOptions": {
     // Node 24 runs ES2023 natively.

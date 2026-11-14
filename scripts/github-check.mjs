@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Compares the repository's settings on GitHub with the ones decided in
- * docs/ci-and-security.md, and reports the open alerts and the last workflow
- * runs. Read-only: every call is a GET. Run with `pnpm github:check`.
+ * Compares the repository's settings on GitHub with the expected ones, and
+ * reports the open alerts and the last workflow runs. Read-only: every call
+ * is a GET. Run with `pnpm github:check`.
  *
  * Needs GitHub's command line, `gh`, signed in once with `gh auth login`. It
  * calls the REST API through `gh api`, which adds the signed-in account's
@@ -135,7 +135,7 @@ function openAlerts(path) {
 const secrets = openAlerts(`${repo}/secret-scanning/alerts`);
 if (secrets === null) warn('secret scanning alerts could not be read');
 else if (secrets === 0) ok('no open secret scanning alert');
-else fail(`${secrets} open secret scanning alert(s): a secret is in the repository`, 'revoke it first, then remove it (docs/ci-and-security.md)');
+else fail(`${secrets} open secret scanning alert(s): a secret is in the repository`, 'revoke or rotate it first, then remove it from the code');
 const code = openAlerts(`${repo}/code-scanning/alerts`);
 if (code === null) warn('CodeQL alerts could not be read (none exist before its first analysis)');
 else if (code === 0) ok('no open CodeQL alert');

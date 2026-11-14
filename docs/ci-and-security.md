@@ -22,7 +22,9 @@ What GitHub checks on every push, the repository settings that protect the code 
 | [`dependabot.yml`](../.github/dependabot.yml) | Mondays | one pull request updating the pinned GitHub Actions | never: its own CI run is the check |
 | CodeQL default setup (no file) | every push to `main`, and weekly | static analysis of the TypeScript and of the workflows | never fails a push: it opens alerts under **Security → Code scanning** |
 
-Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash.
+Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner.
+
+CI runs on every branch, so a branch is checked before it reaches `main`. A new push to a branch cancels its run still in progress; on `main` every commit keeps its run. Pull requests from forks run nothing until the owner approves them. The audit runs on pull requests from forks only, since branches of this repository are already audited on push; its job summary lists outdated packages without failing the run.
 
 **Why `pnpm audit` beside Dependabot alerts:** an alert only warns, on GitHub's page, once the vulnerable version is on `main`; the Audit run fails the branch that brings it, next to its CI, and runs the same check locally (`pnpm audit`). Dependabot reads `pnpm-lock.yaml` for the alerts and opens a pull request for a fix when one exists; npm version updates are left out of `dependabot.yml` and made by hand.
 

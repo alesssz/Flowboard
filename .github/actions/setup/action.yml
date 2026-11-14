@@ -1,13 +1,5 @@
-# The setup every job starts with, right after actions/checkout: Node, pnpm and
-# the workspace's dependencies. One place for it, so ci.yml and audit.yml
-# cannot drift apart. A local action is read from the checked-out code, which
-# is why the checkout itself stays in each job.
-#
-# Only GitHub's own actions are allowed in this repository (Settings → Actions,
-# docs/ci-and-security.md), so pnpm is installed with npm instead of a
-# third-party setup action. Actions are pinned to a full commit hash, the
-# release in the comment beside it: a tag can be moved, a commit cannot.
-# Dependabot updates both together.
+# Shared by every job, right after actions/checkout (a local action is read from
+# the checked-out code). Actions are pinned to a commit hash, release in the comment.
 name: Setup
 description: Node at the version in .nvmrc, pnpm at the version in package.json, dependencies from the lockfile
 
@@ -17,12 +9,11 @@ runs:
     - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version-file: .nvmrc
-        # No automatic package-manager cache: pnpm is not installed yet at
-        # this point. The pnpm store is cached below instead.
+        # pnpm is not installed yet; its store is cached below instead.
         package-manager-cache: false
 
-    # The exact version of package.json's packageManager field (pnpm@x.y.z),
-    # the single place where it is pinned.
+    # Installed with npm: only GitHub's own actions are allowed in this repository.
+    # The version is package.json's packageManager field (pnpm@x.y.z).
     - name: Install pnpm
       shell: bash
       run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -32,16 +23,12 @@ runs:
       shell: bash
       run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
 
-    # Downloaded packages kept between runs, keyed on the lockfile; a changed
-    # lockfile restores the closest previous store and downloads the rest.
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.store.outputs.path }}
         key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: pnpm-store-${{ runner.os }}-
 
-    # Exactly the lockfile's versions: a lockfile out of step with a
-    # package.json fails here instead of being quietly rewritten.
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
