@@ -90,7 +90,7 @@ It needs [GitHub CLI](https://cli.github.com) signed in as the owner (`gh auth l
 
 ## Merging
 
-A branch reaches `main` with `pnpm merge:main` ([`scripts/merge-main.mjs`](../scripts/merge-main.mjs), the same script as in AtleoPlan and Chronovault), from the pushed branch. It stops if the branch is not ready (uncommitted or unpushed work, nothing new, a conflict with `main`), runs `pnpm check` (the CI's checks), shows the commits and asks; then it opens the pull request, or reuses the open one, and turns on auto-merge: GitHub merges once CI passes, with a merge commit listing the branch's commits, even if the terminal is closed. Then it updates `main` and deletes the branch on GitHub and locally. A failed check stops it with nothing merged. `--yes` skips the question, `--no-checks` the local checks (CI still runs them).
+A branch reaches `main` with `pnpm merge:main` ([`scripts/merge-main.mjs`](../scripts/merge-main.mjs), the same script as in AtleoPlan and Chronovault), from the pushed branch. It stops if the branch is not ready (uncommitted or unpushed work, nothing new, a conflict with `main`), runs `pnpm check` (the CI's checks), shows the commits and asks; then it opens the pull request, or reuses the open one, and turns on auto-merge: GitHub merges once CI passes, with a merge commit listing the branch's commits, even if the terminal is closed. Then it updates `main` and deletes the branch on GitHub and locally. A failed check stops it with nothing merged. `--yes` skips the question, `--no-checks` the local checks (CI still runs them). `make merge` runs the same script, with `yes=1` and `checks=0` for the two flags.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), as in AtleoPlan and Chronovault.
 

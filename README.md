@@ -60,22 +60,25 @@ Flowboard/
 │   └── api/                Express REST API (@flowboard/api)       → apps/api/README.md
 ├── packages/               Internal libraries, e.g. shared types (planned)
 ├── docs/                   Developer documentation
-├── scripts/                Repository tooling (GitHub settings check)
+├── scripts/                Repository tooling (merge, GitHub settings check, make help and clean)
 ├── .github/                CI and audit workflows, shared setup action, Dependabot
 ├── .githooks/              Git hooks (commit identity check)
+├── Makefile                Shortcuts for the scripts, plus setup, Git and cleanup steps
 ├── package.json            Workspace-wide scripts
 └── pnpm-workspace.yaml     Workspace definition, allowed install scripts, version overrides
 ```
 
 ## Getting started
 
-**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm 12+ (the exact version is pinned in `package.json` and fetched automatically), Git. Optional: [GitHub CLI](https://cli.github.com), for `pnpm github:check`. Commands are written for PowerShell; in bash or zsh they are the same, except environment variables (`PORT=3001 pnpm dev` instead of `$env:PORT=3001`).
+**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm 12+ (the exact version is pinned in `package.json` and fetched automatically), Git. Optional: [GitHub CLI](https://cli.github.com), for `pnpm github:check` and `pnpm merge:main`; GNU Make, for the [Makefile](#makefile) (Windows: `winget install ezwinports.make`; macOS: included in the Command Line Tools, `xcode-select --install`). Commands are written for PowerShell; in bash or zsh they are the same, except environment variables (`PORT=3001 pnpm dev` instead of `$env:PORT=3001`).
 
 ```powershell
 pnpm install                          # every package, from the single lockfile
 git config core.hooksPath .githooks   # once per clone: enables the commit identity check
 pnpm dev                              # web app and API together, with reload on change
 ```
+
+With Make, the same is `make setup` then `make dev`.
 
 Open http://localhost:5173: the status panel reads **API online** when both sides are up.
 
@@ -102,6 +105,23 @@ Run from the repository root; each runs the script of the same name in every pac
 
 One package only: `pnpm --filter @flowboard/api dev`.
 
+### Makefile
+
+`make help` (or `make` alone) lists every target. Most are the scripts above under the same name (`make dev`, `make check`, `make github-check`…); the others:
+
+| Command | What it does |
+|---|---|
+| `make setup` | New clone: `pnpm install` and `git config core.hooksPath .githooks` |
+| `make urls` | The local addresses |
+| `make dev-web` · `make dev-api` | One app only |
+| `make branch name=feat/board-ui` | New branch from an up-to-date `main` |
+| `make sync` | Back to `main`, updated from GitHub, branches deleted there forgotten (`fetch --prune`) |
+| `make push` | Pushes the current branch, setting its upstream the first time |
+| `make merge` | `pnpm merge:main`; `yes=1` adds `--yes`, `checks=0` adds `--no-checks` |
+| `make clean` · `make clean-all` | Removes every package's `dist/`; `clean-all` also every `node_modules` (then `make install`) |
+
+It runs from PowerShell, Git Bash and zsh alike: every recipe line is a single `pnpm`, `git` or `node` command, since from PowerShell Make runs recipes with `cmd.exe`. What needs more than one command (`make help`, `make clean`) is a script in `scripts/`. Values are passed as variables (`name=…`, `yes=1`): Make reads any other word after the target as another target, and anything starting with `--` as its own option.
+
 ## Troubleshooting
 
 | Problem | Solution |
@@ -114,6 +134,7 @@ One package only: `pnpm --filter @flowboard/api dev`.
 | Two `/api/health` requests on every load in development | Expected: StrictMode runs effects twice in development only |
 | `pnpm dev` works but `pnpm typecheck` or CI fails | `pnpm dev` only strips types (tsx, Vite). Type errors show in the editor and in `pnpm typecheck` |
 | `pre-commit: refused, identity is '…'` | The commit identity is not the GitHub noreply address: set it for this clone with `git config user.email "<id>+<user>@users.noreply.github.com"` |
+
 ## CI and security
 
 Every push runs type-checking, linting and the production build on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
