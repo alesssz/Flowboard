@@ -18,6 +18,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+/** The CI jobs main requires before a merge: the job names of ci.yml. */
+const REQUIRED_CHECKS = ['Types, lint and build'];
+
 // A terminal opened before GitHub CLI was installed does not see it on the
 // PATH yet; on Windows the installer's location is tried first.
 const WINDOWS_GH = 'C:\\Program Files\\GitHub CLI\\gh.exe';
@@ -28,11 +31,7 @@ let failures = 0;
 /** Runs gh; its trimmed output, or null when it exits with an error. */
 function gh(args) {
   try {
-    return execFileSync(GH, args, {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    return execFileSync(GH, args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     return null;
   }
@@ -87,6 +86,8 @@ console.log('General');
 const info = api(repo);
 expect(info?.visibility === 'public', 'repository public', 'Settings → General → Danger Zone');
 expect(info?.has_wiki === false && info?.has_projects === false && info?.has_discussions === false, 'wiki, projects and discussions off', 'Settings → General → Features');
+// The merge script has GitHub merge the pull request once CI passes, as a merge commit.
+expect(info?.allow_merge_commit === true && info?.allow_auto_merge === true, 'merge commits and auto-merge allowed', 'Settings → General → Pull Requests: "Allow merge commits" and "Allow auto-merge"');
 expect(info?.delete_branch_on_merge === true, 'head branches deleted after merge', 'Settings → General → Pull Requests');
 
 // --- Actions -----------------------------------------------------------------
@@ -115,12 +116,15 @@ expect(codeql?.state === 'configured', `CodeQL default setup on${languages}`, 'S
 // --- Ruleset on the default branch ------------------------------------------
 console.log('Ruleset');
 const summaries = api(`${repo}/rulesets`) ?? [];
-const rulesets = summaries.map((summary) => api(`${repo}/rulesets/${summary.id}`)).filter(Boolean);
-const onMain = rulesets.find(
-  (ruleset) => ruleset.enforcement === 'active' && ruleset.conditions?.ref_name?.include?.includes('~DEFAULT_BRANCH'),
-);
-const rules = onMain?.rules.map((rule) => rule.type) ?? [];
-expect(rules.includes('deletion') && rules.includes('non_fast_forward'), 'main: deletion and force pushes blocked', 'Settings → Rules → Rulesets');
+const rulesets = summaries.map(summary => api(`${repo}/rulesets/${summary.id}`)).filter(Boolean);
+const onMain = rulesets.find(ruleset => ruleset.enforcement === 'active' && ruleset.conditions?.ref_name?.include?.includes('~DEFAULT_BRANCH'));
+const rules = onMain?.rules ?? [];
+const types = rules.map(rule => rule.type);
+expect(types.includes('deletion') && types.includes('non_fast_forward'), 'main: deletion and force pushes blocked', 'Settings → Rules → Rulesets → main');
+expect(types.includes('pull_request'), 'main: changes only through a pull request', 'Settings → Rules → Rulesets → main → Require a pull request before merging');
+const required = rules.find(rule => rule.type === 'required_status_checks')?.parameters?.required_status_checks?.map(check => check.context) ?? [];
+const missing = REQUIRED_CHECKS.filter(check => !required.includes(check));
+expect(missing.length === 0, `main: CI must pass (${REQUIRED_CHECKS.join(', ')})`, `Settings → Rules → Rulesets → main → Require status checks to pass, add: ${missing.join(', ')}`);
 if (onMain && onMain.bypass_actors.length > 0) {
   warn('the ruleset of main has bypass actors: someone may skip it', 'Settings → Rules → Rulesets → main → Bypass list');
 }
