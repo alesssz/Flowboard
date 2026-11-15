@@ -95,8 +95,10 @@ Run from the repository root; each runs the script of the same name in every pac
 | `pnpm build` | Type-checks and builds every package for production |
 | `pnpm typecheck` | Type-checks every package |
 | `pnpm lint` | Runs ESLint (web app for now) |
+| `pnpm check` | The CI's checks: type-check, lint, build |
 | `pnpm audit` | Checks every dependency against the advisory database |
 | `pnpm github:check` | Compares the repository's GitHub settings with the ones decided (needs [GitHub CLI](https://cli.github.com)) |
+| `pnpm merge:main` | Merges the current branch into `main` through a pull request, once CI passes ([docs/ci-and-security.md](docs/ci-and-security.md#merging)) |
 
 One package only: `pnpm --filter @flowboard/api dev`.
 

@@ -9,6 +9,7 @@ What GitHub checks on every push, the repository settings that protect the code 
 - [Repository settings](#repository-settings)
 - [Checking the settings: pnpm github:check](#checking-the-settings-pnpm-githubcheck)
 - [Responding to a problem](#responding-to-a-problem)
+- [Merging](#merging)
 - [Local safeguards](#local-safeguards)
 
 ---
@@ -24,7 +25,7 @@ What GitHub checks on every push, the repository settings that protect the code 
 
 Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner.
 
-CI runs on every branch, so a branch is checked before it reaches `main`. A new push to a branch cancels its run still in progress; on `main` every commit keeps its run. Pull requests from forks run nothing until the owner approves them. The audit runs on pull requests from forks only, since branches of this repository are already audited on push; its job summary lists outdated packages without failing the run.
+CI runs on every branch, so a branch is checked before it reaches `main`, and only through a pull request whose CI passed ([Merging](#merging)). A new push to a branch cancels its run still in progress; on `main` every commit keeps its run. Pull requests from forks run nothing until the owner approves them. The audit runs on pull requests from forks only, since branches of this repository are already audited on push; its job summary lists outdated packages without failing the run.
 
 **Why `pnpm audit` beside Dependabot alerts:** an alert only warns, on GitHub's page, once the vulnerable version is on `main`; the Audit run fails the branch that brings it, next to its CI, and runs the same check locally (`pnpm audit`). Dependabot reads `pnpm-lock.yaml` for the alerts and opens a pull request for a fix when one exists; npm version updates are left out of `dependabot.yml` and made by hand.
 
@@ -47,7 +48,7 @@ Made by the owner on github.com (or with `gh api`), and verified by `pnpm github
 | Setting | Choice | Why |
 |---|---|---|
 | Features | Wikis, Projects, Discussions off; Issues on | Documentation lives in the repository; fewer surfaces to watch |
-| Pull Requests | Automatically delete head branches | Merged branches do not pile up |
+| Pull Requests | **Allow merge commits**, **Allow auto-merge**, **Automatically delete head branches** | `pnpm merge:main` hands the merge to GitHub, as a merge commit, once CI passes; merged branches do not pile up |
 
 **Settings → Actions → General**
 
@@ -66,7 +67,7 @@ Made by the owner on github.com (or with `gh api`), and verified by `pnpm github
 | Secret Protection, with Push protection | On | The whole history is scanned, and a push holding a known kind of secret is refused |
 | CodeQL analysis | **Default setup**, default query suite | Free on public repositories, run with GitHub's own action |
 
-**Settings → Rules → Rulesets:** a branch ruleset named `main`, **Active**, targeting the default branch, with **Restrict deletions** and **Block force pushes**, and no bypass list. Nobody, the owner included, can delete `main` or rewrite its history. No required pull request or status check for now: work lands on `main` directly while the project has a single contributor.
+**Settings → Rules → Rulesets:** a branch ruleset named `main`, **Active**, targeting the default branch, with **Restrict deletions**, **Block force pushes**, **Require a pull request before merging** (no approvals: one contributor) and **Require status checks to pass** (*Types, lint and build*), and no bypass list. Nobody, the owner included, can delete `main`, rewrite its history or bring in a commit whose CI did not pass.
 
 **The account** (outside the repository, but whoever controls it controls the repository): two-factor authentication with an app or a passkey; **Keep my email addresses private** and **Block command line pushes that expose my email**; no personal access tokens or SSH keys that are not in use.
 
@@ -86,6 +87,12 @@ It needs [GitHub CLI](https://cli.github.com) signed in as the owner (`gh auth l
 - **The Audit run fails:** `pnpm audit` locally shows the advisory and `pnpm why -r <package>` who brings the package. Update the direct dependency if a release fixes it; otherwise force a fixed version in `overrides`, with its comment. Never silence a run that stays red: a permanent failure hides the next one.
 - **A CodeQL alert:** read it under **Security → Code scanning**; fix it, or dismiss it with a reason when it is a false positive.
 - **A private vulnerability report:** it arrives by email and in the **Security** tab; answer there, and fix it like any bug.
+
+## Merging
+
+A branch reaches `main` with `pnpm merge:main` ([`scripts/merge-main.mjs`](../scripts/merge-main.mjs), the same script as in AtleoPlan and Chronovault), from the pushed branch. It stops if the branch is not ready (uncommitted or unpushed work, nothing new, a conflict with `main`), runs `pnpm check` (the CI's checks), shows the commits and asks; then it opens the pull request, or reuses the open one, and turns on auto-merge: GitHub merges once CI passes, with a merge commit listing the branch's commits, even if the terminal is closed. Then it updates `main` and deletes the branch on GitHub and locally. A failed check stops it with nothing merged. `--yes` skips the question, `--no-checks` the local checks (CI still runs them).
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), as in AtleoPlan and Chronovault.
 
 ## Local safeguards
 

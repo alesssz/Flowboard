@@ -7,7 +7,7 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 - **pnpm only**, from the repository root; the version is pinned by `packageManager` in `package.json`. Never mix in `npm install` or `yarn`: they would ignore the workspace and the lockfile.
 - Everyday scripts, run in every package that defines them: `pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint`. One package only: `pnpm --filter @flowboard/api <script>`.
 - Ports: the web app on **5173** (`strictPort`), the API on **3000** (`PORT` overrides it). In development Vite proxies `/api/*` to the API, so the browser sees a single origin and CORS is not involved.
-- **`pnpm dev` does not type-check**: tsx and Vite only strip types. `pnpm typecheck` and `pnpm lint` must pass before a commit.
+- **`pnpm dev` does not type-check**: tsx and Vite only strip types. `pnpm check` (typecheck, lint, build: the CI's checks) must pass before a commit; branches reach `main` with `pnpm merge:main`, through a pull request merged once CI passes.
 - Dependency install scripts are blocked by pnpm unless allowlisted in `pnpm-workspace.yaml` (`allowBuilds`). Add an entry only for a package whose script is understood and needed.
 - The development machine is Windows: commands in the docs are written for PowerShell.
 - `.env` files hold secrets: never read or print them; new variables are documented in a committed `.env.example`.
