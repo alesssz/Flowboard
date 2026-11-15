@@ -147,6 +147,8 @@ Every push runs type-checking, linting and the production build on GitHub Action
 
 ## Roadmap
 
+The directions; the points ready to be picked up are in [docs/backlog.md](docs/backlog.md).
+
 **Core**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
