@@ -1,7 +1,4 @@
-/*
- * Placeholder start page and its status panel. Imported CSS is global in
- * Vite: BEM class names (block__element--modifier) keep components apart.
- */
+/* Placeholder start page and its status panel. */
 
 .welcome {
   width: min(560px, 100% - 32px);

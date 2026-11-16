@@ -1,39 +1,20 @@
 #!/usr/bin/env node
 /**
- * Merges the current branch into main through a GitHub pull request, once CI
- * passes, then cleans up.
+ * Merges the current branch into main through a pull request that GitHub
+ * merges once CI passes (main's ruleset allows no other way in), then deletes
+ * the branch on GitHub and locally.
  *
  *   pnpm merge:main               asks for confirmation first
- *   pnpm merge:main --yes         no confirmation (e.g. scripts)
- *   pnpm merge:main --no-checks   skips `pnpm check` (e.g. a docs-only branch; CI still runs)
+ *   pnpm merge:main --yes         no confirmation
+ *   pnpm merge:main --no-checks   skips `pnpm check` (CI still runs it)
  *
- * Why a pull request: nothing reaches main without a green CI. GitHub merges
- * only once CI passes, and main's ruleset refuses any other way in.
- *
- * What it does, in order:
- *   1. On main: prints "Already on main" and stops (nothing to do).
- *   2. Stops when gh (GitHub's command line) is missing or signed out, or the
- *      repository's commit email is not the GitHub noreply one: the merge commit
- *      carries it, and the repository is public.
- *   3. Stops when the branch is not ready: uncommitted changes, never pushed,
- *      local commits not pushed yet, remote commits not pulled yet, nothing
- *      new compared to main, a local main with unpushed commits, or conflicts
- *      with main (found without touching your files).
- *   4. Runs `pnpm check`: the local checks, minutes before CI would say the same.
- *   5. Shows the commits and the merge message, and asks for confirmation.
- *   6. Opens the pull request (or reuses the one already open for the branch).
- *   7. Waits for CI, printing where it stands. Once main's ruleset requires the
- *      checks, it turns on GitHub's auto-merge: from then on GitHub merges by
- *      itself when CI passes, even if this terminal is closed (Ctrl+C only stops
- *      the waiting). Otherwise it merges from here once every check passed.
- *      Either way the merge commit gets the usual message (--no-ff, every commit
- *      of the branch listed), a noreply author, and only the commit checked here
- *      can be merged.
- *   8. A failed check turns auto-merge off again and stops: nothing is merged.
- *      Fix, push, run it again; the same pull request is reused.
- *   9. Once merged: switches to main, pulls it, deletes the branch on GitHub and
- *      locally. Run again on a branch whose pull request was merged meanwhile
- *      (after Ctrl+C), it does only this clean-up.
+ * Stops before opening anything when gh is missing or signed out, the commit
+ * email is not the noreply one (the merge commit carries it into a public
+ * repository), or the branch is not ready: uncommitted, unpushed or unpulled
+ * commits, nothing new, a local main ahead of origin, conflicts with main.
+ * Only the commit checked here can be merged (--match-head-commit). Run again
+ * after Ctrl+C, it reuses the open pull request, or only cleans up if GitHub
+ * merged it meanwhile.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
@@ -41,23 +22,16 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { buildMergeMessage } from './lib/merge-message.mjs';
 import { buildPullRequest, describeChecks, summarizeChecks } from './lib/pull-request.mjs';
 
-/** The branch everything is merged into. */
 const MAIN = 'main';
-/** The GitHub remote. */
 const REMOTE = 'origin';
 /** `--yes` (or `-y`): answer yes to the confirmation question. */
 const assumeYes = process.argv.includes('--yes') || process.argv.includes('-y');
 /** `--no-checks`: skip the local checks (CI still runs them before the merge). */
 const skipChecks = process.argv.includes('--no-checks');
-/** The checks run before opening the pull request; the tests replace them (their throwaway repositories hold no project). */
-const CHECK_COMMAND = process.env.MERGE_MAIN_CHECK_COMMAND || 'pnpm check';
-/**
- * The gh command, as program and leading arguments. The tests put a stand-in
- * for GitHub here (a JSON array such as ["node", "fake-gh.mjs"]).
- */
-const GH = process.env.MERGE_MAIN_GH ? JSON.parse(process.env.MERGE_MAIN_GH) : ['gh'];
-/** Time between two looks at the pull request while waiting (CI takes about ten minutes). */
-const POLL_MS = Number(process.env.MERGE_MAIN_POLL_MS) || 15_000;
+/** The CI's checks, run locally first. */
+const CHECK_COMMAND = 'pnpm check';
+/** Time between two looks at the pull request while waiting (CI takes a few minutes). */
+const POLL_MS = 15_000;
 /** Looks in a row GitHub may fail to answer before the script gives up waiting (about two minutes). */
 const MAX_GH_FAILURES = 8;
 /** Merge states in which GitHub would merge right now (HAS_HOOKS: allowed, with hooks to run). */
@@ -93,10 +67,9 @@ function countCommits(range) {
 
 /** Runs gh and returns its trimmed output; throws on failure (the error carries gh's own message). */
 function gh(...args) {
-  return execFileSync(GH[0], [...GH.slice(1), ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  return execFileSync('gh', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
-/** Runs gh and parses its JSON output. */
 function ghJson(...args) {
   return JSON.parse(gh(...args));
 }
@@ -110,10 +83,8 @@ function reason(error) {
 async function confirm(question) {
   if (assumeYes) return true;
   if (!process.stdin.isTTY) throw new Stop('No terminal to ask for confirmation: run it again with --yes.');
-  // A prompt on this terminal.
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    // What the user typed.
     const answer = await rl.question(question);
     return /^y(es)?$/i.test(answer.trim());
   } finally {
@@ -126,7 +97,6 @@ async function confirm(question) {
  * first, else the most recently merged or closed. Null when there is none.
  */
 function findPullRequest(branch) {
-  // Every pull request from this branch into main, newest first.
   const found = ghJson(
     'pr',
     'list',
@@ -192,14 +162,12 @@ function cleanUp(branch) {
  * when the account keeps its emails private.
  */
 async function waitAndMerge(pr, sha, mergeFlags, authorEmail) {
-  // gh calls in a row that failed (a dropped connection), auto-merge already asked for, the last line printed.
   let failures = 0;
   let autoTried = false;
   let lastLine = '';
   console.log(`▸ Waiting for CI (${pr.url}/checks). Ctrl+C stops waiting; with auto-merge on, GitHub still merges.`);
 
   for (;;) {
-    // The pull request now; a failed look is retried, a few times in a row at most.
     let now;
     try {
       now = viewPullRequest(pr.number);
@@ -222,7 +190,6 @@ async function waitAndMerge(pr, sha, mergeFlags, authorEmail) {
     if (now.headRefOid !== sha)
       throw new Stop(`The branch changed on GitHub while waiting. Pull, check, then run this again.`);
 
-    // Where the checks stand, printed when it changed.
     const checks = summarizeChecks(now.statusCheckRollup);
     const line = describeChecks(checks);
     if (line !== lastLine) console.log(`  CI: ${line}`);
@@ -276,7 +243,6 @@ async function waitAndMerge(pr, sha, mergeFlags, authorEmail) {
 
 /** The whole procedure; resolves with the exit code, throws Stop for expected refusals. */
 async function run() {
-  // The branch checked out (empty when HEAD is detached).
   const branch = git('branch', '--show-current');
   if (!branch) throw new Stop('You are not on a branch (detached HEAD): switch to the branch to merge.');
   if (branch === MAIN) {
@@ -308,11 +274,9 @@ async function run() {
   console.log(`▸ Fetching ${REMOTE}…`);
   if (!gitVisible('fetch', '--prune', REMOTE)) throw new Stop(`Could not reach ${REMOTE}: check your connection.`);
 
-  // The branch as GitHub has it (after the fetch above).
   const upstream = `${REMOTE}/${branch}`;
   if (!gitSucceeds('rev-parse', '--verify', '--quiet', `refs/remotes/${upstream}`)) {
     // Gone from GitHub: deleted after its pull request was merged, while this script waited elsewhere or not at all.
-    // The branch's latest pull request, merged if that is what happened.
     const merged = findPullRequest(branch);
     if (merged?.state === 'MERGED' && merged.headRefOid === git('rev-parse', branch)) {
       console.log(`✔ "${branch}" was already merged (${merged.url}). Cleaning up.`);
@@ -321,12 +285,10 @@ async function run() {
     }
     throw new Stop(`"${branch}" has never been pushed. Push it first: git push -u ${REMOTE} ${branch}`);
   }
-  // Local commits the remote does not have yet.
   const unpushed = countCommits(`${upstream}..${branch}`);
   if (unpushed > 0) {
     throw new Stop(`"${branch}" has ${unpushed} local commit(s) not pushed yet. Push them first: git push`);
   }
-  // Remote commits this checkout does not have yet.
   const unpulled = countCommits(`${branch}..${upstream}`);
   if (unpulled > 0) {
     throw new Stop(`${REMOTE} has ${unpulled} commit(s) on "${branch}" that you don't have. Pull them first: git pull`);
@@ -335,7 +297,6 @@ async function run() {
     throw new Stop(`Your local ${MAIN} has commits that are not on ${REMOTE}: push or remove them before merging.`);
   }
 
-  // The commit that will be merged, and the branch's latest pull request.
   const sha = git('rev-parse', branch);
   let pr = findPullRequest(branch);
   // Merged on GitHub already (auto-merge finished after Ctrl+C): only the clean-up is left.
@@ -345,7 +306,6 @@ async function run() {
     return 0;
   }
 
-  // The subjects of the branch's own commits, oldest first, for the messages.
   const subjects = git('log', '--reverse', '--no-merges', '--format=%s', `${REMOTE}/${MAIN}..${branch}`)
     .split('\n')
     .filter(Boolean);
@@ -377,7 +337,6 @@ async function run() {
   }
 
   // --- Confirmation --------------------------------------------------------------------
-  // The merge commit's message, shown now and given to GitHub for the merge.
   const message = buildMergeMessage(branch, subjects);
   console.log(`\n"${branch}" → ${MAIN}: ${subjects.length} commit(s)\n`);
   console.log(message.replace(/^/gm, '    '));
@@ -392,7 +351,6 @@ async function run() {
     console.log(`▸ Pull request already open: ${pr.url}`);
   } else {
     console.log(`▸ Opening the pull request…`);
-    // What GitHub shows on the pull request's page.
     const { title, body } = buildPullRequest(branch, subjects);
     try {
       gh('pr', 'create', '--base', MAIN, '--head', branch, '--title', title, '--body', body);
@@ -406,9 +364,7 @@ async function run() {
   // How GitHub merges it, now or by auto-merge: a merge commit (--no-ff) with the usual message,
   // and only if the branch is still the commit checked here. The author's email is added for a
   // merge from here only (see waitAndMerge).
-  // The message's first line (the commit's subject) and the lines after it (its body).
   const [subject, ...rest] = message.split('\n');
-  // gh pr merge's options, the same for a merge from here and for auto-merge.
   const mergeFlags = ['--merge', '--subject', subject, '--body', rest.join('\n').trim(), '--match-head-commit', sha];
   await waitAndMerge(pr, sha, mergeFlags, email);
 

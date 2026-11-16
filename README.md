@@ -5,7 +5,7 @@
 
 A real-time collaborative kanban board: boards, columns and cards you drag around, with every change showing up live for everyone looking at the same board.
 
-React and TypeScript in the browser, Node.js and TypeScript on the server, in a single pnpm workspace that shares types between the two.
+React and TypeScript in the browser, Node.js and TypeScript on the server, in a single pnpm workspace.
 
 ## Status
 
@@ -30,8 +30,8 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 | Area | Technology | Why |
 |---|---|---|
 | Language | [TypeScript](https://www.typescriptlang.org/) 6, `strict` | One language and shared types across the web app and the API |
-| Web app | [React](https://react.dev/) 19 | Component model and ecosystem for a highly interactive UI |
-| Build tool | [Vite](https://vite.dev/) 8 | Instant dev server with hot module replacement, optimised production builds |
+| Web app | [React](https://react.dev/) 19 | The board's libraries: dnd-kit for drag and drop, TanStack Query for optimistic updates |
+| Build tool | [Vite](https://vite.dev/) 8 | Its dev proxy gives the app and the API one origin; a static production build |
 | API | [Node.js](https://nodejs.org/) 24 LTS + [Express](https://expressjs.com/) 5 | Minimal, well-understood HTTP layer; Express 5 forwards async errors natively |
 | Dev runner | [tsx](https://tsx.is/) | Runs the API's TypeScript directly, restarting on change |
 | Package manager | [pnpm](https://pnpm.io/) workspaces | One lockfile, strict dependency resolution, internal packages without publishing |
@@ -120,7 +120,7 @@ One package only: `pnpm --filter @flowboard/api dev`.
 | `make merge` | `pnpm merge:main`; `yes=1` adds `--yes`, `checks=0` adds `--no-checks` |
 | `make clean` · `make clean-all` | Removes every package's `dist/`; `clean-all` also every `node_modules` (then `make install`) |
 
-It runs from PowerShell, Git Bash and zsh alike: every recipe line is a single `pnpm`, `git` or `node` command, since from PowerShell Make runs recipes with `cmd.exe`. What needs more than one command (`make help`, `make clean`) is a script in `scripts/`. Values are passed as variables (`name=…`, `yes=1`): Make reads any other word after the target as another target, and anything starting with `--` as its own option.
+It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables (`name=…`, `yes=1`), not as flags.
 
 ## Troubleshooting
 
@@ -131,7 +131,6 @@ It runs from PowerShell, Git Bash and zsh alike: every recipe line is a single `
 | `Cannot start the server on port 3000: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3001`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
 | `Error: Port 5173 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5174). Stop it |
 | The start page shows **API unreachable** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`, then **Retry** |
-| Two `/api/health` requests on every load in development | Expected: StrictMode runs effects twice in development only |
 | `pnpm dev` works but `pnpm typecheck` or CI fails | `pnpm dev` only strips types (tsx, Vite). Type errors show in the editor and in `pnpm typecheck` |
 | `pre-commit: refused, identity is '…'` | The commit identity is not the GitHub noreply address: set it for this clone with `git config user.email "<id>+<user>@users.noreply.github.com"` |
 
@@ -149,23 +148,28 @@ Every push runs type-checking, linting and the production build on GitHub Action
 
 The directions; the points ready to be picked up are in [docs/backlog.md](docs/backlog.md).
 
-**Core**
+**Usable board**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
 - [ ] Board UI: boards, columns and cards
-- [ ] REST API for boards, columns and cards
-- [ ] PostgreSQL with Prisma
+- [ ] REST API for boards, columns and cards, on PostgreSQL with Prisma
 - [ ] Shared types and validation (`@flowboard/shared` + Zod)
-- [ ] Authentication with JWT
-- [ ] Drag and drop with dnd-kit, optimistic updates with TanStack Query
-- [ ] Online deployment
+- [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
+- [ ] Tests in CI: API and web app (Vitest)
 
-**Advanced**
-- [ ] Real-time collaboration (Socket.IO) and user presence
-- [ ] Concurrent editing of card descriptions (Yjs / CRDT)
+**Collaboration**
+- [ ] Accounts and sign-in (JWT)
+- [ ] Live updates and presence (Socket.IO)
 - [ ] Board roles and permissions
-- [ ] Background jobs (BullMQ + Redis): due-date reminders
+- [ ] Concurrent editing of card descriptions (Yjs)
+
+**Production**
+- [ ] Docker Compose for the whole stack
+- [ ] Online deployment, with continuous deployment from `main`
+- [ ] End-to-end tests (Playwright)
+
+**Later**
+- [ ] Due-date reminders (BullMQ + Redis)
 - [ ] Attachments on S3-compatible storage
-- [ ] Undo/redo, offline-first PWA, list virtualisation
-- [ ] AI assistant to draft cards
-- [ ] Tests (Vitest, Playwright) in CI, continuous deployment, Docker Compose
+- [ ] Undo/redo, offline use (PWA), virtualised long columns
+- [ ] AI assistant that drafts cards

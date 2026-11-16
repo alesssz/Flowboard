@@ -1,7 +1,6 @@
-// Solution-style config: it checks nothing itself and points to one project
-// per runtime, so browser code cannot use Node APIs by mistake and vice versa.
-//   tsconfig.app.json  → src/, runs in the browser
-//   tsconfig.node.json → vite.config.ts, runs in Node
+// One project per runtime, so browser code cannot use Node APIs and vice versa:
+//   tsconfig.app.json  → src/, browser
+//   tsconfig.node.json → vite.config.ts, Node
 // `tsc -b` (`pnpm typecheck`, `pnpm build`) checks both.
 {
   "files": [],
