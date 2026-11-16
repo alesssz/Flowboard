@@ -4,10 +4,9 @@
  * reports the open alerts and the last workflow runs. Read-only: every call
  * is a GET. Run with `pnpm github:check`.
  *
- * Needs GitHub's command line, `gh`, signed in once with `gh auth login`. It
- * calls the REST API through `gh api`, which adds the signed-in account's
- * token itself; the token is never printed. Some endpoints answer only the
- * repository's owner: another account gets "Not Found", reported as a failure.
+ * Needs `gh` signed in (`gh auth login`); the token is never printed. Some
+ * endpoints answer only the repository's owner: another account gets
+ * "Not Found", reported as a failure.
  *
  * Exit code 1 when at least one check fails, 0 otherwise (warnings included).
  */

@@ -8,7 +8,7 @@ const PORT = Number(process.env.PORT ?? '3000');
 
 const app = createApp();
 
-// Express 5 passes listen errors (EADDRINUSE: the port is taken) to this callback.
+// Express 5 passes listen errors (e.g. EADDRINUSE) to this callback.
 const server = app.listen(PORT, (error) => {
   if (error) {
     console.error(`Cannot start the server on port ${PORT}:`, error.message);
