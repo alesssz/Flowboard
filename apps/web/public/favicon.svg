@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Flowboard mark: an F of three cards. The stem follows the browser's theme; the cards stay amber.
+  <!-- Flowboard mark: an F of three cards. The stem follows the browser's theme; the cards stay coral.
        Colours match the tokens in src/index.css: change them together. -->
   <style>
-    .stem { fill: #111827; }
-    .card { fill: #f59e0b; }
+    .stem { fill: #1c1917; }
+    .card { fill: #ff6b4a; }
     @media (prefers-color-scheme: dark) {
-      .stem { fill: #f4f4f5; }
-      .card { fill: #fbbf24; }
+      .stem { fill: #f5f5f4; }
+      .card { fill: #ff8a6b; }
     }
   </style>
   <rect class="stem" x="13" y="8" width="13" height="48" rx="4" />
