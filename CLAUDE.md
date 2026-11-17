@@ -1,6 +1,6 @@
 # Flowboard — notes for AI assistants
 
-A real-time collaborative kanban board (boards, columns, draggable cards, live updates between users). One pnpm workspace: a React 19 / TypeScript / Vite single-page app (`apps/web`) and a Node.js 24 / Express 5 / TypeScript API (`apps/api`). Start from [README.md](README.md); the package READMEs ([apps/web](apps/web/README.md), [apps/api](apps/api/README.md)) describe each side.
+A real-time collaborative kanban board (boards, columns, draggable cards, live updates between users). One pnpm workspace: a React 19 / TypeScript / Vite single-page app (`apps/web`) and a Node.js 24 / Express 5 / TypeScript API (`apps/api`), sharing types through `packages/shared` (`@flowboard/shared`). Start from [README.md](README.md); the package READMEs ([apps/web](apps/web/README.md), [apps/api](apps/api/README.md)) describe each side.
 
 ## Running things
 
@@ -12,13 +12,14 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 - Dependency install scripts are blocked by pnpm unless allowlisted in `pnpm-workspace.yaml` (`allowBuilds`). Add an entry only for a package whose script is understood and needed.
 - Developed on Windows and macOS: the docs write commands for PowerShell. On Windows, PowerShell 5.1 prepends a UTF-8 BOM to text piped into a native program, so never pipe JSON to `gh` or `node`: write it to a file without a BOM (`[IO.File]::WriteAllText($path, $json)`) and pass the file (`gh api … --input $path`).
 - `.env` files hold secrets: never read or print them; new variables are documented in a committed `.env.example`.
-- **CI and security** ([docs/ci-and-security.md](docs/ci-and-security.md)): GitHub runs `ci.yml` (typecheck, lint, build) on every push and `audit.yml` (`pnpm audit`) weekly and on dependency changes; both share `.github/actions/setup`. Workflows use **only GitHub's own actions**, pinned to a full commit hash with the release in a comment, with `permissions: contents: read` and `persist-credentials: false`. A new action, permission or secret is a decision to document there first. An advisory is fixed (update, or `overrides` in `pnpm-workspace.yaml` with a comment saying why and when to remove it), never silenced. `pnpm github:check` compares the repository's settings on GitHub with the documented ones (read-only, needs `gh`).
+- **CI and security** ([docs/ci-and-security.md](docs/ci-and-security.md)): GitHub runs `ci.yml` (typecheck, lint, build) on every push and `audit.yml` (`pnpm audit`) weekly and on dependency changes; both share `.github/actions/setup`. Workflows use **only GitHub's own actions**, pinned to a full commit hash with the release in a comment, with `permissions: contents: read` and `persist-credentials: false`. A new action, permission or secret is a decision to document there first. An advisory is fixed (update, or `overrides` in `pnpm-workspace.yaml` with a comment saying why and when to remove it), never silenced; the one exception is an advisory with no fixed release, reached only through development tools, listed by ID in `auditConfig.ignoreGhsas` with the same kind of comment. `pnpm github:check` compares the repository's settings on GitHub with the documented ones (read-only, needs `gh`).
 
 ## Code conventions
 
 - TypeScript `strict` plus `noUncheckedIndexedAccess`; `verbatimModuleSyntax` (type-only imports use `import type`); `erasableSyntaxOnly` (no `enum` or `namespace`: string-literal unions instead).
 - API: ESM with `module: nodenext`; relative imports carry the `.ts` extension, rewritten to `.js` by `tsc` (`rewriteRelativeImportExtensions`). Every route lives under `/api` and every response, errors included, is JSON. `app.ts` builds the app, `index.ts` starts it.
 - Web: components in PascalCase, props typed with `interface XxxProps`, event handlers named `handleXxx` and the props that receive them `onXxx`, multi-shape state modelled as discriminated unions, CSS class names in BEM.
+- Shared: request and response bodies are typed once in `@flowboard/shared` and imported with `import type`. The package exports types only and is consumed as sources; runtime code there (Zod schemas) needs a build step first.
 - Semicolons, single quotes.
 
 ## Working rules

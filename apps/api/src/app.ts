@@ -2,19 +2,8 @@
  * Express application factory: middleware and routes, without binding a port,
  * so tests can drive an instance in-process (Supertest). index.ts starts it.
  */
+import type { HealthResponse } from '@flowboard/shared';
 import express, { type Express } from 'express';
-
-/**
- * Body of `GET /api/health`. Duplicated in apps/web/src/App.tsx until the
- * shared types package exists.
- */
-export interface HealthResponse {
-  status: 'ok';
-  /** When the response was produced, ISO 8601. */
-  timestamp: string;
-  /** Seconds since the Node process started. */
-  uptimeSeconds: number;
-}
 
 /** A new, independent app instance. */
 export function createApp(): Express {

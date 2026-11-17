@@ -51,6 +51,7 @@ Invoke-RestMethod http://localhost:3000/api/health
 
 ## Conventions
 
+- Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - Every route lives under **`/api`**, the only prefix the web app's dev proxy forwards.
 - Every response is **JSON**, errors included.
 - Relative imports carry the **`.ts`** extension (`import { createApp } from './app.ts'`); `tsc` rewrites it to `.js` (`rewriteRelativeImportExtensions`).

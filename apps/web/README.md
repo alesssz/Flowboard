@@ -43,6 +43,7 @@ apps/web/
 
 ## Conventions
 
+- Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
 - ESLint runs the recommended rule sets of `@eslint/js` and `typescript-eslint`, plus `react-hooks` and `react-refresh`.
 - Components are functions named in **PascalCase**; their props are typed with `interface XxxProps`.

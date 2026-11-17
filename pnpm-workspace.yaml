@@ -16,3 +16,13 @@ allowBuilds:
 #   pass with 11. Remove once they require 11.0.1 or later themselves.
 overrides:
   minimatch: ^11.0.8
+
+# Advisories pnpm audit skips: only those with no fixed release yet, reached
+# only through development tools.
+#   GHSA-fc5q-39xc-vjpf: picomatch <=4.0.7, denial of service through crafted
+#   extglob patterns (high). Brought by Vite and typescript-eslint, which match
+#   the project's own patterns, never user input; not in the production tree.
+#   Remove once picomatch ships a fix and the tree reaches it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf

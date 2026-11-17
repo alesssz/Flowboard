@@ -1,0 +1,25 @@
+// Type-check only: consumers import the sources directly (see the README).
+{
+  "compilerOptions": {
+    "target": "es2023",
+    // Used by the browser and by Node: neither DOM nor Node types.
+    "lib": ["ES2023"],
+    "types": [],
+
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
