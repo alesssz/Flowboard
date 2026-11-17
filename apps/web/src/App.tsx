@@ -60,7 +60,9 @@ export default function App() {
   return (
     <main className="welcome">
       <header className="welcome__header">
-        <h1 className="welcome__title">Flowboard</h1>
+        <h1 className="welcome__title">
+          <span className="welcome__title-accent">Flow</span>board
+        </h1>
         <p className="welcome__subtitle">Real-time collaborative kanban board</p>
       </header>
 
