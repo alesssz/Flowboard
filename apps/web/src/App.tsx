@@ -2,15 +2,9 @@
  * Placeholder start page: checks that the web app reaches the API through the
  * Vite proxy (GET /api/health) and shows the result. The board UI replaces it.
  */
+import type { HealthResponse } from '@flowboard/shared';
 import { useEffect, useState } from 'react';
 import './App.css';
-
-/** Body of `GET /api/health`, duplicated from apps/api/src/app.ts until the shared types package exists. */
-interface HealthResponse {
-  status: 'ok';
-  timestamp: string;
-  uptimeSeconds: number;
-}
 
 type ApiStatus =
   | { kind: 'loading' }

@@ -171,6 +171,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@flowboard/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       express:
         specifier: ^5.3.0
         version: 5.3.0
@@ -190,6 +193,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@flowboard/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -233,6 +239,12 @@ importers:
       vite:
         specifier: ^8.3.6
         version: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15)
+
+  packages/shared:
+    devDependencies:
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
 
 packages:
 

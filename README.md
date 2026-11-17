@@ -5,7 +5,7 @@
 
 A real-time collaborative kanban board: boards, columns and cards you drag around, with every change showing up live for everyone looking at the same board.
 
-React and TypeScript in the browser, Node.js and TypeScript on the server, in a single pnpm workspace.
+React and TypeScript in the browser, Node.js and TypeScript on the server, in a single pnpm workspace that shares types between the two.
 
 ## Status
 
@@ -58,7 +58,8 @@ Flowboard/
 ├── apps/
 │   ├── web/                React single-page app (@flowboard/web)  → apps/web/README.md
 │   └── api/                Express REST API (@flowboard/api)       → apps/api/README.md
-├── packages/               Internal libraries, e.g. shared types (planned)
+├── packages/
+│   └── shared/             Types shared by both apps (@flowboard/shared)  → packages/shared/README.md
 ├── docs/                   Developer documentation
 ├── scripts/                Repository tooling (merge, GitHub settings check, make help and clean)
 ├── .github/                CI and audit workflows, shared setup action, Dependabot
@@ -153,7 +154,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
 - [ ] Board UI: boards, columns and cards
 - [ ] REST API for boards, columns and cards, on PostgreSQL with Prisma
-- [ ] Shared types and validation (`@flowboard/shared` + Zod)
+- [x] Shared types (`@flowboard/shared`)
+- [ ] Request validation with Zod, in the shared package
 - [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
 - [ ] Tests in CI: API and web app (Vitest)
 

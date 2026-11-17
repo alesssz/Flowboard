@@ -1,6 +1,6 @@
 # Flowboard — notes for AI assistants
 
-A real-time collaborative kanban board (boards, columns, draggable cards, live updates between users). One pnpm workspace: a React 19 / TypeScript / Vite single-page app (`apps/web`) and a Node.js 24 / Express 5 / TypeScript API (`apps/api`). Start from [README.md](README.md); the package READMEs ([apps/web](apps/web/README.md), [apps/api](apps/api/README.md)) describe each side.
+A real-time collaborative kanban board (boards, columns, draggable cards, live updates between users). One pnpm workspace: a React 19 / TypeScript / Vite single-page app (`apps/web`) and a Node.js 24 / Express 5 / TypeScript API (`apps/api`), sharing types through `packages/shared` (`@flowboard/shared`). Start from [README.md](README.md); the package READMEs ([apps/web](apps/web/README.md), [apps/api](apps/api/README.md)) describe each side.
 
 ## Running things
 
@@ -19,6 +19,7 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 - TypeScript `strict` plus `noUncheckedIndexedAccess`; `verbatimModuleSyntax` (type-only imports use `import type`); `erasableSyntaxOnly` (no `enum` or `namespace`: string-literal unions instead).
 - API: ESM with `module: nodenext`; relative imports carry the `.ts` extension, rewritten to `.js` by `tsc` (`rewriteRelativeImportExtensions`). Every route lives under `/api` and every response, errors included, is JSON. `app.ts` builds the app, `index.ts` starts it.
 - Web: components in PascalCase, props typed with `interface XxxProps`, event handlers named `handleXxx` and the props that receive them `onXxx`, multi-shape state modelled as discriminated unions, CSS class names in BEM.
+- Shared: request and response bodies are typed once in `@flowboard/shared` and imported with `import type`. The package exports types only and is consumed as sources; runtime code there (Zod schemas) needs a build step first.
 - Semicolons, single quotes.
 
 ## Working rules
