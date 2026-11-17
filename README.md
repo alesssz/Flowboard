@@ -44,7 +44,7 @@ Planned: PostgreSQL with Prisma, Zod, TanStack Query, dnd-kit, Socket.IO, Vitest
                          development
 ┌─────────┐   /api/*   ┌──────────────────┐   /api/*   ┌───────────────────┐
 │ Browser │ ─────────▶ │  Vite dev server │ ─────────▶ │    Express API    │
-│         │ ◀───────── │      :5173       │ ◀───────── │       :3000       │
+│         │ ◀───────── │      :5873       │ ◀───────── │       :3700       │
 └─────────┘            └──────────────────┘            └───────────────────┘
                          serves apps/web                   apps/api
 ```
@@ -71,7 +71,7 @@ Flowboard/
 
 ## Getting started
 
-**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm 12+ (the exact version is pinned in `package.json` and fetched automatically), Git. Optional: [GitHub CLI](https://cli.github.com), for `pnpm github:check` and `pnpm merge:main`; GNU Make, for the [Makefile](#makefile) (Windows: `winget install ezwinports.make`; macOS: included in the Command Line Tools, `xcode-select --install`). Commands are written for PowerShell; in bash or zsh they are the same, except environment variables (`PORT=3001 pnpm dev` instead of `$env:PORT=3001`).
+**Prerequisites:** Node.js 24 (`.nvmrc`), pnpm 12+ (the exact version is pinned in `package.json` and fetched automatically), Git. Optional: [GitHub CLI](https://cli.github.com), for `pnpm github:check` and `pnpm merge:main`; GNU Make, for the [Makefile](#makefile) (Windows: `winget install ezwinports.make`; macOS: included in the Command Line Tools, `xcode-select --install`). Commands are written for PowerShell; in bash or zsh they are the same, except environment variables (`PORT=3701 pnpm dev` instead of `$env:PORT=3701`).
 
 ```powershell
 pnpm install                          # every package, from the single lockfile
@@ -81,13 +81,15 @@ pnpm dev                              # web app and API together, with reload on
 
 With Make, the same is `make setup` then `make dev`.
 
-Open http://localhost:5173: the status panel reads **API online** when both sides are up.
+Open http://localhost:5873: the status panel reads **API online** when both sides are up.
 
 | Service | URL |
 |---|---|
-| Web app (Vite) | http://localhost:5173 |
-| API (Express) | http://localhost:3000 |
-| Health check | http://localhost:3000/api/health |
+| Web app (Vite) | http://localhost:5873 |
+| API (Express) | http://localhost:3700 |
+| Health check | http://localhost:3700/api/health |
+
+The ports are Vite's and Express's usual ones plus 700, so Flowboard runs beside other projects left on 5173 and 3000.
 
 ## Scripts
 
@@ -129,8 +131,8 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 |---|---|
 | PowerShell: `pnpm.ps1 cannot be loaded because running scripts is disabled on this system` | Windows' default execution policy blocks the `pnpm.ps1` shim. Once per user: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` |
 | `ERR_PNPM_IGNORED_BUILDS` after adding a dependency | pnpm blocked its install script. Review it with `pnpm approve-builds` (select with Space) and commit the `allowBuilds` entry it writes to `pnpm-workspace.yaml`, or leave it blocked |
-| `Cannot start the server on port 3000: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3001`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
-| `Error: Port 5173 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5174). Stop it |
+| `Cannot start the server on port 3700: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3701`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
+| `Error: Port 5873 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5874). Stop it |
 | The start page shows **API unreachable** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`, then **Retry** |
 | `pnpm dev` works but `pnpm typecheck` or CI fails | `pnpm dev` only strips types (tsx, Vite). Type errors show in the editor and in `pnpm typecheck` |
 | `pre-commit: refused, identity is '…'` | The commit identity is not the GitHub noreply address: set it for this clone with `git config user.email "<id>+<user>@users.noreply.github.com"` |

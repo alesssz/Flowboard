@@ -26,19 +26,19 @@ install: ## Install every package from the lockfile (after a pull that changed i
 
 # Through node: echo would print cmd.exe's quotes, or lose the alignment in sh.
 urls: ## The local addresses
-	@node -e "console.log('Web app (Vite)   http://localhost:5173')"
-	@node -e "console.log('API (Express)    http://localhost:3000')"
-	@node -e "console.log('Health check     http://localhost:3000/api/health')"
+	@node -e "console.log('Web app (Vite)   http://localhost:5873')"
+	@node -e "console.log('API (Express)    http://localhost:3700')"
+	@node -e "console.log('Health check     http://localhost:3700/api/health')"
 
 # --- Development --------------------------------------------------------------
 
-dev: ## Start the web app and the API, reloading on change (http://localhost:5173)
+dev: ## Start the web app and the API, reloading on change (http://localhost:5873)
 	$(PNPM) dev
 
 dev-web: ## Start the web app only (the API calls fail until the API is up)
 	$(PNPM) --filter @flowboard/web dev
 
-dev-api: ## Start the API only (http://localhost:3000)
+dev-api: ## Start the API only (http://localhost:3700)
 	$(PNPM) --filter @flowboard/api dev
 
 build: ## Type-check and build every package for production

@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5173. Without the API running, the status panel reads "API unreachable" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873. Without the API running, the status panel reads "API unreachable" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -34,7 +34,7 @@ apps/web/
 │   ├── App.tsx         placeholder start page: API connection status
 │   ├── App.css         its styles (BEM)
 │   └── index.css       global styles, design tokens, light and dark themes
-├── vite.config.ts      React plugin, dev proxy /api → localhost:3000
+├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
 ├── tsconfig.app.json   browser code (src/)
 ├── tsconfig.node.json  vite.config.ts (Node)
