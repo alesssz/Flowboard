@@ -19,7 +19,7 @@ What GitHub checks on every push, the repository settings that protect the code 
 | What | Runs | Does | Fails when |
 |---|---|---|---|
 | [`ci.yml`](../.github/workflows/ci.yml) | every push, to any branch; by hand | `pnpm typecheck`, `pnpm lint`, `pnpm build` on a fresh Linux runner | any check fails |
-| [`audit.yml`](../.github/workflows/audit.yml) | Mondays 06:00 UTC; a push or fork pull request changing a `package.json`, the lockfile or `pnpm-workspace.yaml`; by hand | `pnpm audit` over the whole workspace, and a list of outdated packages in the job summary | any advisory, of any severity |
+| [`audit.yml`](../.github/workflows/audit.yml) | Mondays 06:00 UTC; a push or fork pull request changing a `package.json`, the lockfile or `pnpm-workspace.yaml`; by hand | `pnpm audit` over the whole workspace, and a list of outdated packages in the job summary | any advisory, of any severity, except those listed in `auditConfig` |
 | [`dependabot.yml`](../.github/dependabot.yml) | Mondays | one pull request updating the pinned GitHub Actions | never: its own CI run is the check |
 | CodeQL default setup (no file) | every push to `main`, and weekly | static analysis of the TypeScript and of the workflows | never fails a push: it opens alerts under **Security → Code scanning** |
 
@@ -30,6 +30,8 @@ CI runs on every branch, so a branch is checked before it reaches `main`, and on
 **Why `pnpm audit` beside Dependabot alerts:** an alert only warns, on GitHub's page, once the vulnerable version is on `main`; the Audit run fails the branch that brings it, next to its CI, and runs the same check locally (`pnpm audit`). Dependabot reads `pnpm-lock.yaml` for the alerts and opens a pull request for a fix when one exists; npm version updates are left out of `dependabot.yml` and made by hand.
 
 An advisory with no fixed version reachable through the normal tree is fixed by forcing a version in `pnpm-workspace.yaml` (`overrides`), with a comment giving the advisory, who still asks for the old version and when to remove the override.
+
+An advisory with **no fixed release at all** cannot be fixed that way. When the package reaches the project only through development tools (`pnpm audit --prod` stays clean), its ID goes in `auditConfig.ignoreGhsas` in `pnpm-workspace.yaml`, with the same kind of comment: what the advisory is, who brings the package, why it is not exploitable here, and that it goes once a fix ships. Only that advisory is skipped: any other still fails the run. An advisory in the production tree with no fix is a decision about the dependency itself, not an entry in that list.
 
 ## Rules for workflows
 
@@ -84,7 +86,7 @@ It needs [GitHub CLI](https://cli.github.com) signed in as the owner (`gh auth l
 ## Responding to a problem
 
 - **A secret committed by mistake:** revoke or rotate it first (it is public from the moment it was pushed), then remove it from the code. Push protection stops the known kinds of secret, not all of them.
-- **The Audit run fails:** `pnpm audit` locally shows the advisory and `pnpm why -r <package>` who brings the package. Update the direct dependency if a release fixes it; otherwise force a fixed version in `overrides`, with its comment. Never silence a run that stays red: a permanent failure hides the next one.
+- **The Audit run fails:** `pnpm audit` locally shows the advisory and `pnpm why -r <package>` who brings the package. Update the direct dependency if a release fixes it; otherwise force a fixed version in `overrides`, with its comment. If no fixed release exists and only development tools bring the package, list the advisory in `auditConfig.ignoreGhsas`, with its comment, and check at each weekly run whether a fix has shipped. Never silence the run as a whole: a permanent failure hides the next one.
 - **A CodeQL alert:** read it under **Security → Code scanning**; fix it, or dismiss it with a reason when it is a false positive.
 - **A private vulnerability report:** it arrives by email and in the **Security** tab; answer there, and fix it like any bug.
 

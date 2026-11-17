@@ -66,7 +66,7 @@ Flowboard/
 ├── .githooks/              Git hooks (commit identity check)
 ├── Makefile                Shortcuts for the scripts, plus setup, Git and cleanup steps
 ├── package.json            Workspace-wide scripts
-└── pnpm-workspace.yaml     Workspace definition, allowed install scripts, version overrides
+└── pnpm-workspace.yaml     Workspace definition, allowed install scripts, version overrides, skipped advisories
 ```
 
 ## Getting started
