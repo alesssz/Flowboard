@@ -11,7 +11,7 @@ pnpm dev                              # API and web app together
 pnpm --filter @flowboard/api dev      # API only
 ```
 
-The server listens on http://localhost:3000; set `PORT` to change it (`$env:PORT=4000` in PowerShell). The web app's dev proxy targets port 3000, so update `apps/web/vite.config.ts` too. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+The server listens on http://localhost:3700; set `PORT` to change it (`$env:PORT=4700` in PowerShell). The web app's dev proxy targets port 3700, so update `apps/web/vite.config.ts` too. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -40,14 +40,14 @@ src/
 | any | any other path | No matching route | `404` `{ "error": "Not Found", "message" }` |
 
 ```powershell
-Invoke-RestMethod http://localhost:3000/api/health
+Invoke-RestMethod http://localhost:3700/api/health
 ```
 
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3000` | Port the server listens on |
+| `PORT` | `3700` | Port the server listens on |
 
 ## Conventions
 

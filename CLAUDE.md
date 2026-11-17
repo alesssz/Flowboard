@@ -6,7 +6,7 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 
 - **pnpm only**, from the repository root; the version is pinned by `packageManager` in `package.json`. Never mix in `npm install` or `yarn`: they would ignore the workspace and the lockfile.
 - Everyday scripts, run in every package that defines them: `pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint`. One package only: `pnpm --filter @flowboard/api <script>`.
-- Ports: the web app on **5173** (`strictPort`), the API on **3000** (`PORT` overrides it). In development Vite proxies `/api/*` to the API, so the browser sees a single origin and CORS is not involved.
+- Ports: the web app on **5873** (`strictPort`), the API on **3700** (`PORT` overrides it): the usual ports plus 700, to run beside projects left on the defaults. In development Vite proxies `/api/*` to the API, so the browser sees a single origin and CORS is not involved.
 - The `Makefile` mirrors the scripts and adds setup, Git and cleanup targets (`make help`). It must run from PowerShell (where Make uses `cmd.exe`), Git Bash and zsh: every recipe line a single `pnpm`, `git` or `node` command, argument checks with Make functions (`$(if …,,$(error …))`), anything longer a script in `scripts/`. A new pnpm script gets its target, with a `##` description.
 - **`pnpm dev` does not type-check**: tsx and Vite only strip types. `pnpm check` (typecheck, lint, build: the CI's checks) must pass before a commit; branches reach `main` with `pnpm merge:main`, through a pull request merged once CI passes.
 - Dependency install scripts are blocked by pnpm unless allowlisted in `pnpm-workspace.yaml` (`allowBuilds`). Add an entry only for a package whose script is understood and needed.
@@ -34,4 +34,4 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 
 ## Working on a task
 
-- **Before handing over**, check the comments and docs the task touched against the rules above, and run `pnpm check`. Servers started to collect real output are stopped afterwards, with ports 3000 and 5173 free again.
+- **Before handing over**, check the comments and docs the task touched against the rules above, and run `pnpm check`. Servers started to collect real output are stopped afterwards, with ports 3700 and 5873 free again.

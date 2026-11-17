@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
 
   server: {
-    port: 5173,
-    // Fail if 5173 is taken instead of silently moving to 5174: a second dev
+    port: 5873,
+    // Fail if 5873 is taken instead of silently moving to 5874: a second dev
     // server left running would otherwise go unnoticed.
     strictPort: true,
 
@@ -17,7 +17,7 @@ export default defineConfig({
     // from one domain to keep the same contract.
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3700',
         changeOrigin: true,
       },
     },

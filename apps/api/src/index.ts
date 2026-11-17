@@ -3,8 +3,8 @@
  */
 import { createApp } from './app.ts';
 
-// Hosting platforms assign PORT; 3000 is the dev proxy's target (apps/web/vite.config.ts).
-const PORT = Number(process.env.PORT ?? '3000');
+// Hosting platforms assign PORT; 3700 is the dev proxy's target (apps/web/vite.config.ts).
+const PORT = Number(process.env.PORT ?? '3700');
 
 const app = createApp();
 
