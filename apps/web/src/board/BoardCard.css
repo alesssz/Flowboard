@@ -1,4 +1,4 @@
-/* Card inside a column lane. */
+/* Card inside a column lane: labels on top, then title and description. */
 
 .board-card {
   display: flex;
@@ -11,11 +11,38 @@
   box-shadow: var(--shadow-card);
 }
 
+/* data-color is set only when the card has labels (see BoardCard.tsx). */
+.board-card[data-color] {
+  border-left: 4px solid var(--tone);
+  padding-left: 10px;
+}
+
 .board-card__title {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.35;
+}
+
+/* Shown above the title, which comes first in the markup. */
+.board-card__labels {
+  order: -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.board-card__label {
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tone-text);
+  background: var(--tone-soft);
 }
 
 .board-card__description {

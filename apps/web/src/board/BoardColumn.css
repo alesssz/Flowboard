@@ -8,36 +8,10 @@
   display: flex;
   flex-direction: column;
   padding: 0 8px 8px;
-  border-top: 4px solid var(--lane);
+  border-top: 4px solid var(--tone);
   border-radius: 14px;
-  background: var(--lane-tint);
+  background: var(--tone-tint);
   scroll-snap-align: start;
-}
-
-/* One modifier per ColumnColor in @flowboard/shared: a new colour adds one here and two tokens. */
-.board-column--gray {
-  --lane: var(--color-lane-gray);
-  --lane-tint: var(--color-lane-gray-tint);
-}
-
-.board-column--coral {
-  --lane: var(--color-lane-coral);
-  --lane-tint: var(--color-lane-coral-tint);
-}
-
-.board-column--red {
-  --lane: var(--color-lane-red);
-  --lane-tint: var(--color-lane-red-tint);
-}
-
-.board-column--blue {
-  --lane: var(--color-lane-blue);
-  --lane-tint: var(--color-lane-blue-tint);
-}
-
-.board-column--green {
-  --lane: var(--color-lane-green);
-  --lane-tint: var(--color-lane-green-tint);
 }
 
 .board-column__header {

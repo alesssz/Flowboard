@@ -11,16 +11,24 @@ export interface Column {
   id: string;
   title: string;
   /** Lane colour, chosen per column; it says nothing about the column's meaning. */
-  color: ColumnColor;
+  color: PaletteColor;
   cards: Card[];
 }
-
-/** A closed palette: the web app has a light and a dark shade for each. */
-export type ColumnColor = 'gray' | 'coral' | 'red' | 'blue' | 'green';
 
 export interface Card {
   id: string;
   title: string;
   /** Plain text; empty when the card has none. */
   description: string;
+  /** In display order; empty when the card has none. */
+  labels: Label[];
 }
+
+export interface Label {
+  id: string;
+  name: string;
+  color: PaletteColor;
+}
+
+/** The colours a user can pick for columns and labels; the web app has shades of each for both themes. */
+export type PaletteColor = 'gray' | 'coral' | 'red' | 'amber' | 'green' | 'blue' | 'violet';

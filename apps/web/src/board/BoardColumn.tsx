@@ -12,10 +12,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
   const titleId = useId();
 
   return (
-    <section
-      className={`board-column board-column--${column.color}`}
-      aria-labelledby={titleId}
-    >
+    <section className="board-column" data-color={column.color} aria-labelledby={titleId}>
       <header className="board-column__header">
         <h2 id={titleId} className="board-column__title">
           {column.title}

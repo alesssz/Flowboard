@@ -54,3 +54,4 @@ apps/web/
 - CSS class names follow **BEM** (`block__element--modifier`).
 - Each component imports its own stylesheet, beside it (`BoardCard.tsx` → `BoardCard.css`); colours, radius and gutter come only from the tokens in `index.css`.
 - Code is grouped by feature (`board/`, `api-status/`), not by kind.
+- Colours a user picks (`PaletteColor` in `@flowboard/shared`) are set with `data-color="…"`: it gives the element the `--tone-*` variables (`index.css`), so no component needs a modifier per colour. A new palette colour adds its four tokens per theme and its `data-color` rule.
