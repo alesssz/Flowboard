@@ -1,4 +1,4 @@
-/* Card inside a column lane: labels on top, then title, description and due date. */
+/* Card inside a column lane: labels on top, then title, description, and a footer with due date and assignees. */
 
 .board-card {
   display: flex;
@@ -55,4 +55,11 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
+}
+
+.board-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
 }

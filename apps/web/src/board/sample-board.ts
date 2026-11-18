@@ -1,5 +1,5 @@
 // Sample board rendered until the API serves boards.
-import type { Board, Label } from '@flowboard/shared';
+import type { Board, Label, Member } from '@flowboard/shared';
 import { addDays, toCalendarDay } from './due-date.ts';
 
 const design: Label = { id: 'design', name: 'Design', color: 'violet' };
@@ -7,6 +7,11 @@ const content: Label = { id: 'content', name: 'Content', color: 'blue' };
 const seo: Label = { id: 'seo', name: 'SEO', color: 'green' };
 const legal: Label = { id: 'legal', name: 'Legal', color: 'amber' };
 const frontend: Label = { id: 'frontend', name: 'Frontend', color: 'coral' };
+
+const ada: Member = { id: 'ada', name: 'Ada Okafor', color: 'violet' };
+const marco: Member = { id: 'marco', name: 'Marco Bianchi', color: 'amber' };
+const lena: Member = { id: 'lena', name: 'Lena Fischer', color: 'green' };
+const sam: Member = { id: 'sam', name: 'Sam Patel', color: 'blue' };
 
 // Counted from the day the app loads, so the sample always shows every due-date state.
 const loadedOn = new Date();
@@ -28,14 +33,16 @@ export const sampleBoard: Board = {
             'Three plans, a comparison table and the FAQ. Legal reviews the refund wording before it goes live, and support checks that the answers match the help centre.',
           labels: [content, legal],
           dueDate: dueIn(5),
+          assignees: [lena, marco],
         },
-        { id: 'hero', title: 'Pick the hero illustration', description: '', labels: [design], dueDate: null },
+        { id: 'hero', title: 'Pick the hero illustration', description: '', labels: [design], dueDate: null, assignees: [] },
         {
           id: 'redirects',
           title: 'Redirect the old URLs',
           description: 'Every old path maps to its new page, so search rankings carry over.',
           labels: [seo],
           dueDate: dueIn(60),
+          assignees: [sam],
         },
         {
           id: 'cookies',
@@ -43,6 +50,7 @@ export const sampleBoard: Board = {
           description: 'Essential cookies only by default; analytics after consent.',
           labels: [legal, frontend],
           dueDate: dueIn(-2),
+          assignees: [marco, sam, lena, ada],
         },
       ],
     },
@@ -57,6 +65,7 @@ export const sampleBoard: Board = {
           description: 'Mobile menu first, then the desktop one.',
           labels: [design, frontend],
           dueDate: dueIn(0),
+          assignees: [ada, sam],
         },
         {
           id: 'blog',
@@ -64,6 +73,7 @@ export const sampleBoard: Board = {
           description: '142 posts. Images keep their alt text; drafts stay unpublished.',
           labels: [content],
           dueDate: dueIn(1),
+          assignees: [lena],
         },
       ],
     },
@@ -79,6 +89,7 @@ export const sampleBoard: Board = {
           description: 'Validation messages and the confirmation state.',
           labels: [frontend],
           dueDate: dueIn(-1),
+          assignees: [sam, ada],
         },
       ],
     },
@@ -93,6 +104,7 @@ export const sampleBoard: Board = {
           description: '',
           labels: [design],
           dueDate: null,
+          assignees: [ada],
         },
         {
           id: 'analytics',
@@ -100,6 +112,7 @@ export const sampleBoard: Board = {
           description: 'Events for sign-up, trial start and plan change.',
           labels: [],
           dueDate: null,
+          assignees: [marco],
         },
       ],
     },
