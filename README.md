@@ -154,8 +154,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 **Usable board**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
-- [x] Board layout: columns and cards, from sample data
-- [ ] Board editing: add, rename, move and delete columns and cards
+- [x] Board layout: coloured column lanes and labelled cards, from sample data
+- [ ] Board editing: add, rename, move and delete columns, cards and labels
 - [ ] REST API for boards, columns and cards, on PostgreSQL with Prisma
 - [x] Shared types (`@flowboard/shared`)
 - [ ] Request validation with Zod, in the shared package

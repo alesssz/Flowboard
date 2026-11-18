@@ -14,17 +14,38 @@
   --color-text-muted: #57534e;
   --color-border: #e7e5e4;
   --color-border-strong: #d6d3d1;
-  /* Column lanes: a bar colour and a tint for the lane's background, one pair per ColumnColor. */
-  --color-lane-gray: #a8a29e;
-  --color-lane-gray-tint: #f0eeeb;
-  --color-lane-coral: #ff6b4a;
-  --color-lane-coral-tint: #fff0ea;
-  --color-lane-red: #dc2626;
-  --color-lane-red-tint: #fdeeee;
-  --color-lane-blue: #0284c7;
-  --color-lane-blue-tint: #eaf5fc;
-  --color-lane-green: #16a34a;
-  --color-lane-green-tint: #ebf7ef;
+  /*
+   * The palette a user picks from (PaletteColor in @flowboard/shared), four shades per colour:
+   * solid (lane bar, card stripe), tint (lane background), soft and text (label).
+   */
+  --palette-gray: #a8a29e;
+  --palette-gray-tint: #f0eeeb;
+  --palette-gray-soft: #f0eeeb;
+  --palette-gray-text: #44403c;
+  --palette-coral: #ff6b4a;
+  --palette-coral-tint: #fff0ea;
+  --palette-coral-soft: #ffe4dc;
+  --palette-coral-text: #9a3412;
+  --palette-red: #dc2626;
+  --palette-red-tint: #fdeeee;
+  --palette-red-soft: #fee2e2;
+  --palette-red-text: #991b1b;
+  --palette-amber: #d97706;
+  --palette-amber-tint: #fdf5e3;
+  --palette-amber-soft: #fef3c7;
+  --palette-amber-text: #92400e;
+  --palette-green: #16a34a;
+  --palette-green-tint: #ebf7ef;
+  --palette-green-soft: #dcfce7;
+  --palette-green-text: #166534;
+  --palette-blue: #0284c7;
+  --palette-blue-tint: #eaf5fc;
+  --palette-blue-soft: #e0f2fe;
+  --palette-blue-text: #075985;
+  --palette-violet: #7c3aed;
+  --palette-violet-tint: #f3effd;
+  --palette-violet-soft: #f3e8ff;
+  --palette-violet-text: #6b21a8;
   /* Coral fills; coral text and outlines use the darker shade, which keeps its contrast on white. */
   --color-accent: #ff6b4a;
   --color-accent-text: #c2410c;
@@ -52,16 +73,34 @@
     --color-text-muted: #a8a29e;
     --color-border: #292524;
     --color-border-strong: #44403c;
-    --color-lane-gray: #78716c;
-    --color-lane-gray-tint: #171513;
-    --color-lane-coral: #ff8a6b;
-    --color-lane-coral-tint: #24140f;
-    --color-lane-red: #ef4444;
-    --color-lane-red-tint: #241212;
-    --color-lane-blue: #38bdf8;
-    --color-lane-blue-tint: #0f1d26;
-    --color-lane-green: #4ade80;
-    --color-lane-green-tint: #0f1f15;
+    --palette-gray: #78716c;
+    --palette-gray-tint: #171513;
+    --palette-gray-soft: #292524;
+    --palette-gray-text: #d6d3d1;
+    --palette-coral: #ff8a6b;
+    --palette-coral-tint: #24140f;
+    --palette-coral-soft: #3a1a12;
+    --palette-coral-text: #ffb59f;
+    --palette-red: #ef4444;
+    --palette-red-tint: #241212;
+    --palette-red-soft: #3b1212;
+    --palette-red-text: #fca5a5;
+    --palette-amber: #fbbf24;
+    --palette-amber-tint: #221a0b;
+    --palette-amber-soft: #3a2a0a;
+    --palette-amber-text: #fcd34d;
+    --palette-green: #4ade80;
+    --palette-green-tint: #0f1f15;
+    --palette-green-soft: #0f2e1c;
+    --palette-green-text: #86efac;
+    --palette-blue: #38bdf8;
+    --palette-blue-tint: #0f1d26;
+    --palette-blue-soft: #0c2d44;
+    --palette-blue-text: #7dd3fc;
+    --palette-violet: #a78bfa;
+    --palette-violet-tint: #1a1426;
+    --palette-violet-soft: #2e1a47;
+    --palette-violet-text: #d8b4fe;
     /* A shadow does not show on a dark page; the card's border separates it. */
     --shadow-card: none;
     --color-accent: #ff8a6b;
@@ -76,6 +115,60 @@
   :root {
     --gutter: 16px;
   }
+}
+
+/*
+ * data-color="<PaletteColor>" gives an element and its children the --tone-* variables,
+ * so components style a user's colour without one modifier per colour.
+ */
+
+[data-color='gray'] {
+  --tone: var(--palette-gray);
+  --tone-tint: var(--palette-gray-tint);
+  --tone-soft: var(--palette-gray-soft);
+  --tone-text: var(--palette-gray-text);
+}
+
+[data-color='coral'] {
+  --tone: var(--palette-coral);
+  --tone-tint: var(--palette-coral-tint);
+  --tone-soft: var(--palette-coral-soft);
+  --tone-text: var(--palette-coral-text);
+}
+
+[data-color='red'] {
+  --tone: var(--palette-red);
+  --tone-tint: var(--palette-red-tint);
+  --tone-soft: var(--palette-red-soft);
+  --tone-text: var(--palette-red-text);
+}
+
+[data-color='amber'] {
+  --tone: var(--palette-amber);
+  --tone-tint: var(--palette-amber-tint);
+  --tone-soft: var(--palette-amber-soft);
+  --tone-text: var(--palette-amber-text);
+}
+
+[data-color='green'] {
+  --tone: var(--palette-green);
+  --tone-tint: var(--palette-green-tint);
+  --tone-soft: var(--palette-green-soft);
+  --tone-text: var(--palette-green-text);
+}
+
+[data-color='blue'] {
+  --tone: var(--palette-blue);
+  --tone-tint: var(--palette-blue-tint);
+  --tone-soft: var(--palette-blue-soft);
+  --tone-text: var(--palette-blue-text);
+}
+
+[data-color='violet'] {
+  --tone: var(--palette-violet);
+  --tone-tint: var(--palette-violet-tint);
+  --tone-soft: var(--palette-violet-soft);
+  --tone-text: var(--palette-violet-text);
 }
 
 *,
