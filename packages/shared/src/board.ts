@@ -22,6 +22,8 @@ export interface Card {
   description: string;
   /** In display order; empty when the card has none. */
   labels: Label[];
+  /** Calendar day as `YYYY-MM-DD`, with no time or time zone; null when the card has none. */
+  dueDate: string | null;
 }
 
 export interface Label {
