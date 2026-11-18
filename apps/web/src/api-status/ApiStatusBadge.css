@@ -1,0 +1,68 @@
+/* API connection badge in the header. */
+
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Painted with currentColor, so each modifier only sets `color`. */
+.api-status__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.api-status--loading .api-status__dot {
+  color: var(--color-text-muted);
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+.api-status--online .api-status__dot {
+  color: var(--color-success);
+}
+
+.api-status--offline .api-status__dot {
+  color: var(--color-danger);
+}
+
+.api-status__retry {
+  padding: 4px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.api-status__retry:hover {
+  filter: brightness(1.1);
+}
+
+.api-status__retry:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .api-status--loading .api-status__dot {
+    animation: none;
+  }
+}

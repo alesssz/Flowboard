@@ -8,11 +8,23 @@
  * Ink and coral are the brand colours: change them together with public/favicon.svg.
  */
 :root {
-  --color-bg: #f5f5f4;
+  --color-bg: #fafaf9;
   --color-surface: #ffffff;
   --color-text: #1c1917;
   --color-text-muted: #57534e;
   --color-border: #e7e5e4;
+  --color-border-strong: #d6d3d1;
+  /* Column lanes: a bar colour and a tint for the lane's background, one pair per ColumnColor. */
+  --color-lane-gray: #a8a29e;
+  --color-lane-gray-tint: #f0eeeb;
+  --color-lane-coral: #ff6b4a;
+  --color-lane-coral-tint: #fff0ea;
+  --color-lane-red: #dc2626;
+  --color-lane-red-tint: #fdeeee;
+  --color-lane-blue: #0284c7;
+  --color-lane-blue-tint: #eaf5fc;
+  --color-lane-green: #16a34a;
+  --color-lane-green-tint: #ebf7ef;
   /* Coral fills; coral text and outlines use the darker shade, which keeps its contrast on white. */
   --color-accent: #ff6b4a;
   --color-accent-text: #c2410c;
@@ -21,7 +33,11 @@
   /* Darker and redder than the accent, so an error never reads as a brand element. */
   --color-danger: #b91c1c;
 
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.06);
+
   --radius: 12px;
+  /* Side padding of the header and the board. */
+  --gutter: 20px;
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, Consolas, monospace;
 
@@ -35,11 +51,30 @@
     --color-text: #f5f5f4;
     --color-text-muted: #a8a29e;
     --color-border: #292524;
+    --color-border-strong: #44403c;
+    --color-lane-gray: #78716c;
+    --color-lane-gray-tint: #171513;
+    --color-lane-coral: #ff8a6b;
+    --color-lane-coral-tint: #24140f;
+    --color-lane-red: #ef4444;
+    --color-lane-red-tint: #241212;
+    --color-lane-blue: #38bdf8;
+    --color-lane-blue-tint: #0f1d26;
+    --color-lane-green: #4ade80;
+    --color-lane-green-tint: #0f1f15;
+    /* A shadow does not show on a dark page; the card's border separates it. */
+    --shadow-card: none;
     --color-accent: #ff8a6b;
     --color-accent-text: #ff8a6b;
     --color-on-accent: #1c1917;
     --color-success: #4ade80;
     --color-danger: #ef4444;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --gutter: 16px;
   }
 }
 

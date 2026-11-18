@@ -10,8 +10,13 @@ export interface Board {
 export interface Column {
   id: string;
   title: string;
+  /** Lane colour, chosen per column; it says nothing about the column's meaning. */
+  color: ColumnColor;
   cards: Card[];
 }
+
+/** A closed palette: the web app has a light and a dark shade for each. */
+export type ColumnColor = 'gray' | 'coral' | 'red' | 'blue' | 'green';
 
 export interface Card {
   id: string;

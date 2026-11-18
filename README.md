@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The workspace is set up and the web app reaches the API through the development proxy. Next: the first board UI. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board, with columns and cards from sample data, and checks its connection to the API through the development proxy. Next: the REST API for boards, so the board comes from the server. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -81,7 +81,7 @@ pnpm dev                              # web app and API together, with reload on
 
 With Make, the same is `make setup` then `make dev`.
 
-Open http://localhost:5873: the status panel reads **API online** when both sides are up.
+Open http://localhost:5873: the header reads **API online** when both sides are up.
 
 | Service | URL |
 |---|---|
@@ -133,7 +133,7 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 | `ERR_PNPM_IGNORED_BUILDS` after adding a dependency | pnpm blocked its install script. Review it with `pnpm approve-builds` (select with Space) and commit the `allowBuilds` entry it writes to `pnpm-workspace.yaml`, or leave it blocked |
 | `Cannot start the server on port 3700: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3701`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
 | `Error: Port 5873 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5874). Stop it |
-| The start page shows **API unreachable** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`, then **Retry** |
+| The header shows **API offline** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`, then **Retry** |
 | `pnpm dev` works but `pnpm typecheck` or CI fails | `pnpm dev` only strips types (tsx, Vite). Type errors show in the editor and in `pnpm typecheck` |
 | `pre-commit: refused, identity is '…'` | The commit identity is not the GitHub noreply address: set it for this clone with `git config user.email "<id>+<user>@users.noreply.github.com"` |
 
@@ -154,7 +154,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 **Usable board**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
-- [ ] Board UI: boards, columns and cards
+- [x] Board layout: columns and cards, from sample data
+- [ ] Board editing: add, rename, move and delete columns and cards
 - [ ] REST API for boards, columns and cards, on PostgreSQL with Prisma
 - [x] Shared types (`@flowboard/shared`)
 - [ ] Request validation with Zod, in the shared package
