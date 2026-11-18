@@ -1,4 +1,4 @@
-/* Card inside a column lane: labels on top, then title and description. */
+/* Card inside a column lane: labels on top, then title, description and due date. */
 
 .board-card {
   display: flex;

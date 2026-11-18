@@ -34,7 +34,7 @@ apps/web/
 │   ├── App.tsx         app shell: header, then the board
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── api-status/     header badge: GET /api/health on load and on retry
-│   ├── board/          BoardView → BoardColumn → BoardCard, and the sample board
+│   ├── board/          BoardView → BoardColumn → BoardCard → DueDate, the due-date helpers, the sample board
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -55,3 +55,5 @@ apps/web/
 - Each component imports its own stylesheet, beside it (`BoardCard.tsx` → `BoardCard.css`); colours, radius and gutter come only from the tokens in `index.css`.
 - Code is grouped by feature (`board/`, `api-status/`), not by kind.
 - Colours a user picks (`PaletteColor` in `@flowboard/shared`) are set with `data-color="…"`: it gives the element the `--tone-*` variables (`index.css`), so no component needs a modifier per colour. A new palette colour adds its four tokens per theme and its `data-color` rule.
+- Text only screen readers need (what a colour alone shows) goes in a `.visually-hidden` element (`index.css`).
+- Due dates are calendar days (`'YYYY-MM-DD'`), compared as strings and shown in the browser's time zone with the helpers in `board/due-date.ts`; never `new Date('YYYY-MM-DD')`, which is midnight UTC and the previous day west of Greenwich.
