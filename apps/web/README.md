@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5873. The board shows sample data; without the API running, the header reads "API offline" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873. The board shows sample data; without the API running, the header reads "API offline", retries on its own and offers a retry button. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -33,7 +33,7 @@ apps/web/
 │   ├── main.tsx        mounts <App /> into #root
 │   ├── App.tsx         app shell: header, then the board
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
-│   ├── api-status/     header badge: GET /api/health on load and on retry
+│   ├── api-status/     header badge: GET /api/health on load, retried while it fails
 │   ├── board/          BoardView → BoardColumn → BoardCard → DueDate, the due-date helpers, the sample board
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700

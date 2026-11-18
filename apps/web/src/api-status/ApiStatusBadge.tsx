@@ -1,4 +1,4 @@
-// Connection to the API, shown in the header: GET /api/health on load and on retry.
+// Connection to the API, shown in the header: GET /api/health on load, then again while it fails.
 import type { HealthResponse } from '@flowboard/shared';
 import { useEffect, useState } from 'react';
 import './ApiStatusBadge.css';
@@ -6,7 +6,10 @@ import './ApiStatusBadge.css';
 type ApiStatus =
   | { kind: 'loading' }
   | { kind: 'online'; health: HealthResponse }
-  | { kind: 'offline'; reason: string };
+  | { kind: 'offline'; reason: string; failures: number };
+
+const firstRetryMs = 1_000;
+const maxRetryMs = 30_000;
 
 export function ApiStatusBadge() {
   const [status, setStatus] = useState<ApiStatus>({ kind: 'loading' });
@@ -32,7 +35,11 @@ export function ApiStatusBadge() {
         if (controller.signal.aborted) return;
 
         const reason = error instanceof Error ? error.message : 'Unknown error';
-        setStatus({ kind: 'offline', reason });
+        setStatus((previous) => ({
+          kind: 'offline',
+          reason,
+          failures: previous.kind === 'offline' ? previous.failures + 1 : 1,
+        }));
       }
     }
 
@@ -41,8 +48,19 @@ export function ApiStatusBadge() {
     return () => controller.abort();
   }, [attempt]);
 
+  // Retries on its own, waiting twice as long after each failure: the API may still be starting
+  // (pnpm dev starts it beside Vite) or restarting after a change. The badge stays offline meanwhile.
+  useEffect(() => {
+    if (status.kind !== 'offline') return;
+
+    const delay = Math.min(firstRetryMs * 2 ** (status.failures - 1), maxRetryMs);
+    const timer = setTimeout(() => setAttempt((previous) => previous + 1), delay);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   // The loading state is reset here rather than at the start of the effect,
   // where a synchronous setState fails react-hooks/set-state-in-effect.
+  // Also resets the wait between automatic retries.
   function handleRetry() {
     setStatus({ kind: 'loading' });
     setAttempt((previous) => previous + 1);
