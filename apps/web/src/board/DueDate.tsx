@@ -1,4 +1,5 @@
 // A card's due date: relative words near today, amber on the day, red once past; the full date on hover.
+import { Tooltip } from '../Tooltip.tsx';
 import { formatDueDate, formatFullDate, getDueStatus } from './due-date.ts';
 import './DueDate.css';
 
@@ -20,11 +21,7 @@ export function DueDate({ date, today }: DueDateProps) {
       {/* The colour alone does not say the date is past. */}
       <span className="visually-hidden">{status === 'overdue' ? 'Overdue: ' : 'Due: '}</span>
       <time dateTime={date}>{formatDueDate(date, today)}</time>
-      {/* Drawn rather than a title attribute, which some browsers and webviews never show. Hidden
-          from screen readers: <time> already gives them the date. */}
-      <span className="due-date__tooltip" aria-hidden="true">
-        {formatFullDate(date)}
-      </span>
+      <Tooltip text={formatFullDate(date)} />
     </p>
   );
 }

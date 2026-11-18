@@ -1,0 +1,28 @@
+/* Avatars on a card, side by side at the right of its footer. */
+
+.assignees {
+  display: flex;
+  gap: 3px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.assignees__avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+}
+
+/* Has no data-color: without these it would take the card's stripe colour. */
+.assignees__avatar--more {
+  color: var(--color-text-muted);
+  background: var(--palette-gray-soft);
+}

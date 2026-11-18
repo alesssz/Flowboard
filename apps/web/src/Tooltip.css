@@ -1,0 +1,40 @@
+/* Tooltip above its parent, shown on hover. */
+
+/* Opens upwards: card lists scroll and would clip it below. */
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  z-index: 1;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--color-surface);
+  background: var(--color-text);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.tooltip--start {
+  left: 0;
+}
+
+.tooltip--end {
+  right: 0;
+}
+
+/* The short delay keeps tooltips from flashing while the pointer crosses the board. */
+:hover > .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 120ms ease-out 150ms, visibility 0s 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :hover > .tooltip {
+    transition: none;
+  }
+}

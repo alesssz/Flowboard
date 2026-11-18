@@ -1,5 +1,6 @@
-// A card as its column shows it: labels, title, the description cut to two lines, and the due date.
+// A card as its column shows it: labels, title, the description cut to two lines, then due date and assignees.
 import type { Card } from '@flowboard/shared';
+import { Assignees } from './Assignees.tsx';
 import { DueDate } from './DueDate.tsx';
 import './BoardCard.css';
 
@@ -28,7 +29,12 @@ export function BoardCard({ card }: BoardCardProps) {
 
       {card.description !== '' && <p className="board-card__description">{card.description}</p>}
 
-      {card.dueDate !== null && <DueDate date={card.dueDate} today={new Date()} />}
+      {(card.dueDate !== null || card.assignees.length > 0) && (
+        <div className="board-card__footer">
+          {card.dueDate !== null && <DueDate date={card.dueDate} today={new Date()} />}
+          {card.assignees.length > 0 && <Assignees members={card.assignees} />}
+        </div>
+      )}
     </article>
   );
 }
