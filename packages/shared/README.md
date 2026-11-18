@@ -27,6 +27,6 @@ This holds while the package exports **types only**. They are erased at compile 
 ```
 src/
 ├── index.ts    public entry point: the only module consumers import
-├── board.ts    Board, Column, Card
+├── board.ts    Board, Column, ColumnColor, Card
 └── health.ts   HealthResponse (GET /api/health)
 ```

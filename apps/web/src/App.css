@@ -1,105 +1,42 @@
-/* Placeholder start page and its status panel. */
+/* App shell: a header, and a main area that fills the rest of the viewport. */
 
-.welcome {
-  width: min(560px, 100% - 32px);
-  margin: 0 auto;
-  padding: 15vh 0 48px;
+/* Exactly the viewport's height: the board scrolls inside it, never the page. */
+.app {
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 32px;
 }
 
-.welcome__header {
-  text-align: center;
-}
-
-.welcome__title {
-  margin: 0;
-  font-size: 2.75rem;
-  letter-spacing: -0.02em;
-}
-
-.welcome__title-accent {
-  color: var(--color-accent-text);
-}
-
-.welcome__subtitle {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-}
-
-.status {
+.app__header {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 8px var(--gutter);
+  border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
-.status__detail {
-  margin: 4px 0 0;
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
+.app__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Painted with currentColor, so each modifier only sets `color`. */
-.status__dot {
-  flex-shrink: 0;
-  width: 10px;
-  height: 10px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: currentColor;
+.app__wordmark {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.status--loading .status__dot {
-  color: var(--color-text-muted);
-  animation: pulse 1s ease-in-out infinite alternate;
+.app__wordmark-accent {
+  color: var(--color-accent-text);
 }
 
-.status--online .status__dot {
-  color: var(--color-success);
-}
-
-.status--offline .status__dot {
-  color: var(--color-danger);
-}
-
-.status__retry {
-  margin-top: 12px;
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-on-accent);
-  background: var(--color-accent);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.status__retry:hover {
-  filter: brightness(1.1);
-}
-
-.status__retry:focus-visible {
-  outline: 2px solid var(--color-accent-text);
-  outline-offset: 2px;
-}
-
-@keyframes pulse {
-  from {
-    opacity: 0.35;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status--loading .status__dot {
-    animation: none;
-  }
+.app__main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }

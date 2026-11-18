@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5873. Without the API running, the status panel reads "API unreachable" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873. The board shows sample data; without the API running, the header reads "API offline" and offers a retry. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -31,8 +31,10 @@ apps/web/
 ├── public/             static files served as-is (favicon)
 ├── src/
 │   ├── main.tsx        mounts <App /> into #root
-│   ├── App.tsx         placeholder start page: API connection status
-│   ├── App.css         its styles (BEM)
+│   ├── App.tsx         app shell: header, then the board
+│   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
+│   ├── api-status/     header badge: GET /api/health on load and on retry
+│   ├── board/          BoardView → BoardColumn → BoardCard, and the sample board
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -48,5 +50,7 @@ apps/web/
 - ESLint runs the recommended rule sets of `@eslint/js` and `typescript-eslint`, plus `react-hooks` and `react-refresh`.
 - Components are functions named in **PascalCase**; their props are typed with `interface XxxProps`.
 - Event handlers are named `handleXxx`; the props that receive them `onXxx`.
-- State with several shapes is a **discriminated union** (see `ApiStatus` in `App.tsx`).
+- State with several shapes is a **discriminated union** (see `ApiStatus` in `api-status/ApiStatusBadge.tsx`).
 - CSS class names follow **BEM** (`block__element--modifier`).
+- Each component imports its own stylesheet, beside it (`BoardCard.tsx` → `BoardCard.css`); colours, radius and gutter come only from the tokens in `index.css`.
+- Code is grouped by feature (`board/`, `api-status/`), not by kind.

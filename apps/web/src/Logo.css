@@ -1,0 +1,13 @@
+/* The mark's two colours follow the theme tokens, as the favicon's do. */
+
+.logo {
+  flex-shrink: 0;
+}
+
+.logo__stem {
+  fill: var(--color-text);
+}
+
+.logo__card {
+  fill: var(--color-accent);
+}
