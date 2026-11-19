@@ -6,9 +6,10 @@ import './BoardColumn.css';
 
 interface BoardColumnProps {
   column: Column;
+  onOpenCard: (cardId: string) => void;
 }
 
-export function BoardColumn({ column }: BoardColumnProps) {
+export function BoardColumn({ column, onOpenCard }: BoardColumnProps) {
   const titleId = useId();
 
   return (
@@ -29,7 +30,7 @@ export function BoardColumn({ column }: BoardColumnProps) {
         <ol className="board-column__cards">
           {column.cards.map((card) => (
             <li key={card.id}>
-              <BoardCard card={card} />
+              <BoardCard card={card} onOpen={() => onOpenCard(card.id)} />
             </li>
           ))}
         </ol>

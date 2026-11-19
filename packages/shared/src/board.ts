@@ -26,6 +26,18 @@ export interface Card {
   dueDate: string | null;
   /** The people working on the card, in display order; empty when nobody is. */
   assignees: Member[];
+  /** How many comments the card has; the comments themselves come with the card's detail. */
+  commentCount: number;
+}
+
+/** A comment on a card. Named CardComment because the DOM already has a global Comment type. */
+export interface CardComment {
+  id: string;
+  author: Member;
+  /** Plain text; line breaks are kept. */
+  body: string;
+  /** ISO 8601 instant in UTC, e.g. '2026-11-18T09:30:00.000Z'. */
+  createdAt: string;
 }
 
 export interface Label {

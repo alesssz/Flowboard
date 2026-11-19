@@ -35,7 +35,8 @@ apps/web/
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── Tooltip.tsx     hover text drawn above its parent
 │   ├── api-status/     header badge: GET /api/health on load, retried while it fails
-│   ├── board/          BoardView → BoardColumn → BoardCard → DueDate and Assignees, the due-date helpers, the sample board
+│   ├── board/          BoardView → BoardColumn → BoardCard, CardDialog (a card's detail), their parts
+│   │                   (Labels, DueDate, Assignees, Avatar), date helpers, the sample board and comments
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -57,5 +58,7 @@ apps/web/
 - Code is grouped by feature (`board/`, `api-status/`), not by kind.
 - Colours a user picks (`PaletteColor` in `@flowboard/shared`) are set with `data-color="…"`: it gives the element the `--tone-*` variables (`index.css`), so no component needs a modifier per colour. A new palette colour adds its four tokens per theme and its `data-color` rule.
 - Text only screen readers need (what a colour alone shows) goes in a `.visually-hidden` element (`index.css`).
+- Dialogs are a native `<dialog>` opened with `showModal()` (`board/CardDialog.tsx`): the browser traps focus, closes on Escape and gives focus back to the element that opened it. The component is mounted only while open, and its `onClose` unmounts it.
+- A clickable card is an `<article>` with the click handler, holding a real `<button>` (its title) for the keyboard and screen readers; the button's click bubbles to the card.
 - Hover text is a `<Tooltip>`, never a `title` attribute, which some browsers and webviews do not show. The tooltip is hidden from screen readers, so its text is also in the markup (visible or `.visually-hidden`).
 - Due dates are calendar days (`'YYYY-MM-DD'`), compared as strings and shown in the browser's time zone with the helpers in `board/due-date.ts`; never `new Date('YYYY-MM-DD')`, which is midnight UTC and the previous day west of Greenwich.

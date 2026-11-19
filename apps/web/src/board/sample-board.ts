@@ -1,5 +1,5 @@
-// Sample board rendered until the API serves boards.
-import type { Board, Label, Member } from '@flowboard/shared';
+// Sample board, and the comments on its cards, rendered until the API serves them.
+import type { Board, CardComment, Label, Member } from '@flowboard/shared';
 import { addDays, toCalendarDay } from './due-date.ts';
 
 const design: Label = { id: 'design', name: 'Design', color: 'violet' };
@@ -16,6 +16,64 @@ const sam: Member = { id: 'sam', name: 'Sam Patel', color: 'blue' };
 // Counted from the day the app loads, so the sample always shows every due-date state.
 const loadedOn = new Date();
 const dueIn = (days: number) => toCalendarDay(addDays(loadedOn, days));
+const minutesAgo = (minutes: number) => new Date(loadedOn.getTime() - minutes * 60_000).toISOString();
+
+/** By card id; a card without comments has no entry. */
+export const sampleComments: Record<string, CardComment[]> = {
+  'pricing-copy': [
+    {
+      id: 'c1',
+      author: marco,
+      body: 'Legal wants "refund within 14 days" spelled out, not "two weeks".',
+      createdAt: minutesAgo(60 * 26),
+    },
+    {
+      id: 'c2',
+      author: lena,
+      body: 'Updated. The FAQ now links to the full policy.',
+      createdAt: minutesAgo(60 * 3),
+    },
+  ],
+  cookies: [
+    {
+      id: 'c3',
+      author: sam,
+      body: 'The banner blocks the page on mobile Safari when the keyboard is open.',
+      createdAt: minutesAgo(60 * 50),
+    },
+    {
+      id: 'c4',
+      author: ada,
+      body: 'Bottom sheet instead of a modal?\nIt would also keep the page readable behind it.',
+      createdAt: minutesAgo(60 * 49),
+    },
+    {
+      id: 'c5',
+      author: marco,
+      body: 'Agreed, as long as "Reject all" stays as visible as "Accept all".',
+      createdAt: minutesAgo(60 * 30),
+    },
+  ],
+  navigation: [
+    { id: 'c6', author: sam, body: 'Mobile menu is on the preview branch.', createdAt: minutesAgo(45) },
+    {
+      id: 'c7',
+      author: ada,
+      body: 'Looks good. The close button needs a larger touch target.',
+      createdAt: minutesAgo(4),
+    },
+  ],
+  'contact-form': [
+    {
+      id: 'c8',
+      author: ada,
+      body: 'The confirmation should repeat the email address, so a typo is caught.',
+      createdAt: minutesAgo(60 * 24 * 6),
+    },
+  ],
+};
+
+const commentCount = (cardId: string) => sampleComments[cardId]?.length ?? 0;
 
 export const sampleBoard: Board = {
   id: 'sample',
@@ -34,8 +92,17 @@ export const sampleBoard: Board = {
           labels: [content, legal],
           dueDate: dueIn(5),
           assignees: [lena, marco],
+          commentCount: commentCount('pricing-copy'),
         },
-        { id: 'hero', title: 'Pick the hero illustration', description: '', labels: [design], dueDate: null, assignees: [] },
+        {
+          id: 'hero',
+          title: 'Pick the hero illustration',
+          description: '',
+          labels: [design],
+          dueDate: null,
+          assignees: [],
+          commentCount: commentCount('hero'),
+        },
         {
           id: 'redirects',
           title: 'Redirect the old URLs',
@@ -43,6 +110,7 @@ export const sampleBoard: Board = {
           labels: [seo],
           dueDate: dueIn(60),
           assignees: [sam],
+          commentCount: commentCount('redirects'),
         },
         {
           id: 'cookies',
@@ -51,6 +119,7 @@ export const sampleBoard: Board = {
           labels: [legal, frontend],
           dueDate: dueIn(-2),
           assignees: [marco, sam, lena, ada],
+          commentCount: commentCount('cookies'),
         },
       ],
     },
@@ -66,6 +135,7 @@ export const sampleBoard: Board = {
           labels: [design, frontend],
           dueDate: dueIn(0),
           assignees: [ada, sam],
+          commentCount: commentCount('navigation'),
         },
         {
           id: 'blog',
@@ -74,6 +144,7 @@ export const sampleBoard: Board = {
           labels: [content],
           dueDate: dueIn(1),
           assignees: [lena],
+          commentCount: commentCount('blog'),
         },
       ],
     },
@@ -90,6 +161,7 @@ export const sampleBoard: Board = {
           labels: [frontend],
           dueDate: dueIn(-1),
           assignees: [sam, ada],
+          commentCount: commentCount('contact-form'),
         },
       ],
     },
@@ -105,6 +177,7 @@ export const sampleBoard: Board = {
           labels: [design],
           dueDate: null,
           assignees: [ada],
+          commentCount: commentCount('brand'),
         },
         {
           id: 'analytics',
@@ -113,6 +186,7 @@ export const sampleBoard: Board = {
           labels: [],
           dueDate: null,
           assignees: [marco],
+          commentCount: commentCount('analytics'),
         },
       ],
     },

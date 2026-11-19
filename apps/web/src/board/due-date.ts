@@ -37,7 +37,11 @@ export function formatDueDate(dueDate: string, today: Date): string {
   if (dueDate === toCalendarDay(addDays(today, -1))) return 'Yesterday';
   if (dueDate === toCalendarDay(today)) return 'Today';
   if (dueDate === toCalendarDay(addDays(today, 1))) return 'Tomorrow';
-  const date = parseCalendarDay(dueDate);
+  return formatDay(parseCalendarDay(dueDate), today);
+}
+
+/** '20 Nov', with the year when it is not this one. */
+export function formatDay(date: Date, today: Date): string {
   return (date.getFullYear() === today.getFullYear() ? dayMonth : dayMonthYear).format(date);
 }
 

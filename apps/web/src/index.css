@@ -55,6 +55,8 @@
   --color-danger: #b91c1c;
 
   --shadow-card: 0 1px 2px rgb(28 25 23 / 0.06);
+  --shadow-dialog: 0 16px 40px rgb(28 25 23 / 0.2);
+  --color-backdrop: rgb(28 25 23 / 0.45);
 
   --radius: 12px;
   /* Side padding of the header and the board. */
@@ -103,6 +105,8 @@
     --palette-violet-text: #d8b4fe;
     /* A shadow does not show on a dark page; the card's border separates it. */
     --shadow-card: none;
+    --shadow-dialog: 0 16px 40px rgb(0 0 0 / 0.6);
+    --color-backdrop: rgb(0 0 0 / 0.65);
     --color-accent: #ff8a6b;
     --color-accent-text: #ff8a6b;
     --color-on-accent: #1c1917;
