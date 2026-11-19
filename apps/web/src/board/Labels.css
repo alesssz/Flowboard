@@ -1,0 +1,20 @@
+/* A card's labels as coloured pills. */
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.labels__item {
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+}

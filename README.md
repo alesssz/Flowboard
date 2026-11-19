@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board, with columns and cards from sample data, and checks its connection to the API through the development proxy. Next: the REST API for boards, so the board comes from the server. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board, with columns, cards and each card's detail and comments from sample data, and checks its connection to the API through the development proxy. Next: the REST API for boards, so the board comes from the server. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -155,8 +155,9 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 **Usable board**
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
-- [x] Board layout: coloured column lanes, cards with labels, due dates and assignees, from sample data
-- [ ] Board editing: add, rename, move and delete columns, cards and labels
+- [x] Board layout: coloured column lanes, cards with labels, due dates, assignees and comment counts, from sample data
+- [x] Card detail, read-only: full description and comments
+- [ ] Board editing: add, rename, move and delete columns, cards and labels; write comments
 - [ ] REST API for boards, columns and cards, on PostgreSQL with Prisma
 - [x] Shared types (`@flowboard/shared`)
 - [ ] Request validation with Zod, in the shared package

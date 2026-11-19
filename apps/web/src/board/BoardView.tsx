@@ -1,7 +1,8 @@
-// A board: its title and card count, then its columns side by side.
-import type { Board } from '@flowboard/shared';
-import { useId } from 'react';
+// A board: its title and card count, then its columns side by side; a card opens its detail over them.
+import type { Board, Card, Column } from '@flowboard/shared';
+import { useId, useState } from 'react';
 import { BoardColumn } from './BoardColumn.tsx';
+import { CardDialog } from './CardDialog.tsx';
 import './BoardView.css';
 
 interface BoardViewProps {
@@ -10,7 +11,17 @@ interface BoardViewProps {
 
 export function BoardView({ board }: BoardViewProps) {
   const titleId = useId();
+  const [openCardId, setOpenCardId] = useState<string | null>(null);
   const cardCount = board.columns.reduce((total, column) => total + column.cards.length, 0);
+  const openCard = openCardId === null ? undefined : findCard(board, openCardId);
+
+  function handleOpenCard(cardId: string) {
+    setOpenCardId(cardId);
+  }
+
+  function handleCloseCard() {
+    setOpenCardId(null);
+  }
 
   return (
     <section className="board" aria-labelledby={titleId}>
@@ -26,9 +37,26 @@ export function BoardView({ board }: BoardViewProps) {
       {/* Focusable so the keyboard can scroll it sideways. */}
       <div className="board__columns" tabIndex={0} aria-label="Columns">
         {board.columns.map((column) => (
-          <BoardColumn key={column.id} column={column} />
+          <BoardColumn key={column.id} column={column} onOpenCard={handleOpenCard} />
         ))}
       </div>
+
+      {openCard !== undefined && (
+        <CardDialog
+          key={openCard.card.id}
+          card={openCard.card}
+          column={openCard.column}
+          onClose={handleCloseCard}
+        />
+      )}
     </section>
   );
+}
+
+function findCard(board: Board, cardId: string): { card: Card; column: Column } | undefined {
+  for (const column of board.columns) {
+    const card = column.cards.find((candidate) => candidate.id === cardId);
+    if (card !== undefined) return { card, column };
+  }
+  return undefined;
 }
