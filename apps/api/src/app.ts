@@ -4,9 +4,12 @@
  */
 import type { HealthResponse } from '@flowboard/shared';
 import express, { type Express } from 'express';
+import { boardRoutes } from './boards/board-routes.ts';
+import type { PrismaClient } from './db/client.ts';
+import { handleError, sendError } from './errors.ts';
 
-/** A new, independent app instance. */
-export function createApp(): Express {
+/** A new, independent app instance, reading and writing through `prisma`. */
+export function createApp(prisma: PrismaClient): Express {
   const app = express();
 
   app.use(express.json());
@@ -15,7 +18,7 @@ export function createApp(): Express {
 
   /**
    * GET /api/health — liveness probe for the web app's status panel and, once
-   * deployed, the hosting platform's health checks.
+   * deployed, the hosting platform's health checks. It does not touch the database.
    * 200 → HealthResponse
    */
   app.get('/api/health', (_req, res) => {
@@ -27,13 +30,14 @@ export function createApp(): Express {
     res.json(body);
   });
 
+  app.use('/api', boardRoutes(prisma));
+
   // Unmatched routes: a JSON 404 in the API's error shape, not Express's HTML page.
   app.use((req, res) => {
-    res.status(404).json({
-      error: 'Not Found',
-      message: `No route for ${req.method} ${req.originalUrl}`,
-    });
+    sendError(res, 404, `No route for ${req.method} ${req.originalUrl}`);
   });
+
+  app.use(handleError);
 
   return app;
 }

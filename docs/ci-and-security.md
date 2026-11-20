@@ -23,7 +23,7 @@ What GitHub checks on every push, the repository settings that protect the code 
 | [`dependabot.yml`](../.github/dependabot.yml) | Mondays | one pull request updating the pinned GitHub Actions | never: its own CI run is the check |
 | CodeQL default setup (no file) | every push to `main`, and weekly | static analysis of the TypeScript and of the workflows | never fails a push: it opens alerts under **Security → Code scanning** |
 
-Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner.
+Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner. The install runs the dependency scripts allowlisted in `pnpm-workspace.yaml`, so it also downloads Prisma's schema engine from `binaries.prisma.sh` (checked against its sha256). The checks need no database: the API's `typecheck` and `build` generate the Prisma client from the schema alone.
 
 CI runs on every branch, so a branch is checked before it reaches `main`, and only through a pull request whose CI passed ([Merging](#merging)). A new push to a branch cancels its run still in progress; on `main` every commit keeps its run. Pull requests from forks run nothing until the owner approves them. The audit runs on pull requests from forks only, since branches of this repository are already audited on push; its job summary lists outdated packages without failing the run.
 
@@ -99,5 +99,6 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 ## Local safeguards
 
 - `.githooks/pre-commit` refuses a commit whose author or committer is not the GitHub noreply address, so a real email address never reaches the public history. Enabled once per clone with `git config core.hooksPath .githooks`.
-- `.gitignore` keeps `.env` files out; a committed `.env.example` will document the variables, with no values.
+- `.gitignore` keeps `.env` files out; the committed `apps/api/.env.example` documents the variables, with no secrets: its only value is the URL of the local development database.
+- The development database in `compose.yaml` listens on `127.0.0.1` only, so its fixed credentials are not reachable from the network.
 - pnpm refuses dependency install scripts that are not allowlisted in `pnpm-workspace.yaml` (`allowBuilds`).

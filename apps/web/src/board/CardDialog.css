@@ -153,6 +153,39 @@
   color: var(--color-text-muted);
 }
 
+.card-dialog__error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.card-dialog__retry {
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.card-dialog__retry:hover:not(:disabled) {
+  background: var(--palette-gray-soft);
+}
+
+.card-dialog__retry:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.card-dialog__retry:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
 .card-dialog__comments {
   display: flex;
   flex-direction: column;

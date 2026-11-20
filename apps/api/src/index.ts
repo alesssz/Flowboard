@@ -2,11 +2,22 @@
  * API entry point: configuration, HTTP server, graceful shutdown.
  */
 import { createApp } from './app.ts';
+import { createPrismaClient, readDatabaseUrl } from './db/client.ts';
 
 // Hosting platforms assign PORT; 3700 is the dev proxy's target (apps/web/vite.config.ts).
 const PORT = Number(process.env.PORT ?? '3700');
 
-const app = createApp();
+let databaseUrl: string;
+try {
+  databaseUrl = readDatabaseUrl();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
+
+// Connects on the first query: the server starts even while the database is down.
+const prisma = createPrismaClient(databaseUrl);
+const app = createApp(prisma);
 
 // Express 5 passes listen errors (e.g. EADDRINUSE) to this callback.
 const server = app.listen(PORT, (error) => {
@@ -19,14 +30,14 @@ const server = app.listen(PORT, (error) => {
 });
 
 /**
- * Stops accepting connections and exits once in-flight requests finish: on
- * Ctrl+C (SIGINT), and on the platform's stop signal before a redeploy (SIGTERM).
+ * Stops accepting connections, then closes the database connections once in-flight requests
+ * finish: on Ctrl+C (SIGINT), and on the platform's stop signal before a redeploy (SIGTERM).
  */
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`${signal} received, shutting down`);
 
   server.close(() => {
-    process.exit(0);
+    void prisma.$disconnect().finally(() => process.exit(0));
   });
 }
 

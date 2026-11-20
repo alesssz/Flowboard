@@ -1,12 +1,13 @@
 // A card's detail in a modal dialog: its column, labels, due date, assignees, full description and comments.
 import type { Card, Column } from '@flowboard/shared';
+import { useQuery } from '@tanstack/react-query';
 import { type MouseEvent, type PointerEvent, useEffect, useId, useRef } from 'react';
 import { Tooltip } from '../Tooltip.tsx';
 import { Avatar } from './Avatar.tsx';
+import { cardCommentsQuery } from './board-queries.ts';
 import { formatCommentTime, formatFullDateTime } from './comment-time.ts';
 import { DueDate } from './DueDate.tsx';
 import { Labels } from './Labels.tsx';
-import { sampleComments } from './sample-board.ts';
 import './CardDialog.css';
 
 interface CardDialogProps {
@@ -23,8 +24,9 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
   const descriptionId = useId();
   const commentsId = useId();
   const now = new Date();
-  // Read from the sample data until the API serves a card's comments.
-  const comments = sampleComments[card.id] ?? [];
+  const comments = useQuery(cardCommentsQuery(card.id));
+  // The card's own count until the comments arrive.
+  const commentCount = comments.data?.length ?? card.commentCount;
 
   // showModal(), not the open attribute: it makes the rest of the page inert, closes on Escape
   // and shows ::backdrop. The check skips StrictMode's second run, as showModal() on an open dialog throws.
@@ -32,6 +34,10 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
     const dialog = dialogRef.current;
     if (dialog !== null && !dialog.open) dialog.showModal();
   }, []);
+
+  function handleRetryComments() {
+    void comments.refetch();
+  }
 
   function handleCloseClick() {
     dialogRef.current?.close();
@@ -119,17 +125,35 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
           <h3 id={commentsId} className="card-dialog__heading">
             Comments
             {/* Screen readers get the count from the list itself. */}
-            {comments.length > 0 && (
+            {commentCount > 0 && (
               <span className="card-dialog__count" aria-hidden="true">
-                {comments.length}
+                {commentCount}
               </span>
             )}
           </h3>
-          {comments.length === 0 ? (
+          {comments.data === undefined ? (
+            comments.isError ? (
+              <div className="card-dialog__error" role="alert">
+                <p className="card-dialog__empty">Cannot load the comments</p>
+                <button
+                  type="button"
+                  className="card-dialog__retry"
+                  disabled={comments.isFetching}
+                  onClick={handleRetryComments}
+                >
+                  {comments.isFetching ? 'Retrying…' : 'Try again'}
+                </button>
+              </div>
+            ) : (
+              <p className="card-dialog__empty" role="status">
+                Loading comments…
+              </p>
+            )
+          ) : comments.data.length === 0 ? (
             <p className="card-dialog__empty">No comments yet</p>
           ) : (
             <ol className="card-dialog__comments">
-              {comments.map((comment) => (
+              {comments.data.map((comment) => (
                 <li key={comment.id} className="card-dialog__comment">
                   <Avatar member={comment.author} size="medium" />
                   <div>

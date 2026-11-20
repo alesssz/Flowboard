@@ -1,0 +1,102 @@
+// Flowboard's database schema (PostgreSQL). A change here needs a migration: pnpm db:migrate.
+
+generator client {
+  provider = "prisma-client"
+  // Generated TypeScript, compiled with the API's sources; gitignored, rebuilt by every API script.
+  output   = "../src/generated/prisma"
+}
+
+// The URL comes from prisma.config.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// Mirrors PaletteColor in @flowboard/shared.
+enum PaletteColor {
+  gray
+  coral
+  red
+  amber
+  green
+  blue
+  violet
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  title     String
+  createdAt DateTime @default(now())
+  columns   Column[]
+  labels    Label[]
+  members   Member[]
+}
+
+// Positions order siblings (columns on a board, cards in a column); gaps are allowed.
+model Column {
+  id       String       @id @default(cuid())
+  board    Board        @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId  String
+  title    String
+  color    PaletteColor
+  position Int
+  cards    Card[]
+
+  @@index([boardId, position])
+}
+
+model Card {
+  id          String    @id @default(cuid())
+  column      Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  columnId    String
+  title       String
+  description String    @default("")
+  // A calendar day with no time zone; Prisma reads it as midnight UTC.
+  dueDate     DateTime? @db.Date
+  position    Int
+  labels      Label[]
+  assignees   Member[]
+  comments    Comment[]
+
+  @@index([columnId, position])
+}
+
+// A board's labels, in the order cards show them.
+model Label {
+  id       String       @id @default(cuid())
+  board    Board        @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId  String
+  name     String
+  color    PaletteColor
+  position Int
+  cards    Card[]
+
+  @@index([boardId])
+}
+
+// Someone who works on a board; accounts will come with sign-in.
+model Member {
+  id       String    @id @default(cuid())
+  board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId  String
+  name     String
+  color    PaletteColor
+  cards    Card[]
+  comments Comment[]
+
+  @@index([boardId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId    String
+  // NoAction is checked at the end of the statement: deleting a board removes its members and
+  // their comments together, while a member alone cannot be deleted before their comments.
+  author    Member   @relation(fields: [authorId], references: [id], onDelete: NoAction)
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([cardId, createdAt])
+  @@index([authorId])
+}

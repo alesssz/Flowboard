@@ -1,6 +1,6 @@
 # @flowboard/web
 
-Flowboard's single-page app: **React 19** and **TypeScript**, served and built by **Vite**.
+Flowboard's single-page app: **React 19** and **TypeScript**, served and built by **Vite**, with API data through **TanStack Query**.
 
 ## Running
 
@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5873. The board shows sample data; without the API running, the header reads "API offline", retries on its own and offers a retry button. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873. The board comes from the API, so it needs the API and its database ([Getting started](../../README.md#getting-started)). Without the API, the header reads "API offline", retries on its own and offers a retry button, and the board area shows the error with **Try again**. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -30,13 +30,15 @@ apps/web/
 ├── index.html          the single HTML page; loads src/main.tsx
 ├── public/             static files served as-is (favicon)
 ├── src/
-│   ├── main.tsx        mounts <App /> into #root
+│   ├── main.tsx        mounts <App /> into #root, inside TanStack Query's QueryClientProvider
 │   ├── App.tsx         app shell: header, then the board
+│   ├── api.ts          fetchJson(): GET /api/…; an error status throws ApiRequestError, no answer a plain Error
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── Tooltip.tsx     hover text drawn above its parent
 │   ├── api-status/     header badge: GET /api/health on load, retried while it fails
-│   ├── board/          BoardView → BoardColumn → BoardCard, CardDialog (a card's detail), their parts
-│   │                   (Labels, DueDate, Assignees, Avatar), date helpers, the sample board and comments
+│   ├── board/          BoardPage (loads the board) → BoardView → BoardColumn → BoardCard, CardDialog
+│   │                   (a card's detail, loads its comments), their parts (Labels, DueDate, Assignees,
+│   │                   Avatar), the queries (board-queries.ts), date helpers
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -49,6 +51,8 @@ apps/web/
 
 - Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
+- API data is read with **TanStack Query**: each query's key and fetcher are defined once with `queryOptions` (`board/board-queries.ts`) and used with `useQuery`. Keys go from general to specific (`['boards']`, `['boards', id]`, `['cards', id, 'comments']`), so related data can be refreshed together. A 4xx is not retried (`main.tsx`); other failures are retried 3 times.
+- A component reading a query renders its data first, then the error, then the loading state: a failed background refresh keeps what is on screen.
 - ESLint runs the recommended rule sets of `@eslint/js` and `typescript-eslint`, plus `react-hooks` and `react-refresh`.
 - Components are functions named in **PascalCase**; their props are typed with `interface XxxProps`.
 - Event handlers are named `handleXxx`; the props that receive them `onXxx`.

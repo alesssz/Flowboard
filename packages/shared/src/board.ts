@@ -7,6 +7,12 @@ export interface Board {
   columns: Column[];
 }
 
+/** A board in the board list, without its content. */
+export interface BoardSummary {
+  id: string;
+  title: string;
+}
+
 export interface Column {
   id: string;
   title: string;
