@@ -1,7 +1,6 @@
-// App shell: the header, then the board, which shows sample data until the API serves boards.
+// App shell: the header, then the board.
 import { ApiStatusBadge } from './api-status/ApiStatusBadge.tsx';
-import { BoardView } from './board/BoardView.tsx';
-import { sampleBoard } from './board/sample-board.ts';
+import { BoardPage } from './board/BoardPage.tsx';
 import { Logo } from './Logo.tsx';
 import './App.css';
 
@@ -19,7 +18,7 @@ export default function App() {
       </header>
 
       <main className="app__main">
-        <BoardView board={sampleBoard} />
+        <BoardPage />
       </main>
     </div>
   );

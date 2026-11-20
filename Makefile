@@ -7,6 +7,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help setup install urls dev dev-web dev-api build \
+        db-up db-down db-migrate db-seed db-reset db-studio \
         typecheck lint check audit github-check \
         branch sync push merge clean clean-all
 
@@ -29,6 +30,8 @@ urls: ## The local addresses
 	@node -e "console.log('Web app (Vite)   http://localhost:5873')"
 	@node -e "console.log('API (Express)    http://localhost:3700')"
 	@node -e "console.log('Health check     http://localhost:3700/api/health')"
+	@node -e "console.log('PostgreSQL       localhost:6132 (make db-up)')"
+	@node -e "console.log('Prisma Studio    http://localhost:6255 (make db-studio)')"
 
 # --- Development --------------------------------------------------------------
 
@@ -43,6 +46,26 @@ dev-api: ## Start the API only (http://localhost:3700)
 
 build: ## Type-check and build every package for production
 	$(PNPM) build
+
+# --- Database -----------------------------------------------------------------
+
+db-up: ## Start PostgreSQL in Docker (compose.yaml) and wait until it accepts connections
+	$(PNPM) db:up
+
+db-down: ## Stop PostgreSQL; the data stays in its Docker volume
+	$(PNPM) db:down
+
+db-migrate: ## Apply the migrations; after a schema change, creates one: make db-migrate name=add-card-cover
+	$(PNPM) db:migrate $(if $(name),--name $(name))
+
+db-seed: ## Replace every board with the sample board
+	$(PNPM) db:seed
+
+db-reset: ## Empty the database, apply every migration, seed (asks first)
+	$(PNPM) db:reset
+
+db-studio: ## Browse and edit the data in Prisma Studio (http://localhost:6255)
+	$(PNPM) db:studio
 
 # --- Quality ------------------------------------------------------------------
 

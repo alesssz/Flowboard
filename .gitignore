@@ -7,6 +7,8 @@ dist-ssr
 build
 *.tsbuildinfo
 coverage
+# Prisma client, generated from apps/api/prisma/schema.prisma by the API's scripts
+apps/api/src/generated
 
 # Environment variables hold secrets; a committed .env.example documents them
 .env

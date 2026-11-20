@@ -1,0 +1,24 @@
+# Local services for development: pnpm db:up starts them, pnpm db:down stops them.
+# The credentials are for this local database only; apps/api/.env.example matches them.
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: flowboard
+      POSTGRES_PASSWORD: flowboard
+      POSTGRES_DB: flowboard
+    # Loopback only, unreachable from the network. 6132 is PostgreSQL's 5432 plus 700, like the app's ports.
+    ports:
+      - "127.0.0.1:6132:5432"
+    # PostgreSQL 18 images keep their data in a versioned folder under /var/lib/postgresql.
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowboard -d flowboard"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  db-data:

@@ -6,16 +6,27 @@ packages:
 # The only dependency install scripts allowed to run; pnpm blocks the rest.
 # Review new requests with `pnpm approve-builds` before adding them here.
 #   esbuild (via tsx): selects and verifies its native binary for the platform.
+#   @prisma/engines (via prisma): downloads the schema engine for the platform
+#   from binaries.prisma.sh, checking its sha256; prisma migrate needs it.
+#   prisma: refused (false). Its preinstall only checks the Node.js version,
+#   which the root package.json's engines field already sets.
 allowBuilds:
+  '@prisma/engines': true
   esbuild: true
+  prisma: false
 
 # Versions forced over what the dependency tree asks for.
 #   minimatch: 11 fixes GHSA-g3hv-75wg-m249 (denial of service through crafted
 #   glob patterns, moderate). ESLint and typescript-eslint still ask for 10;
 #   they are development tools matching the project's own patterns, and they
 #   pass with 11. Remove once they require 11.0.1 or later themselves.
+#   effect (under @prisma/config): 3.22.1 fixes GHSA-7589-6fvf-x4pw (denial of
+#   service through a crafted Schema.TemplateLiteral input, high). The Prisma CLI
+#   pins 3.20.0 and uses it only to validate prisma.config.ts; it passes with
+#   3.22. Remove once @prisma/config requires 3.22.1 or later itself.
 overrides:
   minimatch: ^11.0.8
+  '@prisma/config>effect': ^3.22.1
 
 # Advisories pnpm audit skips: only those with no fixed release yet, reached
 # only through development tools.

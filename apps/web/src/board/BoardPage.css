@@ -1,0 +1,51 @@
+/* What stands in for the board while it loads, fails or does not exist: a message centred in the main area. */
+
+.board-message {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px var(--gutter);
+  text-align: center;
+}
+
+.board-message__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.board-message__detail {
+  max-width: 48ch;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.board-message__retry {
+  margin-top: 6px;
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.board-message__retry:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.board-message__retry:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.board-message__retry:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

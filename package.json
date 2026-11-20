@@ -10,6 +10,12 @@
     "typecheck": "pnpm --recursive run typecheck",
     "lint": "pnpm --recursive run lint",
     "check": "pnpm typecheck && pnpm lint && pnpm build",
+    "db:up": "docker compose up --detach --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter @flowboard/api db:migrate",
+    "db:seed": "pnpm --filter @flowboard/api db:seed",
+    "db:reset": "pnpm --filter @flowboard/api db:reset",
+    "db:studio": "pnpm --filter @flowboard/api db:studio",
     "github:check": "node scripts/github-check.mjs",
     "merge:main": "node scripts/merge-main.mjs"
   },
