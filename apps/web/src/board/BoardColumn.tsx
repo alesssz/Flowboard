@@ -1,15 +1,17 @@
-// A column: a coloured lane with its title and card count, then its cards top to bottom.
+// A column: a coloured lane with its title and card count, its cards top to bottom, then Add a card.
 import type { Column } from '@flowboard/shared';
 import { useId } from 'react';
+import { AddCard } from './AddCard.tsx';
 import { BoardCard } from './BoardCard.tsx';
 import './BoardColumn.css';
 
 interface BoardColumnProps {
+  boardId: string;
   column: Column;
   onOpenCard: (cardId: string) => void;
 }
 
-export function BoardColumn({ column, onOpenCard }: BoardColumnProps) {
+export function BoardColumn({ boardId, column, onOpenCard }: BoardColumnProps) {
   const titleId = useId();
 
   return (
@@ -35,6 +37,8 @@ export function BoardColumn({ column, onOpenCard }: BoardColumnProps) {
           ))}
         </ol>
       )}
+
+      <AddCard boardId={boardId} columnId={column.id} columnTitle={column.title} />
     </section>
   );
 }

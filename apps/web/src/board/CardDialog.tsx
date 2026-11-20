@@ -1,23 +1,31 @@
-// A card's detail in a modal dialog: its column, labels, due date, assignees, full description and comments.
-import type { Card, Column } from '@flowboard/shared';
+// A card's detail in a modal dialog: its column, then its fields, each editable in place, its comments, and Delete.
+import type { Board, Card, Column } from '@flowboard/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type MouseEvent, type PointerEvent, useEffect, useId, useRef } from 'react';
 import { Tooltip } from '../Tooltip.tsx';
 import { Avatar } from './Avatar.tsx';
 import { cardCommentsQuery } from './board-queries.ts';
+import {
+  CardAssigneesField,
+  CardDescriptionField,
+  CardDueDateField,
+  CardLabelsField,
+  CardTitleField,
+  DeleteCard,
+} from './CardFields.tsx';
 import { formatCommentTime, formatFullDateTime } from './comment-time.ts';
-import { DueDate } from './DueDate.tsx';
-import { Labels } from './Labels.tsx';
 import './CardDialog.css';
 
 interface CardDialogProps {
+  /** For its id, and the labels and members a card can be given. */
+  board: Board;
   card: Card;
   column: Column;
   /** Called once the dialog has closed, by the close button, Escape or a click on the backdrop. */
   onClose: () => void;
 }
 
-export function CardDialog({ card, column, onClose }: CardDialogProps) {
+export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pressedOnBackdrop = useRef(false);
   const titleId = useId();
@@ -43,6 +51,10 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
     dialogRef.current?.close();
   }
 
+  function handleDeleted() {
+    dialogRef.current?.close();
+  }
+
   // The content fills the dialog, so only the backdrop targets the dialog element itself. Both the press
   // and the release must be there: a text selection dragged out of the content is not a click outside.
   function handleDialogPointerDown(event: PointerEvent<HTMLDialogElement>) {
@@ -64,14 +76,12 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
     >
       <div className="card-dialog__content">
         <header className="card-dialog__header">
-          <div>
+          <div className="card-dialog__heading-block">
             <p className="card-dialog__column" data-color={column.color}>
               <span className="card-dialog__column-dot" aria-hidden="true" />
               {column.title}
             </p>
-            <h2 id={titleId} className="card-dialog__title">
-              {card.title}
-            </h2>
+            <CardTitleField boardId={board.id} card={card} titleId={titleId} />
           </div>
           <button type="button" className="card-dialog__close" aria-label="Close" onClick={handleCloseClick}>
             <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -80,46 +90,13 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
           </button>
         </header>
 
-        {card.labels.length > 0 && <Labels labels={card.labels} />}
+        <dl className="card-dialog__facts">
+          <CardLabelsField boardId={board.id} card={card} labels={board.labels} />
+          <CardDueDateField boardId={board.id} card={card} today={now} />
+          <CardAssigneesField boardId={board.id} card={card} members={board.members} />
+        </dl>
 
-        {(card.dueDate !== null || card.assignees.length > 0) && (
-          <dl className="card-dialog__facts">
-            {card.dueDate !== null && (
-              <div>
-                <dt>Due</dt>
-                <dd>
-                  <DueDate date={card.dueDate} today={now} />
-                </dd>
-              </div>
-            )}
-            {card.assignees.length > 0 && (
-              <div>
-                <dt>Assignees</dt>
-                <dd>
-                  <ul className="card-dialog__members">
-                    {card.assignees.map((member) => (
-                      <li key={member.id}>
-                        <Avatar member={member} />
-                        {member.name}
-                      </li>
-                    ))}
-                  </ul>
-                </dd>
-              </div>
-            )}
-          </dl>
-        )}
-
-        <section aria-labelledby={descriptionId}>
-          <h3 id={descriptionId} className="card-dialog__heading">
-            Description
-          </h3>
-          {card.description === '' ? (
-            <p className="card-dialog__empty">No description</p>
-          ) : (
-            <p className="card-dialog__description">{card.description}</p>
-          )}
-        </section>
+        <CardDescriptionField boardId={board.id} card={card} headingId={descriptionId} />
 
         <section aria-labelledby={commentsId}>
           <h3 id={commentsId} className="card-dialog__heading">
@@ -171,6 +148,10 @@ export function CardDialog({ card, column, onClose }: CardDialogProps) {
             </ol>
           )}
         </section>
+
+        <footer className="card-dialog__footer">
+          <DeleteCard boardId={board.id} card={card} onDeleted={handleDeleted} />
+        </footer>
       </div>
     </dialog>
   );

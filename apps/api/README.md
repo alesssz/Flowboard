@@ -48,10 +48,14 @@ prisma.config.ts           Prisma CLI configuration
 src/
 ├── index.ts               entry point: configuration, listen, graceful shutdown (SIGINT/SIGTERM)
 ├── app.ts                 createApp(prisma): middleware, routes, JSON 404, error handler
-├── errors.ts              JSON error responses (ApiError) and the error-handling middleware
+├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
+├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
-│   ├── board-routes.ts    /api/boards and /api/cards/:cardId/comments
-│   └── board-queries.ts   Prisma queries, mapped to the @flowboard/shared types
+│   ├── board-routes.ts    GET /api/boards, GET /api/boards/:boardId
+│   └── board-queries.ts   board reads, mapped to the @flowboard/shared types
+├── cards/
+│   ├── card-routes.ts     card create, update, delete; a card's comments
+│   └── card-queries.ts    card reads and writes; cardFields and toCard, shared with the board query
 ├── db/
 │   ├── client.ts          PrismaClient with the PostgreSQL adapter; DATABASE_URL check
 │   └── seed.ts            the sample board (pnpm db:seed)
@@ -66,11 +70,22 @@ src/
 |---|---|---|---|
 | `GET` | `/api/health` | Liveness probe; does not touch the database | `200` `{ "status": "ok", "timestamp", "uptimeSeconds" }` |
 | `GET` | `/api/boards` | Every board, oldest first | `200` `BoardSummary[]` |
-| `GET` | `/api/boards/:boardId` | A board with its columns and cards, in display order | `200` `Board` · `404` |
+| `GET` | `/api/boards/:boardId` | A board with its columns and cards in display order, and the board's labels and members | `200` `Board` · `404` |
+| `POST` | `/api/columns/:columnId/cards` | Adds a card at the bottom of the column; body `CreateCardRequest` | `201` `Card` · `400` · `404` |
+| `PATCH` | `/api/cards/:cardId` | Changes the fields given; body `UpdateCardRequest` | `200` `Card` · `400` · `404` |
+| `DELETE` | `/api/cards/:cardId` | Deletes the card and its comments | `204`, no body · `404` |
 | `GET` | `/api/cards/:cardId/comments` | A card's comments, oldest first | `200` `CardComment[]` · `404` |
 | any | any other path | No matching route | `404` |
 
-Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error": "Not Found", "message": "No board with id …" }`: `400` for a malformed JSON body, `404`, and `500` for anything unexpected, logged by the server with no details sent.
+Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error": "Not Found", "message": "No board with id …" }`:
+
+| Status | When |
+|---|---|
+| `400` | Malformed JSON; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label or member id not on the card's board |
+| `404` | No board, column or card with that id; no route |
+| `500` | Anything unexpected: logged by the server, no details sent |
+
+**Card writes.** `PATCH` changes only the fields present, and needs at least one. Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent. Each write runs in one transaction, and answers with the card as it now is, so the client needs no reload. A new card goes after the column's last one; two created at the same moment may share a position until reordering renumbers them.
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards
@@ -89,7 +104,9 @@ Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
 
 - Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - Every route lives under **`/api`**, the only prefix the web app's dev proxy forwards.
-- Every response is **JSON**, errors included.
+- Every response with a body is **JSON**, errors included; a `DELETE` answers `204` with none.
+- Request bodies go through **`parseBody(schema, req.body)`** with a schema from `@flowboard/shared/schemas`, before anything reads them. The API has no Zod dependency of its own: `parseBody` needs only the schema's `safeParse`.
+- A request that cannot be served throws **`HttpError(status, message)`** from wherever it is found (a route, a query), and the error handler answers in the `ApiError` shape.
 - Queries `select` the fields a response needs and map them to the shared types in `*-queries.ts`; routes never return Prisma's objects as they are.
 - Relative imports carry the **`.ts`** extension (`import { createApp } from './app.ts'`); `tsc` rewrites it to `.js` (`rewriteRelativeImportExtensions`).
 - Type-only imports use **`import type`** (`verbatimModuleSyntax`).

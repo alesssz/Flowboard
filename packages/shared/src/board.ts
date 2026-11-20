@@ -5,6 +5,10 @@ export interface Board {
   id: string;
   title: string;
   columns: Column[];
+  /** Every label of the board, in display order: the ones a card can be given. */
+  labels: Label[];
+  /** Everyone on the board, by name: the people a card can be assigned to. */
+  members: Member[];
 }
 
 /** A board in the board list, without its content. */

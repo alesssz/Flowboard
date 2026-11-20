@@ -5,6 +5,7 @@
 import type { HealthResponse } from '@flowboard/shared';
 import express, { type Express } from 'express';
 import { boardRoutes } from './boards/board-routes.ts';
+import { cardRoutes } from './cards/card-routes.ts';
 import type { PrismaClient } from './db/client.ts';
 import { handleError, sendError } from './errors.ts';
 
@@ -31,6 +32,7 @@ export function createApp(prisma: PrismaClient): Express {
   });
 
   app.use('/api', boardRoutes(prisma));
+  app.use('/api', cardRoutes(prisma));
 
   // Unmatched routes: a JSON 404 in the API's error shape, not Express's HTML page.
   app.use((req, res) => {

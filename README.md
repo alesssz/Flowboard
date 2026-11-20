@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board, with columns, cards and each card's detail and comments, read from the API, which stores them in PostgreSQL; the board is read-only for now. Next: board editing. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Cards can be added, edited in place (title, description, due date, labels, assignees) and deleted; columns, the board's labels and comments are still read-only. Next: the rest of board editing. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -31,15 +31,16 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 |---|---|---|
 | Language | [TypeScript](https://www.typescriptlang.org/) 6, `strict` | One language and shared types across the web app and the API |
 | Web app | [React](https://react.dev/) 19 | The board's libraries: dnd-kit for drag and drop, TanStack Query for optimistic updates |
-| Server state | [TanStack Query](https://tanstack.com/query) 5 | Caching, retries and background refresh of API data; optimistic updates once the board is editable |
+| Server state | [TanStack Query](https://tanstack.com/query) 5 | Caching, retries and background refresh of API data; each write's answer updates the cached board; optimistic updates with drag and drop |
 | Build tool | [Vite](https://vite.dev/) 8 | Its dev proxy gives the app and the API one origin; a static production build |
 | API | [Node.js](https://nodejs.org/) 24 LTS + [Express](https://expressjs.com/) 5 | Minimal, well-understood HTTP layer; Express 5 forwards async errors natively |
 | Database | [PostgreSQL](https://www.postgresql.org/) 18, in Docker for development | Relational data (boards own columns, columns own cards) with constraints and cascades |
 | ORM | [Prisma](https://www.prisma.io/) 7 | Schema-first models, generated migrations, query results typed from the schema |
+| Validation | [Zod](https://zod.dev/) 4, in `@flowboard/shared` | Request bodies checked at runtime by the API; their TypeScript types derived from the same schemas |
 | Dev runner | [tsx](https://tsx.is/) | Runs the API's TypeScript directly, restarting on change |
 | Package manager | [pnpm](https://pnpm.io/) workspaces | One lockfile, strict dependency resolution, internal packages without publishing |
 
-Planned: Zod, dnd-kit, Socket.IO, Vitest and Playwright, Docker for the whole stack.
+Planned: dnd-kit, Socket.IO, Vitest and Playwright, Docker for the whole stack.
 
 ## Architecture
 
@@ -169,7 +170,8 @@ Every push runs type-checking, linting and the production build on GitHub Action
 ## Conventions
 
 - TypeScript `strict` with `noUncheckedIndexedAccess`, `verbatimModuleSyntax` and `erasableSyntaxOnly` (string-literal unions instead of enums).
-- Every API route lives under `/api`, and every response, errors included, is JSON.
+- Every API route lives under `/api`, and every response with a body, errors included, is JSON; a `DELETE` answers `204` with none.
+- Request bodies are validated by the API against Zod schemas in `@flowboard/shared`; an invalid one is a `400` naming each wrong field.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Roadmap
@@ -180,11 +182,12 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [x] pnpm workspace with a Vite + React web app and an Express API
 - [x] CI (types, lint, build), weekly dependency audit, repository security settings
 - [x] Board layout: coloured column lanes, cards with labels, due dates, assignees and comment counts
-- [x] Card detail, read-only: full description and comments
+- [x] Card detail: full description and comments
 - [x] Read API for boards and comments, on PostgreSQL with Prisma; the web app loads it with TanStack Query
-- [ ] Board editing, through the API: add, rename, move and delete columns, cards and labels; write comments
+- [x] Card editing: add, edit in place (title, description, due date, labels, assignees), delete
+- [ ] The rest of board editing: columns, the board's labels, writing comments ([backlog](docs/backlog.md))
 - [x] Shared types (`@flowboard/shared`)
-- [ ] Request validation with Zod, in the shared package
+- [x] Request validation with Zod, in the shared package
 - [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
 - [ ] Tests in CI: API and web app (Vitest)
 

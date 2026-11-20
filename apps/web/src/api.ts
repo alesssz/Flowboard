@@ -1,4 +1,4 @@
-// Requests to the API: relative /api URLs, JSON bodies, failures thrown as ApiRequestError.
+// Requests to the API: relative /api URLs, JSON bodies, failures thrown as errors with a readable message.
 import type { ApiError } from '@flowboard/shared';
 
 /** A response with an error status; `message` is the API's own when it sent one. */
@@ -14,12 +14,33 @@ export class ApiRequestError extends Error {
 
 /** GET `/api${path}`. */
 export async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await request(path, { headers: { Accept: 'application/json' }, signal });
+  // Unchecked cast until responses are validated against shared schemas.
+  return (await response.json()) as T;
+}
+
+/** POST or PATCH `/api${path}` with a JSON body; resolves to the JSON the API answers with. */
+export async function sendJson<T>(method: 'POST' | 'PATCH', path: string, body: unknown): Promise<T> {
+  const response = await request(path, {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return (await response.json()) as T;
+}
+
+/** DELETE `/api${path}`; the API answers 204 with no body. */
+export async function sendDelete(path: string): Promise<void> {
+  await request(path, { method: 'DELETE', headers: { Accept: 'application/json' } });
+}
+
+async function request(path: string, init: RequestInit): Promise<Response> {
   let response: Response;
   try {
-    response = await fetch(`/api${path}`, { headers: { Accept: 'application/json' }, signal });
+    response = await fetch(`/api${path}`, init);
   } catch (error) {
     // An abort is TanStack Query cancelling the request: it must reach it unchanged.
-    if (signal?.aborted) throw error;
+    if (init.signal?.aborted) throw error;
     // fetch's own message ('Failed to fetch', 'Load failed') differs by browser and says little.
     throw new Error('The server cannot be reached', { cause: error });
   }
@@ -29,9 +50,7 @@ export async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<
     const body = (await response.json().catch(() => null)) as ApiError | null;
     throw new ApiRequestError(response.status, body?.message ?? `The server responded with status ${response.status}`);
   }
-
-  // Unchecked cast until responses are validated against shared schemas.
-  return (await response.json()) as T;
+  return response;
 }
 
 /** 4xx: asking again gets the same answer. */

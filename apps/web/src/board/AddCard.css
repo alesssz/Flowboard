@@ -1,0 +1,117 @@
+/* "Add a card" at the bottom of a column lane: a quiet button, or a title field with its actions. */
+
+.add-card__open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-card__open:hover {
+  color: var(--color-text);
+  background: var(--tone-soft);
+}
+
+.add-card__open svg,
+.add-card__close svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.add-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.add-card__input {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  resize: none;
+}
+
+.add-card__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.add-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-card__submit {
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.add-card__submit:hover {
+  filter: brightness(1.1);
+}
+
+.add-card__submit[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.add-card__close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.add-card__close:hover {
+  color: var(--color-text);
+  background: var(--tone-soft);
+}
+
+.add-card__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.add-card__open:focus-visible,
+.add-card__input:focus-visible,
+.add-card__submit:focus-visible,
+.add-card__close:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

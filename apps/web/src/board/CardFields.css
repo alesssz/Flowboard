@@ -1,0 +1,291 @@
+/* A card's editable fields in its dialog: the value with a pencil button, or its editor with actions below. */
+
+.card-field--title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.card-field__title {
+  margin: 0;
+  padding: 2px 0;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+form.card-field--title {
+  flex-direction: column;
+  gap: 6px;
+}
+
+
+.card-field__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.card-field__fact-name,
+.card-field__heading-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  margin-bottom: 4px;
+}
+
+.card-field__fact-name,
+.card-field__heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.card-field__fact-value {
+  margin: 0;
+}
+
+.card-field__none {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.card-field__members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.card-field__members li,
+.card-field__member {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Editors --- */
+
+.card-field__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-field__input {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+}
+
+.card-field__input:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 1px;
+}
+
+.card-field__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.card-field__input--title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card-field__input--date {
+  width: auto;
+  color-scheme: light dark;
+}
+
+.card-field__textarea {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.card-field__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.card-field__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.card-field__choice input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.card-field__label-pill {
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+}
+
+.card-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.card-field__status,
+.card-field__error {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.card-field__status {
+  color: var(--color-text-muted);
+}
+
+.card-field__error {
+  flex-basis: 100%;
+  color: var(--color-danger);
+}
+
+.card-field__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-field__confirm-text {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* --- Buttons --- */
+
+.card-field__button {
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.card-field__button:hover {
+  background: var(--palette-gray-soft);
+}
+
+.card-field__button--primary {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.card-field__button--primary:hover {
+  background: var(--color-accent);
+  filter: brightness(1.1);
+}
+
+.card-field__button--danger {
+  color: var(--color-danger);
+}
+
+.card-field__button--danger-solid {
+  color: var(--color-on-danger);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.card-field__button--danger-solid:hover {
+  background: var(--color-danger);
+  filter: brightness(1.1);
+}
+
+.card-field__button[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.card-field__icon-button {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  background: none;
+  cursor: pointer;
+}
+
+.card-field__icon-button:hover {
+  color: var(--color-text);
+  background: var(--palette-gray-soft);
+}
+
+.card-field__icon-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.card-field__placeholder {
+  width: 100%;
+  padding: 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--color-text-muted);
+  background: var(--palette-gray-soft);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.card-field__placeholder:hover {
+  color: var(--color-text);
+}
+
+.card-field__button:focus-visible,
+.card-field__icon-button:focus-visible,
+.card-field__placeholder:focus-visible,
+.card-field__choice input:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

@@ -18,9 +18,9 @@ A real-time collaborative kanban board (boards, columns, draggable cards, live u
 ## Code conventions
 
 - TypeScript `strict` plus `noUncheckedIndexedAccess`; `verbatimModuleSyntax` (type-only imports use `import type`); `erasableSyntaxOnly` (no `enum` or `namespace`: string-literal unions instead).
-- API: ESM with `module: nodenext`; relative imports carry the `.ts` extension, rewritten to `.js` by `tsc` (`rewriteRelativeImportExtensions`). Every route lives under `/api` and every response, errors included, is JSON. `app.ts` builds the app, `index.ts` starts it.
+- API: ESM with `module: nodenext`; relative imports carry the `.ts` extension, rewritten to `.js` by `tsc` (`rewriteRelativeImportExtensions`). Every route lives under `/api` and every response with a body, errors included, is JSON (a `DELETE` answers `204` with none). Request bodies are checked with `parseBody(schema, req.body)` (`src/validation.ts`) against the schemas in `@flowboard/shared/schemas`. `app.ts` builds the app, `index.ts` starts it.
 - Web: components in PascalCase, props typed with `interface XxxProps`, event handlers named `handleXxx` and the props that receive them `onXxx`, multi-shape state modelled as discriminated unions, CSS class names in BEM.
-- Shared: request and response bodies are typed once in `@flowboard/shared` and imported with `import type`. The package exports types only and is consumed as sources; runtime code there (Zod schemas) needs a build step first.
+- Shared: request and response bodies are typed once in `@flowboard/shared` and imported with `import type`; request types come from the Zod schemas (`z.input`). The package has no build step: Vite, tsx and Node 24's type stripping run its sources, so they stay erasable TypeScript. The schemas are only in `@flowboard/shared/schemas`, so the web app never bundles Zod: the main entry point keeps no runtime Zod import.
 - Semicolons, single quotes.
 
 ## Working rules
