@@ -1,8 +1,7 @@
-// Reads boards and comments from the database, shaped as the @flowboard/shared types.
-import type { Board, BoardSummary, CardComment } from '@flowboard/shared';
+// Reads boards from the database, shaped as the @flowboard/shared types.
+import type { Board, BoardSummary } from '@flowboard/shared';
+import { cardFields, labelFields, memberFields, toCard } from '../cards/card-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
-
-const memberFields = { id: true, name: true, color: true } as const;
 
 export function listBoards(prisma: PrismaClient): Promise<BoardSummary[]> {
   return prisma.board.findMany({
@@ -24,50 +23,17 @@ export async function findBoard(prisma: PrismaClient, boardId: string): Promise<
           id: true,
           title: true,
           color: true,
-          cards: {
-            orderBy: { position: 'asc' },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              dueDate: true,
-              labels: { orderBy: { position: 'asc' }, select: { id: true, name: true, color: true } },
-              assignees: { orderBy: { name: 'asc' }, select: memberFields },
-              _count: { select: { comments: true } },
-            },
-          },
+          cards: { orderBy: { position: 'asc' }, select: cardFields },
         },
       },
+      labels: { orderBy: { position: 'asc' }, select: labelFields },
+      members: { orderBy: { name: 'asc' }, select: memberFields },
     },
   });
   if (board === null) return null;
 
   return {
     ...board,
-    columns: board.columns.map((column) => ({
-      ...column,
-      cards: column.cards.map(({ dueDate, _count, ...card }) => ({
-        ...card,
-        // A date column comes back as midnight UTC, so the UTC date is the stored day.
-        dueDate: dueDate === null ? null : dueDate.toISOString().slice(0, 10),
-        commentCount: _count.comments,
-      })),
-    })),
+    columns: board.columns.map((column) => ({ ...column, cards: column.cards.map(toCard) })),
   };
-}
-
-/** The card's comments, oldest first, or null when there is no card with that id. */
-export async function findCardComments(prisma: PrismaClient, cardId: string): Promise<CardComment[] | null> {
-  const card = await prisma.card.findUnique({
-    where: { id: cardId },
-    select: {
-      comments: {
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, body: true, createdAt: true, author: { select: memberFields } },
-      },
-    },
-  });
-  if (card === null) return null;
-
-  return card.comments.map((comment) => ({ ...comment, createdAt: comment.createdAt.toISOString() }));
 }

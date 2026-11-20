@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5873. The board comes from the API, so it needs the API and its database ([Getting started](../../README.md#getting-started)). Without the API, the header reads "API offline", retries on its own and offers a retry button, and the board area shows the error with **Try again**. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873. The board comes from the API, and every edit is saved there, so it needs the API and its database ([Getting started](../../README.md#getting-started)). Without the API, the header reads "API offline", retries on its own and offers a retry button, and the board area shows the error with **Try again**. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -32,13 +32,15 @@ apps/web/
 ├── src/
 │   ├── main.tsx        mounts <App /> into #root, inside TanStack Query's QueryClientProvider
 │   ├── App.tsx         app shell: header, then the board
-│   ├── api.ts          fetchJson(): GET /api/…; an error status throws ApiRequestError, no answer a plain Error
+│   ├── api.ts          fetchJson, sendJson, sendDelete: /api/… requests; an error status throws
+│   │                   ApiRequestError with the API's message, no answer a plain Error
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── Tooltip.tsx     hover text drawn above its parent
 │   ├── api-status/     header badge: GET /api/health on load, retried while it fails
-│   ├── board/          BoardPage (loads the board) → BoardView → BoardColumn → BoardCard, CardDialog
-│   │                   (a card's detail, loads its comments), their parts (Labels, DueDate, Assignees,
-│   │                   Avatar), the queries (board-queries.ts), date helpers
+│   ├── board/          BoardPage (loads the board) → BoardView → BoardColumn (with AddCard) → BoardCard;
+│   │                   CardDialog (a card's detail, loads its comments) with CardFields (each field
+│   │                   edited in place, Delete card); their parts (Labels, DueDate, Assignees, Avatar);
+│   │                   queries (board-queries.ts), writes (card-mutations.ts), date helpers
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -53,6 +55,11 @@ apps/web/
 - The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
 - API data is read with **TanStack Query**: each query's key and fetcher are defined once with `queryOptions` (`board/board-queries.ts`) and used with `useQuery`. Keys go from general to specific (`['boards']`, `['boards', id]`, `['cards', id, 'comments']`), so related data can be refreshed together. A 4xx is not retried (`main.tsx`); other failures are retried 3 times.
 - A component reading a query renders its data first, then the error, then the loading state: a failed background refresh keeps what is on screen.
+- Writes are TanStack Query mutations (`board/card-mutations.ts`). Each waits for the API, then writes the card it returns into the cached board (`setQueryData`), so the column and the dialog change together without reloading the board. Nothing changes on screen before the API has accepted it; optimistic updates come with drag and drop.
+- Card fields are edited in place (`board/CardFields.tsx`), each with its own mutation: a pencil button (and a click on the title) opens the editor, which shows "Saving…" while the request runs and stays open with the API's message if it fails. Enter saves a single-line field, Ctrl or ⌘ + Enter the description, Escape cancels; the title also saves when it loses the focus. Labels and assignees are checkboxes, each change saved at once.
+- Escape inside a field calls `preventDefault()`, so it cancels the edit without also closing the dialog.
+- While a request runs, buttons stay enabled and their handlers ignore clicks (`aria-disabled` shows the state): a disabled button would drop the keyboard focus. An edit closed from inside it gives the focus back to its pencil button; one closed by clicking elsewhere leaves it there.
+- Inputs take their `maxLength` from the limits in `@flowboard/shared`, the ones the API enforces. The web app imports only types and limits from the package, never its schemas, so Zod stays out of the bundle.
 - ESLint runs the recommended rule sets of `@eslint/js` and `typescript-eslint`, plus `react-hooks` and `react-refresh`.
 - Components are functions named in **PascalCase**; their props are typed with `interface XxxProps`.
 - Event handlers are named `handleXxx`; the props that receive them `onXxx`.

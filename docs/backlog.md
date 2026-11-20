@@ -8,8 +8,13 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 
 - [How this page works](#how-this-page-works)
   - [Template](#template)
+- [Interface (UI)](#interface-ui)
+  - [UI-1 Deleting a card leaves the focus nowhere](#ui-1-deleting-a-card-leaves-the-focus-nowhere)
 - [Features (FEAT)](#features-feat)
   - [FEAT-1 A finished card still shows as overdue](#feat-1-a-finished-card-still-shows-as-overdue)
+  - [FEAT-2 Columns cannot be added, renamed, recoloured or deleted](#feat-2-columns-cannot-be-added-renamed-recoloured-or-deleted)
+  - [FEAT-3 A board's labels cannot be managed](#feat-3-a-boards-labels-cannot-be-managed)
+  - [FEAT-4 Comments cannot be written](#feat-4-comments-cannot-be-written)
 - [Documentation (DOCS)](#documentation-docs)
   - [DOCS-1 The README is a setup guide, not yet the project's showcase](#docs-1-the-readme-is-a-setup-guide-not-yet-the-projects-showcase)
 
@@ -50,6 +55,22 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 **Recommended.** Which option, why, and how to check it is done.
 ```
 
+## Interface (UI)
+
+### UI-1 Deleting a card leaves the focus nowhere
+
+**Priority:** low · **Kind:** accessibility · **Found:** 2026-11-20
+
+**What is wrong.** After **Delete card** is confirmed, the dialog closes and gives the focus back to the button that opened it, the deleted card's title, which is gone: the focus falls to the page. A keyboard or screen reader user starts again from the top of the page.
+
+**Where.** `DeleteCard` in `apps/web/src/board/CardFields.tsx`; `handleDeleted` in `CardDialog.tsx`; `BoardView.tsx`, which knows the columns.
+
+**Options.**
+- A) Focus the card that took the deleted one's place in its column (the next, else the previous), else the column's **Add a card**.
+- B) Always focus the column's **Add a card**.
+
+**Recommended.** A: it keeps the user where they were in the column. Done when, after a deletion, the focus is on a neighbouring card or on **Add a card**, checked with the keyboard alone.
+
 ## Features (FEAT)
 
 ### FEAT-1 A finished card still shows as overdue
@@ -66,6 +87,48 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - C) A due date leaves the card when it moves to a finishing column.
 
 **Recommended.** A: it keeps columns free of meaning, works on boards with any workflow and records when the work ended. To be done with board editing, which brings the controls. Done when a completed card with a past due date is not red, and its state is announced to screen readers.
+
+### FEAT-2 Columns cannot be added, renamed, recoloured or deleted
+
+**Priority:** high · **Kind:** missing feature · **Found:** 2026-11-20
+
+**What is wrong.** Cards can be edited, columns cannot: a board keeps the columns of the seed.
+
+**Where.** New routes in `apps/api/src/columns/` and schemas in `packages/shared/src/` (as for cards); `BoardColumn.tsx`, `BoardView.tsx`.
+
+**Options.**
+- A) The column header edits in place like a card's title (rename), with a menu for the colour and **Delete column**; **Add a column** after the last lane.
+- B) A board settings dialog listing the columns.
+
+**Recommended.** A, matching card editing. Deleting a column with cards asks first and says how many go with it. Moving columns waits for drag and drop. Done when a column can be added, renamed, recoloured and deleted, each through the API.
+
+### FEAT-3 A board's labels cannot be managed
+
+**Priority:** medium · **Kind:** missing feature · **Found:** 2026-11-20
+
+**What is wrong.** A card can be given any of the board's labels, but the labels themselves (name, colour, order) come from the seed.
+
+**Where.** `Label` in `apps/api/prisma/schema.prisma`; the labels editor in `CardFields.tsx`.
+
+**Options.**
+- A) **Create label** and an edit button per label inside the card's labels editor.
+- B) A labels section in a board settings dialog.
+
+**Recommended.** A: labels are created when a card needs one, as in most boards. Deleting a label removes it from every card, after a confirmation naming how many. Done when labels can be created, renamed, recoloured and deleted.
+
+### FEAT-4 Comments cannot be written
+
+**Priority:** medium · **Kind:** missing feature · **Found:** 2026-11-20
+
+**What is wrong.** A card's comments can be read, not written. A comment has an author, and there are no accounts yet.
+
+**Where.** `apps/api/src/cards/`; the comments section of `CardDialog.tsx`.
+
+**Options.**
+- A) Now, with the author picked from the board's members (or a fixed one), replaced by the signed-in user later.
+- B) With accounts and sign-in.
+
+**Recommended.** B: an author chosen by hand would be thrown away with sign-in, and so would the code choosing it. Done when a signed-in member can write, edit and delete their own comments.
 
 ## Documentation (DOCS)
 

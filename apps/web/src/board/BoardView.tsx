@@ -37,13 +37,14 @@ export function BoardView({ board }: BoardViewProps) {
       {/* Focusable so the keyboard can scroll it sideways. */}
       <div className="board__columns" tabIndex={0} aria-label="Columns">
         {board.columns.map((column) => (
-          <BoardColumn key={column.id} column={column} onOpenCard={handleOpenCard} />
+          <BoardColumn key={column.id} boardId={board.id} column={column} onOpenCard={handleOpenCard} />
         ))}
       </div>
 
       {openCard !== undefined && (
         <CardDialog
           key={openCard.card.id}
+          board={board}
           card={openCard.card}
           column={openCard.column}
           onClose={handleCloseCard}
