@@ -53,9 +53,12 @@ src/
 ├── boards/
 │   ├── board-routes.ts    GET /api/boards, GET /api/boards/:boardId
 │   └── board-queries.ts   board reads, mapped to the @flowboard/shared types
+├── columns/
+│   ├── column-routes.ts   column create, update, delete
+│   └── column-queries.ts  column writes; columnFields and toColumn, shared with the board query
 ├── cards/
 │   ├── card-routes.ts     card create, update, delete; a card's comments
-│   └── card-queries.ts    card reads and writes; cardFields and toCard, shared with the board query
+│   └── card-queries.ts    card reads and writes; cardFields and toCard, shared with the column and board queries
 ├── db/
 │   ├── client.ts          PrismaClient with the PostgreSQL adapter; DATABASE_URL check
 │   └── seed.ts            the sample board (pnpm db:seed)
@@ -71,6 +74,9 @@ src/
 | `GET` | `/api/health` | Liveness probe; does not touch the database | `200` `{ "status": "ok", "timestamp", "uptimeSeconds" }` |
 | `GET` | `/api/boards` | Every board, oldest first | `200` `BoardSummary[]` |
 | `GET` | `/api/boards/:boardId` | A board with its columns and cards in display order, and the board's labels and members | `200` `Board` · `404` |
+| `POST` | `/api/boards/:boardId/columns` | Adds a column after the board's last one, with no cards; body `CreateColumnRequest` | `201` `Column` · `400` · `404` |
+| `PATCH` | `/api/columns/:columnId` | Renames or recolours the column; body `UpdateColumnRequest` | `200` `Column` · `400` · `404` |
+| `DELETE` | `/api/columns/:columnId` | Deletes the column with its cards and their comments | `204`, no body · `404` |
 | `POST` | `/api/columns/:columnId/cards` | Adds a card at the bottom of the column; body `CreateCardRequest` | `201` `Card` · `400` · `404` |
 | `PATCH` | `/api/cards/:cardId` | Changes the fields given; body `UpdateCardRequest` | `200` `Card` · `400` · `404` |
 | `DELETE` | `/api/cards/:cardId` | Deletes the card and its comments | `204`, no body · `404` |
@@ -85,7 +91,11 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 | `404` | No board, column or card with that id; no route |
 | `500` | Anything unexpected: logged by the server, no details sent |
 
-**Card writes.** `PATCH` changes only the fields present, and needs at least one. Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent. Each write runs in one transaction, and answers with the card as it now is, so the client needs no reload. A new card goes after the column's last one; two created at the same moment may share a position until reordering renumbers them.
+**Writes.** A `PATCH` changes only the fields present, and needs at least one. Each write runs in one transaction and answers with the column or card as it now is, so the client needs no reload. A new column goes after the board's last one, a new card after its column's last one; two created at the same moment may share a position until reordering renumbers them. Deleting a column deletes its cards and their comments (database cascades).
+
+**Column writes.** Titles are trimmed and keep at least one character (limit: `columnTitleMaxLength` in `@flowboard/shared`). `color` is one of `paletteColors`; the API does not pick one, the client sends it.
+
+**Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards

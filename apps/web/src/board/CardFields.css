@@ -1,4 +1,5 @@
-/* A card's editable fields in its dialog: the value with a pencil button, or its editor with actions below. */
+/* A card's editable fields in its dialog: the value with a pencil button, or its editor with actions below.
+   The buttons and the save state are FieldControls.css. */
 
 .card-field--title {
   flex: 1;
@@ -21,7 +22,6 @@ form.card-field--title {
   flex-direction: column;
   gap: 6px;
 }
-
 
 .card-field__text {
   margin: 0;
@@ -155,116 +155,6 @@ form.card-field--title {
   background: var(--tone-soft);
 }
 
-.card-field__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-}
-
-.card-field__status,
-.card-field__error {
-  margin: 0;
-  font-size: 0.8rem;
-}
-
-.card-field__status {
-  color: var(--color-text-muted);
-}
-
-.card-field__error {
-  flex-basis: 100%;
-  color: var(--color-danger);
-}
-
-.card-field__confirm {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.card-field__confirm-text {
-  margin: 0;
-  font-size: 0.85rem;
-}
-
-/* --- Buttons --- */
-
-.card-field__button {
-  padding: 4px 12px;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-text);
-  background: none;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 7px;
-  cursor: pointer;
-}
-
-.card-field__button:hover {
-  background: var(--palette-gray-soft);
-}
-
-.card-field__button--primary {
-  color: var(--color-on-accent);
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.card-field__button--primary:hover {
-  background: var(--color-accent);
-  filter: brightness(1.1);
-}
-
-.card-field__button--danger {
-  color: var(--color-danger);
-}
-
-.card-field__button--danger-solid {
-  color: var(--color-on-danger);
-  background: var(--color-danger);
-  border-color: var(--color-danger);
-}
-
-.card-field__button--danger-solid:hover {
-  background: var(--color-danger);
-  filter: brightness(1.1);
-}
-
-.card-field__button[aria-disabled='true'] {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-.card-field__icon-button {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  color: var(--color-text-muted);
-  background: none;
-  cursor: pointer;
-}
-
-.card-field__icon-button:hover {
-  color: var(--color-text);
-  background: var(--palette-gray-soft);
-}
-
-.card-field__icon-button svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linejoin: round;
-}
-
 .card-field__placeholder {
   width: 100%;
   padding: 10px;
@@ -282,8 +172,6 @@ form.card-field--title {
   color: var(--color-text);
 }
 
-.card-field__button:focus-visible,
-.card-field__icon-button:focus-visible,
 .card-field__placeholder:focus-visible,
 .card-field__choice input:focus-visible {
   outline: 2px solid var(--color-accent-text);

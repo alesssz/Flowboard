@@ -1,30 +1,25 @@
-// A column: a coloured lane with its title and card count, its cards top to bottom, then Add a card.
+// A column: a coloured lane with its header (title, card count, options), its cards top to bottom, then Add a card.
 import type { Column } from '@flowboard/shared';
 import { useId } from 'react';
 import { AddCard } from './AddCard.tsx';
 import { BoardCard } from './BoardCard.tsx';
+import { ColumnHeader } from './ColumnHeader.tsx';
 import './BoardColumn.css';
 
 interface BoardColumnProps {
   boardId: string;
   column: Column;
   onOpenCard: (cardId: string) => void;
+  /** Runs once the API has deleted the column. */
+  onDeleted: () => void;
 }
 
-export function BoardColumn({ boardId, column, onOpenCard }: BoardColumnProps) {
+export function BoardColumn({ boardId, column, onOpenCard, onDeleted }: BoardColumnProps) {
   const titleId = useId();
 
   return (
     <section className="board-column" data-color={column.color} aria-labelledby={titleId}>
-      <header className="board-column__header">
-        <h2 id={titleId} className="board-column__title">
-          {column.title}
-        </h2>
-        {/* Screen readers get the count from the list itself. */}
-        <span className="board-column__count" aria-hidden="true">
-          {column.cards.length}
-        </span>
-      </header>
+      <ColumnHeader boardId={boardId} column={column} titleId={titleId} onDeleted={onDeleted} />
 
       {column.cards.length === 0 ? (
         <p className="board-column__empty">No cards</p>

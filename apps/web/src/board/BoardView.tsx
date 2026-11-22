@@ -1,6 +1,7 @@
-// A board: its title and card count, then its columns side by side; a card opens its detail over them.
+// A board: its title and card count, then its columns side by side and Add a column; a card opens its detail over them.
 import type { Board, Card, Column } from '@flowboard/shared';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { AddColumn } from './AddColumn.tsx';
 import { BoardColumn } from './BoardColumn.tsx';
 import { CardDialog } from './CardDialog.tsx';
 import './BoardView.css';
@@ -11,6 +12,7 @@ interface BoardViewProps {
 
 export function BoardView({ board }: BoardViewProps) {
   const titleId = useId();
+  const columnsRef = useRef<HTMLDivElement>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const cardCount = board.columns.reduce((total, column) => total + column.cards.length, 0);
   const openCard = openCardId === null ? undefined : findCard(board, openCardId);
@@ -21,6 +23,11 @@ export function BoardView({ board }: BoardViewProps) {
 
   function handleCloseCard() {
     setOpenCardId(null);
+  }
+
+  // The focus was in the deleted column; the row of columns is the nearest place that stays.
+  function handleColumnDeleted() {
+    columnsRef.current?.focus();
   }
 
   return (
@@ -35,10 +42,17 @@ export function BoardView({ board }: BoardViewProps) {
       </header>
 
       {/* Focusable so the keyboard can scroll it sideways. */}
-      <div className="board__columns" tabIndex={0} aria-label="Columns">
+      <div ref={columnsRef} className="board__columns" tabIndex={0} aria-label="Columns">
         {board.columns.map((column) => (
-          <BoardColumn key={column.id} boardId={board.id} column={column} onOpenCard={handleOpenCard} />
+          <BoardColumn
+            key={column.id}
+            boardId={board.id}
+            column={column}
+            onOpenCard={handleOpenCard}
+            onDeleted={handleColumnDeleted}
+          />
         ))}
+        <AddColumn boardId={board.id} columns={board.columns} />
       </div>
 
       {openCard !== undefined && (

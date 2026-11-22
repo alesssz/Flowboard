@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Cards can be added, edited in place (title, description, due date, labels, assignees) and deleted; columns, the board's labels and comments are still read-only. Next: the rest of board editing. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Next: the rest of board editing. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -185,7 +185,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [x] Card detail: full description and comments
 - [x] Read API for boards and comments, on PostgreSQL with Prisma; the web app loads it with TanStack Query
 - [x] Card editing: add, edit in place (title, description, due date, labels, assignees), delete
-- [ ] The rest of board editing: columns, the board's labels, writing comments ([backlog](docs/backlog.md))
+- [x] Column editing: add, rename, recolour, delete
+- [ ] The rest of board editing: the board's labels, writing comments ([backlog](docs/backlog.md))
 - [x] Shared types (`@flowboard/shared`)
 - [x] Request validation with Zod, in the shared package
 - [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
