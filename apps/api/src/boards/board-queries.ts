@@ -1,6 +1,7 @@
 // Reads boards from the database, shaped as the @flowboard/shared types.
 import type { Board, BoardSummary } from '@flowboard/shared';
-import { cardFields, labelFields, memberFields, toCard } from '../cards/card-queries.ts';
+import { labelFields, memberFields } from '../cards/card-queries.ts';
+import { columnFields, toColumn } from '../columns/column-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 
 export function listBoards(prisma: PrismaClient): Promise<BoardSummary[]> {
@@ -17,23 +18,12 @@ export async function findBoard(prisma: PrismaClient, boardId: string): Promise<
     select: {
       id: true,
       title: true,
-      columns: {
-        orderBy: { position: 'asc' },
-        select: {
-          id: true,
-          title: true,
-          color: true,
-          cards: { orderBy: { position: 'asc' }, select: cardFields },
-        },
-      },
+      columns: { orderBy: { position: 'asc' }, select: columnFields },
       labels: { orderBy: { position: 'asc' }, select: labelFields },
       members: { orderBy: { name: 'asc' }, select: memberFields },
     },
   });
   if (board === null) return null;
 
-  return {
-    ...board,
-    columns: board.columns.map((column) => ({ ...column, cards: column.cards.map(toCard) })),
-  };
+  return { ...board, columns: board.columns.map(toColumn) };
 }

@@ -12,7 +12,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
   - [UI-1 Deleting a card leaves the focus nowhere](#ui-1-deleting-a-card-leaves-the-focus-nowhere)
 - [Features (FEAT)](#features-feat)
   - [FEAT-1 A finished card still shows as overdue](#feat-1-a-finished-card-still-shows-as-overdue)
-  - [FEAT-2 Columns cannot be added, renamed, recoloured or deleted](#feat-2-columns-cannot-be-added-renamed-recoloured-or-deleted)
   - [FEAT-3 A board's labels cannot be managed](#feat-3-a-boards-labels-cannot-be-managed)
   - [FEAT-4 Comments cannot be written](#feat-4-comments-cannot-be-written)
 - [Documentation (DOCS)](#documentation-docs)
@@ -87,20 +86,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - C) A due date leaves the card when it moves to a finishing column.
 
 **Recommended.** A: it keeps columns free of meaning, works on boards with any workflow and records when the work ended. To be done with board editing, which brings the controls. Done when a completed card with a past due date is not red, and its state is announced to screen readers.
-
-### FEAT-2 Columns cannot be added, renamed, recoloured or deleted
-
-**Priority:** high · **Kind:** missing feature · **Found:** 2026-11-20
-
-**What is wrong.** Cards can be edited, columns cannot: a board keeps the columns of the seed.
-
-**Where.** New routes in `apps/api/src/columns/` and schemas in `packages/shared/src/` (as for cards); `BoardColumn.tsx`, `BoardView.tsx`.
-
-**Options.**
-- A) The column header edits in place like a card's title (rename), with a menu for the colour and **Delete column**; **Add a column** after the last lane.
-- B) A board settings dialog listing the columns.
-
-**Recommended.** A, matching card editing. Deleting a column with cards asks first and says how many go with it. Moving columns waits for drag and drop. Done when a column can be added, renamed, recoloured and deleted, each through the API.
 
 ### FEAT-3 A board's labels cannot be managed
 

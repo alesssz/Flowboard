@@ -1,9 +1,7 @@
 // A card's editable fields, for its detail dialog. Each edits in place and saves through the API on its
 // own: the field shows "Saving…" until the API answers, and stays open with the error if it refuses.
-//
-// Focus: buttons are never disabled while a request runs (a disabled button drops the focus); clicks are
-// ignored instead. An edit closed from inside it (Save, Cancel, Enter, Escape) gives the focus back to the
-// field's pencil button; one closed by clicking elsewhere leaves it where the click put it.
+// An edit closed from inside it (Save, Cancel, Enter, Escape) gives the focus back to the field's pencil
+// button; one closed by clicking elsewhere leaves it where the click put it.
 import {
   type Card,
   cardDescriptionMaxLength,
@@ -14,8 +12,10 @@ import {
 } from '@flowboard/shared';
 import { type FormEvent, type KeyboardEvent, type ReactNode, useState } from 'react';
 import { Avatar } from './Avatar.tsx';
+import { cancelOnEscape } from './cancel-on-escape.ts';
 import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
 import { DueDate } from './DueDate.tsx';
+import { ConfirmDelete, EditButton, SaveState } from './FieldControls.tsx';
 import { Labels } from './Labels.tsx';
 import './CardFields.css';
 
@@ -240,7 +240,7 @@ export function CardDueDateField({ boardId, card, today }: CardDueDateFieldProps
         />
         <FormActions pending={update.isPending} error={update.error} onCancel={handleFinish}>
           {card.dueDate !== null && (
-            <button type="button" className="card-field__button" onClick={handleRemove}>
+            <button type="button" className="field-control__button" onClick={handleRemove}>
               Remove
             </button>
           )}
@@ -392,8 +392,8 @@ function ChoiceField<T extends { id: string }>({
             {renderOption(option)}
           </label>
         ))}
-        <div className="card-field__actions">
-          <button type="button" className="card-field__button" onClick={handleDone}>
+        <div className="field-control__actions">
+          <button type="button" className="field-control__button" onClick={handleDone}>
             Done
           </button>
           <SaveState pending={update.isPending} error={update.error} />
@@ -412,54 +412,21 @@ interface DeleteCardProps {
 
 /** Delete card, then a confirmation. */
 export function DeleteCard({ boardId, card, onDeleted }: DeleteCardProps) {
-  const [confirming, setConfirming] = useState(false);
   const remove = useDeleteCard(boardId, card.id);
 
-  function handleAsk() {
-    setConfirming(true);
-  }
-
-  function handleCancel() {
-    if (remove.isPending) return;
-    remove.reset();
-    setConfirming(false);
-  }
-
   function handleDelete() {
-    if (remove.isPending) return;
     remove.mutate(undefined, { onSuccess: onDeleted });
   }
 
-  if (!confirming) {
-    return (
-      <button type="button" className="card-field__button card-field__button--danger" onClick={handleAsk}>
-        Delete card
-      </button>
-    );
-  }
-
   return (
-    <div className="card-field__confirm" role="group" aria-label="Delete card">
-      <p className="card-field__confirm-text">
-        Delete this card{card.commentCount > 0 && ' and its comments'}? This cannot be undone.
-      </p>
-      <div className="card-field__actions">
-        <button
-          type="button"
-          className="card-field__button card-field__button--danger-solid"
-          aria-disabled={remove.isPending}
-          autoFocus
-          onClick={handleDelete}
-          onKeyDown={(event) => cancelOnEscape(event, handleCancel)}
-        >
-          {remove.isPending ? 'Deleting…' : 'Delete'}
-        </button>
-        <button type="button" className="card-field__button" aria-disabled={remove.isPending} onClick={handleCancel}>
-          Cancel
-        </button>
-        <SaveState pending={false} error={remove.error} />
-      </div>
-    </div>
+    <ConfirmDelete
+      label="Delete card"
+      question={`Delete this card${card.commentCount > 0 ? ' and its comments' : ''}?`}
+      pending={remove.isPending}
+      error={remove.error}
+      onDelete={handleDelete}
+      onCancel={remove.reset}
+    />
   );
 }
 
@@ -497,62 +464,15 @@ function FormActions({ pending, error, onCancel, children }: FormActionsProps) {
   }
 
   return (
-    <div className="card-field__actions">
-      <button type="submit" className="card-field__button card-field__button--primary" aria-disabled={pending}>
+    <div className="field-control__actions">
+      <button type="submit" className="field-control__button field-control__button--primary" aria-disabled={pending}>
         Save
       </button>
       {children}
-      <button type="button" className="card-field__button" aria-disabled={pending} onClick={handleCancel}>
+      <button type="button" className="field-control__button" aria-disabled={pending} onClick={handleCancel}>
         Cancel
       </button>
       <SaveState pending={pending} error={error} />
     </div>
   );
-}
-
-interface SaveStateProps {
-  pending: boolean;
-  error: Error | null;
-}
-
-function SaveState({ pending, error }: SaveStateProps) {
-  if (pending) {
-    return (
-      <p className="card-field__status" role="status">
-        Saving…
-      </p>
-    );
-  }
-  if (error !== null) {
-    return (
-      <p className="card-field__error" role="alert">
-        Not saved: {error.message}
-      </p>
-    );
-  }
-  return null;
-}
-
-interface EditButtonProps {
-  label: string;
-  /** True when coming back from an edit closed from inside it. */
-  autoFocus: boolean;
-  onClick: () => void;
-}
-
-function EditButton({ label, autoFocus, onClick }: EditButtonProps) {
-  return (
-    <button type="button" className="card-field__icon-button" aria-label={label} autoFocus={autoFocus} onClick={onClick}>
-      <svg viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M10.5 2.5l3 3L6 13H3v-3z" />
-      </svg>
-    </button>
-  );
-}
-
-// Escape in a field undoes the edit; preventDefault keeps it from also closing the dialog.
-function cancelOnEscape(event: KeyboardEvent<HTMLElement>, cancel: () => void) {
-  if (event.key !== 'Escape') return;
-  event.preventDefault();
-  cancel();
 }

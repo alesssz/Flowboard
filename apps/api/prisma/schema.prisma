@@ -11,7 +11,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// Mirrors PaletteColor in @flowboard/shared.
+// Mirrors paletteColors in @flowboard/shared.
 enum PaletteColor {
   gray
   coral

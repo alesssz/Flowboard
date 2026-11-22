@@ -1,9 +1,10 @@
 // Card writes. Each waits for the API, then puts its answer into the cached board, so every view of
 // the card updates without reloading the board.
-import type { Board, Card, CreateCardRequest, UpdateCardRequest } from '@flowboard/shared';
-import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Card, CreateCardRequest, UpdateCardRequest } from '@flowboard/shared';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { sendDelete, sendJson } from '../api.ts';
-import { boardQuery, cardCommentsQuery } from './board-queries.ts';
+import { updateBoard } from './board-cache.ts';
+import { cardCommentsQuery } from './board-queries.ts';
 
 export function useCreateCard(boardId: string, columnId: string) {
   const queryClient = useQueryClient();
@@ -53,8 +54,4 @@ export function useDeleteCard(boardId: string, cardId: string) {
       queryClient.removeQueries({ queryKey: cardCommentsQuery(cardId).queryKey });
     },
   });
-}
-
-function updateBoard(queryClient: QueryClient, boardId: string, change: (board: Board) => Board) {
-  queryClient.setQueryData(boardQuery(boardId).queryKey, (board) => (board === undefined ? undefined : change(board)));
 }

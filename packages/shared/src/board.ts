@@ -1,5 +1,6 @@
 // A board as the web app shows it: columns left to right, cards top to bottom.
 // Array order is display order; how positions are stored is up to the API.
+import type { PaletteColor } from './palette.ts';
 
 export interface Board {
   id: string;
@@ -64,6 +65,3 @@ export interface Member {
   /** Avatar colour. */
   color: PaletteColor;
 }
-
-/** The colours a user can pick for columns, labels and avatars; the web app has shades of each for both themes. */
-export type PaletteColor = 'gray' | 'coral' | 'red' | 'amber' | 'green' | 'blue' | 'violet';

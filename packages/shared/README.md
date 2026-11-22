@@ -1,20 +1,20 @@
 # @flowboard/shared
 
-What the web app and the API agree on: the types of every request and response body, the field limits, and the Zod schemas the API validates request bodies with.
+What the web app and the API agree on: the types of every request and response body, the field limits, the colour palette, and the Zod schemas the API validates request bodies with.
 
 ## Entry points
 
 | Import | Contents | Used by |
 |---|---|---|
-| `@flowboard/shared` | Types (`Board`, `Card`, `UpdateCardRequest`…) and limits (`cardTitleMaxLength`…) | both apps |
-| `@flowboard/shared/schemas` | Zod schemas of the request bodies (`createCardRequestSchema`, `updateCardRequestSchema`) | the API |
+| `@flowboard/shared` | Types (`Board`, `Card`, `UpdateCardRequest`…), limits (`cardTitleMaxLength`…) and the palette (`paletteColors`) | both apps |
+| `@flowboard/shared/schemas` | Zod schemas of the request bodies (`createColumnRequestSchema`, `updateCardRequestSchema`…) | the API |
 
 ```ts
 import { type Card, cardTitleMaxLength } from '@flowboard/shared';
 import { updateCardRequestSchema } from '@flowboard/shared/schemas';
 ```
 
-The schemas have their own entry point so the web app never bundles Zod: the main entry point imports no Zod at runtime (request types are `export type` from the schema module, erased at compile time), and the limits live in a module of their own. Request types are derived from the schemas (`z.input<typeof schema>`), so a body's type and its validation cannot drift apart.
+The schemas have their own entry point so the web app never bundles Zod: the main entry point imports no Zod at runtime (request types are `export type` from the schema module, erased at compile time), and the limits and the palette live in modules of their own. Request types are derived from the schemas (`z.input<typeof schema>`), so a body's type and its validation cannot drift apart.
 
 ## How it is consumed
 
@@ -41,11 +41,13 @@ Zod is a dependency of this package, not of the apps: the API reaches it through
 
 ```
 src/
-├── index.ts           main entry point: types and limits
+├── index.ts           main entry point: types, limits and palette
 ├── schemas.ts         @flowboard/shared/schemas: the Zod schemas
-├── board.ts           Board, BoardSummary, Column, Card, CardComment, Label, Member, PaletteColor
+├── board.ts           Board, BoardSummary, Column, Card, CardComment, Label, Member
+├── column-requests.ts column request schemas, and CreateColumnRequest, UpdateColumnRequest
 ├── card-requests.ts   card request schemas, and CreateCardRequest, UpdateCardRequest
 ├── limits.ts          field limits, free of Zod
+├── palette.ts         paletteColors and PaletteColor, free of Zod; mirrored by the database enum
 ├── error.ts           ApiError, the body of every API error response
 └── health.ts          HealthResponse (GET /api/health)
 ```
