@@ -16,7 +16,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
   - [FEAT-4 Comments cannot be written](#feat-4-comments-cannot-be-written)
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
-  - [OPS-2 The Makefile does not share its common targets with Chronovault and AtleoPlan](#ops-2-the-makefile-does-not-share-its-common-targets-with-chronovault-and-atleoplan)
 - [Documentation (DOCS)](#documentation-docs)
   - [DOCS-1 The README is a setup guide, not yet the project's showcase](#docs-1-the-readme-is-a-setup-guide-not-yet-the-projects-showcase)
 
@@ -124,7 +123,7 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 
 **Priority:** low · **Kind:** tooling · **Found:** 2026-11-22
 
-**What is wrong.** `make db-reset` empties the local database, applies the migrations and seeds it; nothing does the same for files or for production. Once attachments arrive (Roadmap: S3-compatible storage, Cloudflare R2 as in Chronovault), a database reset would leave the bucket holding objects no row points to; once deployed, the production database and bucket could only be emptied by hand.
+**What is wrong.** `make db-reset` empties the local database, applies the migrations and seeds it; nothing does the same for files or for production. Once attachments arrive (Roadmap: S3-compatible storage), a database reset would leave the bucket holding objects no row points to; once deployed, the production database and bucket could only be emptied by hand.
 
 **Where.** `db:reset` in `apps/api/package.json` and its `Makefile` target; a new script in `scripts/` for the bucket; the production configuration, still to come.
 
@@ -132,21 +131,7 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - A) One reset per environment, database and bucket together: `make db-reset` also empties the local bucket, and `make prod-reset` does the same in production, naming the database and bucket it is about to empty and asking for the project's name typed back.
 - B) Separate targets per store (`db-reset`, `storage-reset`) in each environment, combined by hand.
 
-**Recommended.** A: the database and the files are only consistent when emptied together. To be done with attachments (bucket) and deployment (production); the names follow OPS-2. Done when a local reset leaves a seeded database and an empty bucket, and the production one does the same only after the typed confirmation, which `yes=1` does not skip.
-
-### OPS-2 The Makefile does not share its common targets with Chronovault and AtleoPlan
-
-**Priority:** low · **Kind:** tooling · **Found:** 2026-11-22
-
-**What is wrong.** The three projects' Makefiles do the same everyday jobs under different names, or leave some out, so moving between them means reading `make help` each time. Starting everything is `make dev` here (after `make db-up`), `make local` in Chronovault, `make start` in AtleoPlan; stopping is `db-down`, `stop`, `down`; rebuilding the database is `db-reset`, `db-reset`, `fresh`. `doctor` and `lint-fix` are missing here, `urls`, `branch`, `sync` and `push` in Chronovault.
-
-**Where.** The `Makefile` and the README's scripts section of each repository; the Makefile rule in each `CLAUDE.md`.
-
-**Options.**
-- A) One list of shared targets, each with one meaning, the same section order and the same help format in the three Makefiles: `help`, `doctor`, `setup`, `install`, `urls`, `start` (everything: containers, then the dev servers), `stop`, `dev` (the dev servers only), `build`, `db-reset`, `db-migrate`, `db-seed`, `db-studio`, `lint`, `lint-fix`, `typecheck`, `test`, `check`, `audit`, `github-check`, `branch`, `sync`, `push`, `merge`, `clean`, `clean-all`. Each project writes the recipes its own way and keeps its own targets after them.
-- B) A common `.mk` file included by the three Makefiles.
-
-**Recommended.** A: the recipes differ (pnpm and Prisma, pnpm and Supabase, Docker, Composer and npm), so only the names and meanings can be shared, and a file shared across repositories would need copying anyway. The list goes in each `CLAUDE.md`, the same text in all three; a target that does not apply yet (`test` here) is left out, not faked. Done when the shared targets have the same name and meaning in the three `make help` outputs and the old names are gone.
+**Recommended.** A: the database and the files are only consistent when emptied together. To be done with attachments (bucket) and deployment (production). Done when a local reset leaves a seeded database and an empty bucket, and the production one does the same only after the typed confirmation, which `yes=1` does not skip.
 
 ## Documentation (DOCS)
 
