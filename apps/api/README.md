@@ -17,15 +17,17 @@ The server listens on http://localhost:3700; set `PORT` to change it (`$env:PORT
 
 | Script | Command | Description |
 |---|---|---|
-| `dev` | `prisma generate && tsx watch --env-file-if-exists=.env src/index.ts` | Runs the TypeScript sources directly and restarts on change (no type-checking) |
-| `build` | `prisma generate && tsc` | Type-checks and compiles `src/` to `dist/` |
+| `dev` | `prisma generate --no-hints && tsx watch --env-file-if-exists=.env src/index.ts` | Runs the TypeScript sources directly and restarts on change (no type-checking) |
+| `build` | `prisma generate --no-hints && tsc` | Type-checks and compiles `src/` to `dist/` |
 | `start` | `node --env-file-if-exists=.env dist/index.js` | Runs the compiled build |
-| `typecheck` | `prisma generate && tsc --noEmit` | Type-checks without emitting |
-| `db:generate` | `prisma generate` | Regenerates the Prisma client from the schema |
+| `typecheck` | `prisma generate --no-hints && tsc --noEmit` | Type-checks without emitting |
+| `db:generate` | `prisma generate --no-hints` | Regenerates the Prisma client from the schema |
 | `db:migrate` | `prisma migrate dev` | Applies pending migrations; after a schema change, first creates one (`--name <name>`) |
 | `db:seed` | `prisma db seed` | Runs `src/db/seed.ts`: replaces every board with the sample board |
 | `db:reset` | `prisma migrate reset && prisma db seed` | Drops every table, applies every migration, seeds (asks first) |
 | `db:studio` | `prisma studio --port 6255` | Prisma Studio on http://localhost:6255: browse and edit the data |
+
+`--no-hints` keeps `prisma generate` from asking a question when run from a terminal: inside `pnpm --recursive` the process would be stopped waiting for an answer, hanging `pnpm check`.
 
 The root `package.json` forwards the `db:` scripts (`pnpm db:migrate`) and adds `db:up` and `db:down`, which start and stop the database container.
 
