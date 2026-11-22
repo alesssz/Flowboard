@@ -17,7 +17,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
   - [OPS-2 The Makefile does not share its common targets with Chronovault and AtleoPlan](#ops-2-the-makefile-does-not-share-its-common-targets-with-chronovault-and-atleoplan)
-  - [OPS-3 `prisma generate` asks a question and hangs `pnpm check` in a terminal](#ops-3-prisma-generate-asks-a-question-and-hangs-pnpm-check-in-a-terminal)
 - [Documentation (DOCS)](#documentation-docs)
   - [DOCS-1 The README is a setup guide, not yet the project's showcase](#docs-1-the-readme-is-a-setup-guide-not-yet-the-projects-showcase)
 
@@ -148,20 +147,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - B) A common `.mk` file included by the three Makefiles.
 
 **Recommended.** A: the recipes differ (pnpm and Prisma, pnpm and Supabase, Docker, Composer and npm), so only the names and meanings can be shared, and a file shared across repositories would need copying anyway. The list goes in each `CLAUDE.md`, the same text in all three; a target that does not apply yet (`test` here) is left out, not faked. Done when the shared targets have the same name and meaning in the three `make help` outputs and the old names are gone.
-
-### OPS-3 `prisma generate` asks a question and hangs `pnpm check` in a terminal
-
-**Priority:** high · **Kind:** tooling bug · **Found:** 2026-11-22
-
-**What is wrong.** Run from a terminal, `prisma generate` (Prisma 7.10) asks "Install Prisma's agent skills so AI coding tools work better with this project?", a prompt meant to close by itself after 30 seconds. Inside `pnpm --recursive` the question never shows, and the system stops the process when it reads the keyboard (state `T` in `ps`), so the timeout never fires. `pnpm check`, `pnpm typecheck`, `pnpm build` and `make merge` hang after "Prisma schema loaded from prisma/schema.prisma.". Ctrl+C leaves the stopped `prisma generate` and `pnpm` processes behind, and only `kill -9` ends them. CI, and any run without a terminal, never sees the prompt.
-
-**Where.** `dev`, `build`, `typecheck` and `db:generate` in `apps/api/package.json`; the README's Troubleshooting table.
-
-**Options.**
-- A) `--no-hints` on every `prisma generate` in the scripts: it hides Prisma's hints and prompts, and keeps errors and warnings.
-- B) Keep the scripts, and merge with `make merge checks=0`, leaving the checks to CI.
-
-**Recommended.** A: one flag, the same in PowerShell and zsh, and a script has no use for hints. B only works around the hang for merges, while `pnpm check` must pass before every commit. Add the symptom and its fix to Troubleshooting. Done when `pnpm check` and `make merge` finish in a terminal on Windows and macOS.
 
 ## Documentation (DOCS)
 
