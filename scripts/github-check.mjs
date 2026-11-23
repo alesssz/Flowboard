@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** The CI jobs main requires before a merge: the job names of ci.yml. */
-const REQUIRED_CHECKS = ['Types, lint and build'];
+const REQUIRED_CHECKS = ['Types, lint and build', 'API tests'];
 
 // A terminal opened before GitHub CLI was installed does not see it on the
 // PATH yet; on Windows the installer's location is tried first.

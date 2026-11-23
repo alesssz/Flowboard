@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Next: the rest of board editing. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. The API's routes are covered by integration tests. Next: drag and drop. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -38,9 +38,10 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 | ORM | [Prisma](https://www.prisma.io/) 7 | Schema-first models, generated migrations, query results typed from the schema |
 | Validation | [Zod](https://zod.dev/) 4, in `@flowboard/shared` | Request bodies checked at runtime by the API; their TypeScript types derived from the same schemas |
 | Dev runner | [tsx](https://tsx.is/) | Runs the API's TypeScript directly, restarting on change |
+| Tests | [Vitest](https://vitest.dev/) 5 + [Supertest](https://github.com/forwardemail/supertest) | The API tested through HTTP against a PostgreSQL database of its own; Vitest runs TypeScript and ESM as they are |
 | Package manager | [pnpm](https://pnpm.io/) workspaces | One lockfile, strict dependency resolution, internal packages without publishing |
 
-Planned: dnd-kit, Socket.IO, Vitest and Playwright, Docker for the whole stack.
+Planned: dnd-kit, Socket.IO, Playwright, Docker for the whole stack.
 
 ## Architecture
 
@@ -108,7 +109,7 @@ The ports are Vite's, Express's, PostgreSQL's and Prisma Studio's usual ones plu
 
 ## Scripts
 
-Run from the repository root. `dev`, `build`, `typecheck` and `lint` run the script of the same name in every package that defines it; the `db:` scripts work on the development database.
+Run from the repository root. `dev`, `build`, `typecheck`, `lint` and `test` run the script of the same name in every package that defines it; the `db:` scripts work on the development database.
 
 | Command | What it does |
 |---|---|
@@ -116,6 +117,7 @@ Run from the repository root. `dev`, `build`, `typecheck` and `lint` run the scr
 | `pnpm build` | Type-checks and builds every package for production |
 | `pnpm typecheck` | Type-checks every package |
 | `pnpm lint` | Runs ESLint (web app for now) |
+| `pnpm test` | Runs the API's tests on their own database, `flowboard_test`, created on the first run; PostgreSQL must be up (`pnpm db:up`) |
 | `pnpm check` | The CI's checks: type-check, lint, build |
 | `pnpm db:up` | Starts PostgreSQL in Docker (`compose.yaml`) and waits until it accepts connections |
 | `pnpm db:down` | Stops and removes the container; the data stays in its volume |
@@ -166,7 +168,7 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 
 ## CI and security
 
-Every push runs type-checking, linting and the production build on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
+Every push runs type-checking, linting, the production build and the API's tests on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
 
 ## Conventions
 
@@ -181,7 +183,7 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 
 **Usable board**
 - [x] pnpm workspace with a Vite + React web app and an Express API
-- [x] CI (types, lint, build), weekly dependency audit, repository security settings
+- [x] CI (types, lint, build, API tests), weekly dependency audit, repository security settings
 - [x] Board layout: coloured column lanes, cards with labels, due dates, assignees and comment counts
 - [x] Card detail: full description and comments
 - [x] Read API for boards and comments, on PostgreSQL with Prisma; the web app loads it with TanStack Query
@@ -191,7 +193,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [x] Shared types (`@flowboard/shared`)
 - [x] Request validation with Zod, in the shared package
 - [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
-- [ ] Tests in CI: API and web app (Vitest)
+- [x] API tests: every route through HTTP, on a test database, locally and in CI (Vitest, Supertest)
+- [ ] Web app tests
 
 **Collaboration**
 - [ ] Accounts and sign-in (JWT)
