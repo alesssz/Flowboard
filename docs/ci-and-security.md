@@ -18,12 +18,12 @@ What GitHub checks on every push, the repository settings that protect the code 
 
 | What | Runs | Does | Fails when |
 |---|---|---|---|
-| [`ci.yml`](../.github/workflows/ci.yml) | every push, to any branch; by hand | `pnpm typecheck`, `pnpm lint`, `pnpm build` on a fresh Linux runner | any check fails |
+| [`ci.yml`](../.github/workflows/ci.yml) | every push, to any branch; by hand | Two jobs on fresh Linux runners, side by side: *Types, lint and build* (`pnpm typecheck`, `pnpm lint`, `pnpm build`) and *API tests* (`pnpm test`, against a PostgreSQL service container) | any check or test fails |
 | [`audit.yml`](../.github/workflows/audit.yml) | Mondays 06:00 UTC; a push or fork pull request changing a `package.json`, the lockfile or `pnpm-workspace.yaml`; by hand | `pnpm audit` over the whole workspace, and a list of outdated packages in the job summary | any advisory, of any severity, except those listed in `auditConfig` |
 | [`dependabot.yml`](../.github/dependabot.yml) | Mondays | one pull request updating the pinned GitHub Actions | never: its own CI run is the check |
 | CodeQL default setup (no file) | every push to `main`, and weekly | static analysis of the TypeScript and of the workflows | never fails a push: it opens alerts under **Security → Code scanning** |
 
-Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner. The install runs the dependency scripts allowlisted in `pnpm-workspace.yaml`, so it also downloads Prisma's schema engine from `binaries.prisma.sh` (checked against its sha256). The checks need no database: the API's `typecheck` and `build` generate the Prisma client from the schema alone.
+Both workflows share [`.github/actions/setup`](../.github/actions/setup/action.yml): Node from `.nvmrc`, pnpm at the version pinned in `package.json`, `pnpm install --frozen-lockfile`, with the pnpm store cached on the lockfile's hash. `--frozen-lockfile` makes a lockfile out of step with a `package.json` fail the run instead of being rewritten on the runner. The install runs the dependency scripts allowlisted in `pnpm-workspace.yaml`, so it also downloads Prisma's schema engine from `binaries.prisma.sh` (checked against its sha256). *Types, lint and build* needs no database: the API's `typecheck` and `build` generate the Prisma client from the schema alone. *API tests* starts `postgres:18-alpine`, the image `compose.yaml` uses, as a service container that lives only as long as the job, and points the tests at it with `TEST_DATABASE_URL`; its user and password are fixed in the workflow, as in `compose.yaml`, since nothing outside the runner can reach it.
 
 CI runs on every branch, so a branch is checked before it reaches `main`, and only through a pull request whose CI passed ([Merging](#merging)). A new push to a branch cancels its run still in progress; on `main` every commit keeps its run. Pull requests from forks run nothing until the owner approves them. The audit runs on pull requests from forks only, since branches of this repository are already audited on push; its job summary lists outdated packages without failing the run.
 
@@ -40,6 +40,7 @@ An advisory with **no fixed release at all** cannot be fixed that way. When the 
 - **Read-only token**: every workflow declares `permissions: contents: read`, and checkouts use `persist-credentials: false`, so later steps cannot reuse the token.
 - **No secrets** so far. When one is needed, it goes in **Settings → Secrets and variables → Actions** (or an environment restricted to `main`), never in a file.
 - `timeout-minutes` on every job, so a stuck run does not burn GitHub's six-hour limit.
+- **Service containers** use official Docker images only, at the tag `compose.yaml` uses, so CI tests against the database development runs. A new image is a decision documented here first, like a new action.
 
 ## Repository settings
 
@@ -69,7 +70,7 @@ Made by the owner on github.com (or with `gh api`), and verified by `pnpm github
 | Secret Protection, with Push protection | On | The whole history is scanned, and a push holding a known kind of secret is refused |
 | CodeQL analysis | **Default setup**, default query suite | Free on public repositories, run with GitHub's own action |
 
-**Settings → Rules → Rulesets:** a branch ruleset named `main`, **Active**, targeting the default branch, with **Restrict deletions**, **Block force pushes**, **Require a pull request before merging** (no approvals: one contributor) and **Require status checks to pass** (*Types, lint and build*), and no bypass list. Nobody, the owner included, can delete `main`, rewrite its history or bring in a commit whose CI did not pass.
+**Settings → Rules → Rulesets:** a branch ruleset named `main`, **Active**, targeting the default branch, with **Restrict deletions**, **Block force pushes**, **Require a pull request before merging** (no approvals: one contributor) and **Require status checks to pass** (*Types, lint and build* and *API tests*), and no bypass list. Nobody, the owner included, can delete `main`, rewrite its history or bring in a commit whose CI did not pass.
 
 **The account** (outside the repository, but whoever controls it controls the repository): two-factor authentication with an app or a passkey; **Keep my email addresses private** and **Block command line pushes that expose my email**; no personal access tokens or SSH keys that are not in use.
 

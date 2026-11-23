@@ -1,0 +1,9 @@
+// The tests and the Vitest config: type-checked by `pnpm typecheck`, never compiled.
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": [".", "../vitest.config.ts"]
+}

@@ -8,7 +8,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help setup install urls dev dev-web dev-api build \
         db-up db-down db-migrate db-seed db-reset db-studio \
-        typecheck lint check audit github-check \
+        typecheck lint test check audit github-check \
         branch sync push merge clean clean-all
 
 PNPM := pnpm
@@ -74,6 +74,9 @@ typecheck: ## Type-check every package
 
 lint: ## ESLint (web app for now)
 	$(PNPM) lint
+
+test: ## API tests, on their own database (flowboard_test); PostgreSQL must be up (make db-up)
+	$(PNPM) test
 
 check: ## The CI's checks: type-check, lint, build; run before a commit
 	$(PNPM) check

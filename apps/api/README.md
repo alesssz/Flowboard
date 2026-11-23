@@ -20,7 +20,8 @@ The server listens on http://localhost:3700; set `PORT` to change it (`$env:PORT
 | `dev` | `prisma generate --no-hints && tsx watch --env-file-if-exists=.env src/index.ts` | Runs the TypeScript sources directly and restarts on change (no type-checking) |
 | `build` | `prisma generate --no-hints && tsc` | Type-checks and compiles `src/` to `dist/` |
 | `start` | `node --env-file-if-exists=.env dist/index.js` | Runs the compiled build |
-| `typecheck` | `prisma generate --no-hints && tsc --noEmit` | Type-checks without emitting |
+| `typecheck` | `prisma generate --no-hints && tsc --noEmit && tsc --noEmit -p test` | Type-checks the sources, then the tests, without emitting |
+| `test` | `prisma generate --no-hints && vitest run` | Runs the tests once ([Tests](#tests)); `pnpm --filter @flowboard/api exec vitest` keeps watching |
 | `db:generate` | `prisma generate --no-hints` | Regenerates the Prisma client from the schema |
 | `db:migrate` | `prisma migrate dev` | Applies pending migrations; after a schema change, first creates one (`--name <name>`) |
 | `db:seed` | `prisma db seed` | Runs `src/db/seed.ts`: replaces every board with the sample board |
@@ -65,6 +66,13 @@ src/
 │   ├── client.ts          PrismaClient with the PostgreSQL adapter; DATABASE_URL check
 │   └── seed.ts            the sample board (pnpm db:seed)
 └── generated/prisma/      generated Prisma client (gitignored)
+test/
+├── global-setup.ts        once per run: picks the test database, applies the migrations
+├── test-app.ts            useTestApp(): the app and a Prisma client, the database emptied before each test
+├── fixtures.ts            createBoard(): a board with columns, cards, labels, members and comments
+├── *.test.ts              one file per resource (app, boards, columns, cards)
+└── tsconfig.json          the tests' type-check, extending the API's
+vitest.config.ts           test files, global setup, one file at a time
 ```
 
 `app.ts` builds the app and `index.ts` starts it, so tests can exercise `createApp()` in-process without binding a port. The Prisma client is passed in, not imported, so a test can hand it one connected to its own database.
@@ -103,6 +111,16 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 Invoke-RestMethod http://localhost:3700/api/boards
 ```
 
+## Tests
+
+`pnpm test` (or `make test`) runs every route through HTTP: [Supertest](https://github.com/forwardemail/supertest) sends requests to `createApp()` without opening a port, and [Vitest](https://vitest.dev/) runs the files.
+
+- **Database.** The tests use `flowboard_test`, in the same container as the development database, which they never touch. Before the first file, the global setup applies the migrations to it (`prisma migrate deploy`, which creates it on the first run), so a new migration reaches it by itself. PostgreSQL must be up (`pnpm db:up`).
+- **Isolation.** Every test starts from an empty database (`TRUNCATE "Board" CASCADE`, which reaches every table) and builds what it needs with `createBoard()`. The files share the database, so they run one at a time.
+- **Safety.** A database whose name does not end in `_test` is refused before anything runs, whatever `TEST_DATABASE_URL` says.
+- **Fixtures** are created out of display order (the second card before the first, the last label first), so a test of an order checks the API's sorting, not insertion order.
+- A test's name states its scenario; it arranges, acts once, then asserts on the status, the body and, for writes, the rows left in the database.
+
 ## Environment variables
 
 Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
@@ -111,6 +129,7 @@ Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
 |---|---|---|
 | `DATABASE_URL` | none, required | PostgreSQL connection URL; `.env.example` has the one for `compose.yaml`'s database |
 | `PORT` | `3700` | Port the server listens on |
+| `TEST_DATABASE_URL` | the development container's `flowboard_test` | Database the tests run on; its name must end in `_test`. An environment variable, for CI: the tests never read `.env` |
 
 ## Conventions
 
