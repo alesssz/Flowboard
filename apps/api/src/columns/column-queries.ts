@@ -1,5 +1,5 @@
 // Column reads and writes, shaped as the @flowboard/shared types.
-import type { Column, CreateColumnRequest, UpdateColumnRequest } from '@flowboard/shared';
+import type { Column, CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from '@flowboard/shared';
 import { cardFields, toCard } from '../cards/card-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -46,6 +46,34 @@ export function updateColumn(prisma: PrismaClient, columnId: string, changes: Up
       select: columnFields,
     });
     return toColumn(column);
+  });
+}
+
+/**
+ * Moves the column to `index` among its board's columns, and renumbers them from 0. The id of the board,
+ * or null when there is no column with that id.
+ */
+export function moveColumn(prisma: PrismaClient, columnId: string, { index }: MoveColumnRequest): Promise<string | null> {
+  return prisma.$transaction(async (tx) => {
+    const column = await tx.column.findUnique({ where: { id: columnId }, select: { boardId: true } });
+    if (column === null) return null;
+    const { boardId } = column;
+
+    // Column moves on the same board wait for each other.
+    await tx.$queryRaw`SELECT id FROM "Board" WHERE id = ${boardId} FOR UPDATE`;
+
+    const columnIds = (
+      await tx.column.findMany({ where: { boardId }, orderBy: [{ position: 'asc' }, { id: 'asc' }], select: { id: true } })
+    )
+      .map((row) => row.id)
+      .filter((id) => id !== columnId);
+    columnIds.splice(Math.min(index, columnIds.length), 0, columnId);
+
+    await tx.$executeRaw`
+      UPDATE "Column" AS col SET "position" = (placed.ordinality - 1)::int
+      FROM unnest(${columnIds}::text[]) WITH ORDINALITY AS placed(id, ordinality)
+      WHERE col.id = placed.id`;
+    return boardId;
   });
 }
 

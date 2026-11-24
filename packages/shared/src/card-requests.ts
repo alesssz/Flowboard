@@ -29,5 +29,15 @@ export const updateCardRequestSchema = z
   })
   .refine((changes) => Object.keys(changes).length > 0, 'must change at least one field');
 
+/**
+ * POST /api/cards/:cardId/move. The card goes to `index` among the cards of `columnId` (its own column, or
+ * another on the same board), counted without the card itself; an index past the end puts it last.
+ */
+export const moveCardRequestSchema = z.strictObject({
+  columnId: z.string().min(1),
+  index: z.int().min(0),
+});
+
 export type CreateCardRequest = z.input<typeof createCardRequestSchema>;
 export type UpdateCardRequest = z.input<typeof updateCardRequestSchema>;
+export type MoveCardRequest = z.input<typeof moveCardRequestSchema>;

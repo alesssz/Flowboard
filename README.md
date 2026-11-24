@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. The API's routes are covered by integration tests. Next: drag and drop. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Next: the board's labels and the web app's tests. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -31,7 +31,8 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 |---|---|---|
 | Language | [TypeScript](https://www.typescriptlang.org/) 6, `strict` | One language and shared types across the web app and the API |
 | Web app | [React](https://react.dev/) 19 | The board's libraries: dnd-kit for drag and drop, TanStack Query for optimistic updates |
-| Server state | [TanStack Query](https://tanstack.com/query) 5 | Caching, retries and background refresh of API data; each write's answer updates the cached board; optimistic updates with drag and drop |
+| Server state | [TanStack Query](https://tanstack.com/query) 5 | Caching, retries and background refresh of API data; each write's answer updates the cached board; moves are optimistic |
+| Drag and drop | [dnd-kit](https://dndkit.com/) 6 (`core`, `sortable`) | Sortable lists across containers, mouse, touch and keyboard sensors, screen-reader announcements |
 | Build tool | [Vite](https://vite.dev/) 8 | Its dev proxy gives the app and the API one origin; a static production build |
 | API | [Node.js](https://nodejs.org/) 24 LTS + [Express](https://expressjs.com/) 5 | Minimal, well-understood HTTP layer; Express 5 forwards async errors natively |
 | Database | [PostgreSQL](https://www.postgresql.org/) 18, in Docker for development | Relational data (boards own columns, columns own cards) with constraints and cascades |
@@ -41,7 +42,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 | Tests | [Vitest](https://vitest.dev/) 5 + [Supertest](https://github.com/forwardemail/supertest) | The API tested through HTTP against a PostgreSQL database of its own; Vitest runs TypeScript and ESM as they are |
 | Package manager | [pnpm](https://pnpm.io/) workspaces | One lockfile, strict dependency resolution, internal packages without publishing |
 
-Planned: dnd-kit, Socket.IO, Playwright, Docker for the whole stack.
+Planned: Socket.IO, Playwright, Docker for the whole stack.
 
 ## Architecture
 
@@ -192,7 +193,7 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [ ] The rest of board editing: the board's labels, writing comments ([backlog](docs/backlog.md))
 - [x] Shared types (`@flowboard/shared`)
 - [x] Request validation with Zod, in the shared package
-- [ ] Drag and drop (dnd-kit) with optimistic updates (TanStack Query)
+- [x] Drag and drop of cards and columns (dnd-kit), mouse, touch and keyboard, with optimistic updates (TanStack Query)
 - [x] API tests: every route through HTTP, on a test database, locally and in CI (Vitest, Supertest)
 - [ ] Web app tests
 

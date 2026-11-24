@@ -1,6 +1,8 @@
 // A card as its column shows it: labels, title, the description cut to two lines, then a footer with
-// due date, comment count and assignees. A click anywhere on it opens its detail.
+// due date, comment count and assignees. A click anywhere on it opens its detail; its drag handle, given by
+// the column, sits in the top right corner.
 import type { Card } from '@flowboard/shared';
+import type { ReactNode } from 'react';
 import { Tooltip } from '../Tooltip.tsx';
 import { Assignees } from './Assignees.tsx';
 import { DueDate } from './DueDate.tsx';
@@ -10,16 +12,20 @@ import './BoardCard.css';
 interface BoardCardProps {
   card: Card;
   onOpen: () => void;
+  /** The grip it is moved by from the keyboard; absent on the copy that follows the pointer. */
+  dragHandle?: ReactNode;
+  /** The copy that follows the pointer during a drag: lifted, and not a target of its own. */
+  lifted?: boolean;
 }
 
-export function BoardCard({ card, onOpen }: BoardCardProps) {
+export function BoardCard({ card, onOpen, dragHandle, lifted = false }: BoardCardProps) {
   // The stripe takes the first label's colour; a card without labels has none.
   const stripeColor = card.labels[0]?.color;
   const commentLabel = `${card.commentCount} ${card.commentCount === 1 ? 'comment' : 'comments'}`;
   const hasFooter = card.dueDate !== null || card.commentCount > 0 || card.assignees.length > 0;
 
   return (
-    <article className="board-card" data-color={stripeColor} onClick={onOpen}>
+    <article className={lifted ? 'board-card board-card--lifted' : 'board-card'} data-color={stripeColor} onClick={onOpen}>
       {/* First in the markup, so a screen reader reads the title before the labels shown above it.
           The button is the way in for the keyboard and screen readers; its click bubbles to the card. */}
       <h3 className="board-card__title">
@@ -48,6 +54,8 @@ export function BoardCard({ card, onOpen }: BoardCardProps) {
           {card.assignees.length > 0 && <Assignees members={card.assignees} />}
         </div>
       )}
+
+      {dragHandle !== undefined && <div className="board-card__handle">{dragHandle}</div>}
     </article>
   );
 }

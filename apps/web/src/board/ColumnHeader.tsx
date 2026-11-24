@@ -1,7 +1,7 @@
 // A column's header: the title, which edits in place like a card's, the card count, and the options
 // button, which shows the column's colour and Delete column below the header. Saves wait for the API.
 import { type Column, columnTitleMaxLength, type PaletteColor, paletteColors } from '@flowboard/shared';
-import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { cancelOnEscape } from './cancel-on-escape.ts';
 import { useDeleteColumn, useUpdateColumn } from './column-mutations.ts';
 import { ConfirmDelete, EditButton, SaveState } from './FieldControls.tsx';
@@ -14,9 +14,11 @@ interface ColumnHeaderProps {
   titleId: string;
   /** Runs once the API has deleted the column. */
   onDeleted: () => void;
+  /** The grip the column is dragged by, first among the tools. */
+  dragHandle?: ReactNode;
 }
 
-export function ColumnHeader({ boardId, column, titleId, onDeleted }: ColumnHeaderProps) {
+export function ColumnHeader({ boardId, column, titleId, onDeleted, dragHandle }: ColumnHeaderProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const [focusPencil, setFocusPencil] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -99,6 +101,7 @@ export function ColumnHeader({ boardId, column, titleId, onDeleted }: ColumnHead
         )}
 
         <div className="column-header__tools">
+          {dragHandle}
           {draft === null && (
             <EditButton label={`Rename ${column.title}`} autoFocus={focusPencil} onClick={handleEdit} />
           )}

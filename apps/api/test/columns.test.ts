@@ -1,4 +1,4 @@
-// Column writes: create on a board, rename or recolour, delete with its cards.
+// Column writes: create on a board, rename or recolour, move, delete with its cards.
 import { describe, expect, it } from 'vitest';
 import { createBoard } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
@@ -74,6 +74,52 @@ describe('PATCH /api/columns/:columnId', () => {
 
   it('answers 404 for a column that does not exist', async () => {
     const response = await api.patch('/api/columns/missing').send({ title: 'Next' });
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('No column with id missing');
+  });
+});
+
+describe('POST /api/columns/:columnId/move', () => {
+  const idsOf = (board: { columns: { id: string }[] }) => board.columns.map((column) => column.id);
+
+  it('moves a column to the index given, answering with the board', async () => {
+    const { board, columns } = await createBoard(prisma);
+
+    const response = await api.post(`/api/columns/${columns.done.id}/move`).send({ index: 0 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(board.id);
+    expect(idsOf(response.body)).toEqual([columns.done.id, columns.todo.id]);
+    expect(response.body.columns[1].cards).toHaveLength(2);
+  });
+
+  it('puts the column last when the index is past the end, renumbering from 0', async () => {
+    const { columns } = await createBoard(prisma);
+    const review = await prisma.column.create({ data: { boardId: columns.todo.boardId, title: 'Review', color: 'blue', position: 9 } });
+
+    const response = await api.post(`/api/columns/${columns.todo.id}/move`).send({ index: 99 });
+
+    expect(idsOf(response.body)).toEqual([columns.done.id, review.id, columns.todo.id]);
+    const positions = await prisma.column.findMany({ orderBy: { position: 'asc' }, select: { position: true } });
+    expect(positions.map((column) => column.position)).toEqual([0, 1, 2]);
+  });
+
+  it.each([
+    [{}, expect.stringMatching(/^index: /)],
+    [{ index: -1 }, expect.stringMatching(/^index: /)],
+    [{ index: 0, boardId: 'any' }, 'Unrecognized key: "boardId"'],
+  ])('refuses %j with a 400 naming the field', async (body, message) => {
+    const { columns } = await createBoard(prisma);
+
+    const response = await api.post(`/api/columns/${columns.todo.id}/move`).send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toEqual(message);
+  });
+
+  it('answers 404 for a column that does not exist', async () => {
+    const response = await api.post('/api/columns/missing/move').send({ index: 0 });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('No column with id missing');

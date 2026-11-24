@@ -221,6 +221,44 @@
 
 /* --- Inside a detail's panel --- */
 
+.card-field__place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.card-field__place .card-field__column {
+  color: var(--color-text);
+}
+
+.card-field__legend {
+  margin-bottom: 2px;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.card-field__position {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-field__select {
+  align-self: flex-start;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+}
+
 .card-field__choices {
   display: flex;
   flex-direction: column;
@@ -258,6 +296,7 @@
 
 .card-field__retry:focus-visible,
 .card-field__choice input:focus-visible,
+.card-field__select:focus-visible,
 .card-field__date:focus-visible {
   outline: 2px solid var(--color-accent-text);
   outline-offset: 2px;

@@ -1,11 +1,12 @@
-// Card routes: create in a column, change, delete, and read a card's comments.
-import type { Card, CardComment } from '@flowboard/shared';
-import { createCardRequestSchema, updateCardRequestSchema } from '@flowboard/shared/schemas';
+// Card routes: create in a column, change, move, delete, and read a card's comments.
+import type { Board, Card, CardComment } from '@flowboard/shared';
+import { createCardRequestSchema, moveCardRequestSchema, updateCardRequestSchema } from '@flowboard/shared/schemas';
 import { Router } from 'express';
+import { findBoard } from '../boards/board-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
 import { parseBody } from '../validation.ts';
-import { createCard, deleteCard, findCardComments, updateCard } from './card-queries.ts';
+import { createCard, deleteCard, findCardComments, moveCard, updateCard } from './card-queries.ts';
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
 export function cardRoutes(prisma: PrismaClient): Router {
@@ -26,6 +27,18 @@ export function cardRoutes(prisma: PrismaClient): Router {
   router.patch('/cards/:cardId', async (req, res) => {
     const changes = parseBody(updateCardRequestSchema, req.body);
     const body: Card | null = await updateCard(prisma, req.params.cardId, changes);
+    if (body === null) {
+      sendError(res, 404, `No card with id ${req.params.cardId}`);
+      return;
+    }
+    res.json(body);
+  });
+
+  /** POST /api/cards/:cardId/move — MoveCardRequest → 200 Board, as it now is · 400 · 404 */
+  router.post('/cards/:cardId/move', async (req, res) => {
+    const request = parseBody(moveCardRequestSchema, req.body);
+    const boardId = await moveCard(prisma, req.params.cardId, request);
+    const body: Board | null = boardId === null ? null : await findBoard(prisma, boardId);
     if (body === null) {
       sendError(res, 404, `No card with id ${req.params.cardId}`);
       return;

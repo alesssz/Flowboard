@@ -20,5 +20,11 @@ export const updateColumnRequestSchema = z
   })
   .refine((changes) => Object.keys(changes).length > 0, 'must change at least one field');
 
+/** POST /api/columns/:columnId/move. The column goes to `index` among the board's columns; past the end puts it last. */
+export const moveColumnRequestSchema = z.strictObject({
+  index: z.int().min(0),
+});
+
 export type CreateColumnRequest = z.input<typeof createColumnRequestSchema>;
 export type UpdateColumnRequest = z.input<typeof updateColumnRequestSchema>;
+export type MoveColumnRequest = z.input<typeof moveColumnRequestSchema>;
