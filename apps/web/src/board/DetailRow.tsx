@@ -1,7 +1,7 @@
 // One entry of the card's details: its name, its value as a button, and the panel the button opens to
-// change it. The panel is a native popover: it floats over the dialog, so opening it moves nothing, and the
-// browser closes it on Escape or a click outside.
-import { type ReactNode, type ToggleEvent, useEffect, useId, useRef, useState } from 'react';
+// change it (usePopoverPanel), floating over the dialog.
+import { type ReactNode, useId } from 'react';
+import { usePopoverPanel } from './use-popover-panel.ts';
 import './DetailRow.css';
 
 interface DetailRowProps {
@@ -19,79 +19,11 @@ interface DetailRowProps {
   note?: ReactNode;
 }
 
-/** Space kept between the panel and the window's edges, in pixels. */
-const EDGE = 8;
-
 export function DetailRow({ name, value, children, onOpen, onClose, status, note }: DetailRowProps) {
   const nameId = useId();
   const buttonId = useId();
   const panelId = useId();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const cancelledRef = useRef(false);
-  const [open, setOpen] = useState(false);
-
-  // Fixed to the window: it follows a resize, and closes when anything behind it scrolls.
-  useEffect(() => {
-    const panel = panelRef.current;
-    if (panel === null) return;
-    function handleScroll(event: Event) {
-      if (panel?.matches(':popover-open') && !panel.contains(event.target as Node)) panel.hidePopover();
-    }
-    function handleResize() {
-      if (panel?.matches(':popover-open')) place();
-    }
-    // Wherever the focus is: it reaches the panel only once the browser reports it open.
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && panel?.matches(':popover-open')) cancelledRef.current = true;
-    }
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleResize);
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, []);
-
-  // Below the button and ending where it ends, so from the side column it opens over the dialog; above
-  // the button when there is no room below; inside the window either way.
-  function place() {
-    const button = buttonRef.current;
-    const panel = panelRef.current;
-    if (button === null || panel === null) return;
-    const anchor = button.getBoundingClientRect();
-    const left = Math.max(EDGE, Math.min(anchor.right - panel.offsetWidth, window.innerWidth - panel.offsetWidth - EDGE));
-    const below = anchor.bottom + 6;
-    const top =
-      below + panel.offsetHeight > window.innerHeight - EDGE ? Math.max(EDGE, anchor.top - 6 - panel.offsetHeight) : below;
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-  }
-
-  function close() {
-    panelRef.current?.hidePopover();
-  }
-
-  function handleBeforeToggle(event: ToggleEvent<HTMLDivElement>) {
-    if (event.newState !== 'open') return;
-    cancelledRef.current = false;
-    onOpen?.();
-  }
-
-  function handleToggle(event: ToggleEvent<HTMLDivElement>) {
-    const panel = event.currentTarget;
-    setOpen(event.newState === 'open');
-    if (event.newState === 'open') {
-      place();
-      panel.querySelector<HTMLElement>('input, button')?.focus();
-      return;
-    }
-    // Back to the button, unless a click outside put the focus somewhere on purpose.
-    if (panel.contains(document.activeElement) || document.activeElement === document.body) buttonRef.current?.focus();
-    onClose?.(cancelledRef.current);
-  }
+  const { buttonRef, panelRef, open, close, handleBeforeToggle, handleToggle } = usePopoverPanel({ onOpen, onClose });
 
   return (
     <div className="detail-row">

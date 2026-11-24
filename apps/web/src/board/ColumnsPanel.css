@@ -1,0 +1,204 @@
+/* The Columns button in the board's header, and its panel: a checkbox per column, then Add a column. */
+
+.columns-panel__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.columns-panel__button:hover,
+.columns-panel__button[data-open] {
+  background: var(--palette-gray-soft);
+}
+
+.columns-panel__button svg {
+  width: 15px;
+  height: 15px;
+  fill: var(--color-text-muted);
+}
+
+.columns-panel__hidden {
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+/* A native popover: the browser's centring is replaced by the position usePopoverPanel computes. */
+.columns-panel {
+  position: fixed;
+  inset: auto;
+  width: min(300px, 100vw - 16px);
+  max-height: min(520px, 100dvh - 16px);
+  margin: 0;
+  padding: 14px;
+  overflow-y: auto;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.columns-panel:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columns-panel__heading {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.columns-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.columns-panel__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -6px;
+  padding: 5px 6px;
+  border-radius: 7px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.columns-panel__choice:hover {
+  background: var(--palette-gray-soft);
+}
+
+.columns-panel__choice input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.columns-panel__dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+.columns-panel__title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.columns-panel__count {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.columns-panel__none,
+.columns-panel__note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.columns-panel__show-all {
+  align-self: flex-start;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.columns-panel__show-all:hover {
+  background: var(--palette-gray-soft);
+}
+
+.columns-panel__add {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.columns-panel__add-row {
+  display: flex;
+  gap: 6px;
+}
+
+.columns-panel__input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+}
+
+.columns-panel__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.columns-panel__submit {
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.columns-panel__submit:hover {
+  filter: brightness(1.1);
+}
+
+.columns-panel__submit[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.columns-panel__error {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.columns-panel__button:focus-visible,
+.columns-panel__choice input:focus-visible,
+.columns-panel__show-all:focus-visible,
+.columns-panel__input:focus-visible,
+.columns-panel__submit:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

@@ -1,5 +1,5 @@
-// A board: its title and card count, then its columns side by side and Add a column; a card opens its
-// detail over them. Cards and columns move by drag and drop (dnd-kit): with the mouse, a long press on a
+// A board: its title, card count and Columns panel (which columns show, Add a column), then the columns
+// side by side; a card opens its detail over them. Cards and columns move by drag and drop (dnd-kit): with the mouse, a long press on a
 // touch screen, or the keyboard from their handles. A move shows at once and is undone if the API refuses it.
 import {
   type Active,
@@ -23,13 +23,14 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import type { Board, Card, Column } from '@flowboard/shared';
-import { useId, useRef, useState } from 'react';
-import { AddColumn } from './AddColumn.tsx';
+import { useEffect, useId, useRef, useState } from 'react';
 import { BoardCard } from './BoardCard.tsx';
 import { moveCardInBoard } from './board-cache.ts';
 import { BoardColumn, ColumnOverlay, type DragItem } from './BoardColumn.tsx';
 import { CardDialog } from './CardDialog.tsx';
+import { ColumnsPanel } from './ColumnsPanel.tsx';
 import { useMoveCard, useMoveColumn } from './move-mutations.ts';
+import { useHiddenColumns } from './use-hidden-columns.ts';
 import './BoardView.css';
 
 interface BoardViewProps {
@@ -60,6 +61,9 @@ export function BoardView({ board }: BoardViewProps) {
   const droppedAt = useRef(0);
   const moveCard = useMoveCard(board.id);
   const moveColumn = useMoveColumn(board.id);
+  const { hiddenIds, setHiddenIds } = useHiddenColumns(board.id);
+  // Set by Add a column, so the board scrolls to the new column once it shows.
+  const revealLastColumn = useRef(false);
   const sensors = useSensors(
     // A few pixels of travel first, so a click still opens the card.
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -69,6 +73,17 @@ export function BoardView({ board }: BoardViewProps) {
   );
 
   const columns = drag?.columns ?? (dropped?.board === board ? dropped.columns : board.columns);
+  // Hidden columns stay out of the drag and drop too: a column moves among the shown ones, and its place
+  // in the whole board follows from the column it was dropped on.
+  const shownColumns = columns.filter((column) => !hiddenIds.includes(column.id));
+  const lastColumnId = shownColumns.at(-1)?.id;
+
+  useEffect(() => {
+    if (!revealLastColumn.current) return;
+    revealLastColumn.current = false;
+    const row = columnsRef.current;
+    row?.scrollTo({ left: row.scrollWidth, behavior: 'smooth' });
+  }, [lastColumnId]);
   const cardCount = board.columns.reduce((total, column) => total + column.cards.length, 0);
   const openCard = openCardId === null ? undefined : findCard(board, openCardId);
   const moveError = moveCard.error ?? moveColumn.error;
@@ -85,6 +100,14 @@ export function BoardView({ board }: BoardViewProps) {
   // The focus was in the deleted column; the row of columns is the nearest place that stays.
   function handleColumnDeleted() {
     columnsRef.current?.focus();
+  }
+
+  function handleColumnAdded() {
+    revealLastColumn.current = true;
+  }
+
+  function handleShowAllColumns() {
+    setHiddenIds([]);
   }
 
   function handleDismissError() {
@@ -173,6 +196,15 @@ export function BoardView({ board }: BoardViewProps) {
             </button>
           </p>
         )}
+        <div className="board__tools">
+          <ColumnsPanel
+            boardId={board.id}
+            columns={board.columns}
+            hiddenIds={hiddenIds}
+            onChangeHidden={setHiddenIds}
+            onAdded={handleColumnAdded}
+          />
+        </div>
       </header>
 
       <DndContext
@@ -192,8 +224,8 @@ export function BoardView({ board }: BoardViewProps) {
       >
         {/* Focusable so the keyboard can scroll it sideways. */}
         <div ref={columnsRef} className="board__columns" tabIndex={0} aria-label="Columns">
-          <SortableContext items={columns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
-            {columns.map((column) => (
+          <SortableContext items={shownColumns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
+            {shownColumns.map((column) => (
               <BoardColumn
                 key={column.id}
                 boardId={board.id}
@@ -203,7 +235,20 @@ export function BoardView({ board }: BoardViewProps) {
               />
             ))}
           </SortableContext>
-          <AddColumn boardId={board.id} columns={board.columns} />
+          {shownColumns.length === 0 && (
+            <div className="board__empty">
+              {board.columns.length === 0 ? (
+                <p>This board has no columns yet: add the first one from Columns.</p>
+              ) : (
+                <>
+                  <p>Every column is hidden in this browser.</p>
+                  <button type="button" className="board__empty-action" onClick={handleShowAllColumns}>
+                    Show all columns
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <DragOverlay>

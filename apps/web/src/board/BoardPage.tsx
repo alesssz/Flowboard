@@ -43,7 +43,8 @@ function LoadedBoard({ boardId }: LoadedBoardProps) {
   }
 
   // Data first: a failed background refresh keeps showing the board it already has.
-  if (board.data !== undefined) return <BoardView board={board.data} />;
+  // Keyed by board, so state kept per board (hidden columns, an open card) starts afresh on another one.
+  if (board.data !== undefined) return <BoardView key={board.data.id} board={board.data} />;
   if (board.isError) {
     return (
       <BoardMessage
