@@ -1,18 +1,12 @@
-// A card's detail in a modal dialog: its column, then its fields, each editable in place, its comments, and Delete.
+// A card's detail in a modal dialog, in two columns: the title, description and comments on the left, the
+// details and Delete card on the right (below the title on a phone). Every field edits where it is.
 import type { Board, Card, Column } from '@flowboard/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type MouseEvent, type PointerEvent, useEffect, useId, useRef } from 'react';
 import { Tooltip } from '../Tooltip.tsx';
 import { Avatar } from './Avatar.tsx';
 import { cardCommentsQuery } from './board-queries.ts';
-import {
-  CardAssigneesField,
-  CardDescriptionField,
-  CardDueDateField,
-  CardLabelsField,
-  CardTitleField,
-  DeleteCard,
-} from './CardFields.tsx';
+import { CardDescriptionField, CardDetails, CardTitleField, DeleteCard } from './CardFields.tsx';
 import { formatCommentTime, formatFullDateTime } from './comment-time.ts';
 import './CardDialog.css';
 
@@ -27,6 +21,7 @@ interface CardDialogProps {
 
 export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const pressedOnBackdrop = useRef(false);
   const titleId = useId();
   const descriptionId = useId();
@@ -38,9 +33,13 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
 
   // showModal(), not the open attribute: it makes the rest of the page inert, closes on Escape
   // and shows ::backdrop. The check skips StrictMode's second run, as showModal() on an open dialog throws.
+  // The focus starts on Close, not in the title, which is a text area: a stray key would edit it.
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (dialog !== null && !dialog.open) dialog.showModal();
+    if (dialog !== null && !dialog.open) {
+      dialog.showModal();
+      closeRef.current?.focus();
+    }
   }, []);
 
   function handleRetryComments() {
@@ -75,30 +74,31 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
       onClick={handleDialogClick}
     >
       <div className="card-dialog__content">
-        <header className="card-dialog__header">
-          <div className="card-dialog__heading-block">
-            <p className="card-dialog__column" data-color={column.color}>
-              <span className="card-dialog__column-dot" aria-hidden="true" />
-              {column.title}
-            </p>
-            <CardTitleField boardId={board.id} card={card} titleId={titleId} />
-          </div>
-          <button type="button" className="card-dialog__close" aria-label="Close" onClick={handleCloseClick}>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M4 4l8 8M12 4l-8 8" />
-            </svg>
-          </button>
-        </header>
+        <button
+          ref={closeRef}
+          type="button"
+          className="card-dialog__close"
+          aria-label="Close"
+          onClick={handleCloseClick}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
 
-        <dl className="card-dialog__facts">
-          <CardLabelsField boardId={board.id} card={card} labels={board.labels} />
-          <CardDueDateField boardId={board.id} card={card} today={now} />
-          <CardAssigneesField boardId={board.id} card={card} members={board.members} />
-        </dl>
+        <div className="card-dialog__title">
+          <CardTitleField boardId={board.id} card={card} column={column} titleId={titleId} />
+        </div>
 
-        <CardDescriptionField boardId={board.id} card={card} headingId={descriptionId} />
+        <aside className="card-dialog__details" aria-label="Details">
+          <CardDetails board={board} card={card} today={now} />
+        </aside>
 
-        <section aria-labelledby={commentsId}>
+        <div className="card-dialog__description">
+          <CardDescriptionField boardId={board.id} card={card} headingId={descriptionId} />
+        </div>
+
+        <section className="card-dialog__comments-section" aria-labelledby={commentsId}>
           <h3 id={commentsId} className="card-dialog__heading">
             Comments
             {/* Screen readers get the count from the list itself. */}
@@ -149,9 +149,10 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
           )}
         </section>
 
-        <footer className="card-dialog__footer">
+        {/* Last in the page's order, after the comments; drawn at the foot of the details column. */}
+        <div className="card-dialog__delete">
           <DeleteCard boardId={board.id} card={card} onDeleted={handleDeleted} />
-        </footer>
+        </div>
       </div>
     </dialog>
   );
