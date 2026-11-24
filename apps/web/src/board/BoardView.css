@@ -43,3 +43,33 @@
   outline: 2px solid var(--color-accent-text);
   outline-offset: -2px;
 }
+
+/* A refused move: the board is back as it was, and this says why. */
+.board__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 0 0 auto;
+  padding: 4px 6px 4px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.board__alert-dismiss {
+  padding: 2px 8px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.board__alert-dismiss:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

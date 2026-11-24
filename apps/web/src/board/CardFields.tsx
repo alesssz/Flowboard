@@ -15,6 +15,7 @@ import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
 import { DetailRow } from './DetailRow.tsx';
 import { DueDate } from './DueDate.tsx';
 import { ConfirmDelete } from './FieldControls.tsx';
+import { useMoveCard } from './move-mutations.ts';
 import { useAutoGrow } from './use-auto-grow.ts';
 import { useAutosaveText } from './use-autosave-text.ts';
 import { useSavedNotice } from './use-saved-notice.ts';
@@ -138,10 +139,11 @@ interface CardDetailsProps {
   today: Date;
 }
 
-/** Labels, due date and assignees, one row each; a row's button opens its editor in a panel. */
+/** Column and position, labels, due date and assignees, one row each; a row's button opens its editor in a panel. */
 export function CardDetails({ board, card, today }: CardDetailsProps) {
   return (
     <dl className="card-field__details">
+      <PlaceRow board={board} card={card} />
       <ChoiceRow
         boardId={board.id}
         card={card}
@@ -192,6 +194,84 @@ export function CardDetails({ board, card, today }: CardDetailsProps) {
         )}
       />
     </dl>
+  );
+}
+
+interface PlaceRowProps {
+  board: Board;
+  card: Card;
+}
+
+// Moving without dragging, for the keyboard and small screens: another column (the card goes to its
+// bottom), or another position in this one. Shown at once, like a drop, and undone if the API refuses.
+function PlaceRow({ board, card }: PlaceRowProps) {
+  const move = useMoveCard(board.id);
+  const notice = useSavedNotice();
+  const column = board.columns.find((candidate) => candidate.cards.some((other) => other.id === card.id));
+  if (column === undefined) return null;
+  const index = column.cards.findIndex((other) => other.id === card.id);
+
+  function moveTo(columnId: string, toIndex: number) {
+    if (columnId === column?.id && toIndex === index) return;
+    move.mutate({ cardId: card.id, columnId, index: toIndex }, { onSuccess: notice.notifySaved });
+  }
+
+  return (
+    <DetailRow
+      name="Column"
+      value={
+        <span className="card-field__place">
+          <span className="card-field__column" data-color={column.color}>
+            <span className="card-field__column-dot" aria-hidden="true" />
+            {column.title}
+          </span>
+          <span className="card-field__none">
+            {index + 1} of {column.cards.length}
+          </span>
+        </span>
+      }
+      onOpen={move.reset}
+      status={<SaveStatus pending={move.isPending} justSaved={notice.justSaved} savedKey={notice.savedKey} error={null} />}
+      note={<SaveNote error={move.error} />}
+    >
+      {() => (
+        <>
+          <fieldset className="card-field__choices">
+            <legend className="card-field__legend">Column</legend>
+            {board.columns.map((candidate) => (
+              <label key={candidate.id} className="card-field__choice">
+                <input
+                  type="radio"
+                  name={`column-of-${card.id}`}
+                  checked={candidate.id === column.id}
+                  onChange={() => moveTo(candidate.id, candidate.cards.length)}
+                />
+                <span className="card-field__column" data-color={candidate.color}>
+                  <span className="card-field__column-dot" aria-hidden="true" />
+                  {candidate.title}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="card-field__position">
+            <span className="card-field__legend">Position</span>
+            <select
+              className="card-field__select"
+              value={index}
+              onChange={(event) => moveTo(column.id, Number(event.target.value))}
+            >
+              {column.cards.map((other, position) => (
+                <option key={other.id} value={position}>
+                  {position + 1}
+                  {position === 0 ? ' (top)' : position === column.cards.length - 1 ? ' (bottom)' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <SaveNote error={move.error} />
+        </>
+      )}
+    </DetailRow>
   );
 }
 

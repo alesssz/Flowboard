@@ -86,9 +86,11 @@ vitest.config.ts           test files, global setup, one file at a time
 | `GET` | `/api/boards/:boardId` | A board with its columns and cards in display order, and the board's labels and members | `200` `Board` · `404` |
 | `POST` | `/api/boards/:boardId/columns` | Adds a column after the board's last one, with no cards; body `CreateColumnRequest` | `201` `Column` · `400` · `404` |
 | `PATCH` | `/api/columns/:columnId` | Renames or recolours the column; body `UpdateColumnRequest` | `200` `Column` · `400` · `404` |
+| `POST` | `/api/columns/:columnId/move` | Moves the column to another place on its board; body `MoveColumnRequest` | `200` `Board` · `400` · `404` |
 | `DELETE` | `/api/columns/:columnId` | Deletes the column with its cards and their comments | `204`, no body · `404` |
 | `POST` | `/api/columns/:columnId/cards` | Adds a card at the bottom of the column; body `CreateCardRequest` | `201` `Card` · `400` · `404` |
 | `PATCH` | `/api/cards/:cardId` | Changes the fields given; body `UpdateCardRequest` | `200` `Card` · `400` · `404` |
+| `POST` | `/api/cards/:cardId/move` | Moves the card within its column or to another on the same board; body `MoveCardRequest` | `200` `Board` · `400` · `404` |
 | `DELETE` | `/api/cards/:cardId` | Deletes the card and its comments | `204`, no body · `404` |
 | `GET` | `/api/cards/:cardId/comments` | A card's comments, oldest first | `200` `CardComment[]` · `404` |
 | any | any other path | No matching route | `404` |
@@ -97,11 +99,13 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 | Status | When |
 |---|---|
-| `400` | Malformed JSON; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label or member id not on the card's board |
+| `400` | Malformed JSON; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
 | `404` | No board, column or card with that id; no route |
 | `500` | Anything unexpected: logged by the server, no details sent |
 
 **Writes.** A `PATCH` changes only the fields present, and needs at least one. Each write runs in one transaction and answers with the column or card as it now is, so the client needs no reload. A new column goes after the board's last one, a new card after its column's last one; two created at the same moment may share a position until reordering renumbers them. Deleting a column deletes its cards and their comments (database cascades).
+
+**Moves.** A move names the place, not a position: `index` among the column's cards (or the board's columns) counted without the item itself, so `0` is the top, and an index past the end puts it last. The move renumbers the positions of the columns it touches from 0, in one `UPDATE` per column, which also closes gaps and ties. Moves on the same columns (or, for column moves, the same board) wait for each other through row locks taken in id order, so two at once neither interleave nor deadlock. The answer is the whole board, which the web app puts in place of the order it guessed.
 
 **Column writes.** Titles are trimmed and keep at least one character (limit: `columnTitleMaxLength` in `@flowboard/shared`). `color` is one of `paletteColors`; the API does not pick one, the client sends it.
 

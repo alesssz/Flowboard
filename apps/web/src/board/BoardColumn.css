@@ -42,3 +42,38 @@
   text-align: center;
   color: var(--color-text-muted);
 }
+
+/* Where the dragged column or card was, while its copy follows the pointer. */
+.board-column--placeholder,
+.board-column__placeholder {
+  opacity: 0.35;
+}
+
+.board-column--lifted {
+  max-height: 70vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-dialog);
+  cursor: grabbing;
+}
+
+/* Inside a lifted column its cards lie flat: only the column is lifted. */
+.board-column--lifted .board-card--lifted {
+  box-shadow: var(--shadow-card);
+  transform: none;
+}
+
+.board-column__overlay-title {
+  margin: 0;
+  padding: 12px 4px 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.board-column__overlay-count {
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}

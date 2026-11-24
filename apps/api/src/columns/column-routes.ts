@@ -1,11 +1,12 @@
-// Column routes: create on a board, rename or recolour, delete.
-import type { Column } from '@flowboard/shared';
-import { createColumnRequestSchema, updateColumnRequestSchema } from '@flowboard/shared/schemas';
+// Column routes: create on a board, rename or recolour, move, delete.
+import type { Board, Column } from '@flowboard/shared';
+import { createColumnRequestSchema, moveColumnRequestSchema, updateColumnRequestSchema } from '@flowboard/shared/schemas';
 import { Router } from 'express';
+import { findBoard } from '../boards/board-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
 import { parseBody } from '../validation.ts';
-import { createColumn, deleteColumn, updateColumn } from './column-queries.ts';
+import { createColumn, deleteColumn, moveColumn, updateColumn } from './column-queries.ts';
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
 export function columnRoutes(prisma: PrismaClient): Router {
@@ -26,6 +27,18 @@ export function columnRoutes(prisma: PrismaClient): Router {
   router.patch('/columns/:columnId', async (req, res) => {
     const changes = parseBody(updateColumnRequestSchema, req.body);
     const body: Column | null = await updateColumn(prisma, req.params.columnId, changes);
+    if (body === null) {
+      sendError(res, 404, `No column with id ${req.params.columnId}`);
+      return;
+    }
+    res.json(body);
+  });
+
+  /** POST /api/columns/:columnId/move — MoveColumnRequest → 200 Board, as it now is · 400 · 404 */
+  router.post('/columns/:columnId/move', async (req, res) => {
+    const request = parseBody(moveColumnRequestSchema, req.body);
+    const boardId = await moveColumn(prisma, req.params.columnId, request);
+    const body: Board | null = boardId === null ? null : await findBoard(prisma, boardId);
     if (body === null) {
       sendError(res, 404, `No column with id ${req.params.columnId}`);
       return;

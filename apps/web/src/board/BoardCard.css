@@ -2,6 +2,7 @@
    comment count and assignees. The whole card opens its detail. */
 
 .board-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -95,4 +96,32 @@
   stroke: currentColor;
   stroke-width: 1.4;
   stroke-linejoin: round;
+}
+
+/* Last in the markup, so the keyboard reaches the title first; drawn in the top right corner, over the
+   labels' row. Where the pointer can hover it shows on hover or focus. */
+.board-card__handle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+@media (hover: hover) {
+  .board-card__handle {
+    opacity: 0;
+  }
+
+  .board-card:hover .board-card__handle,
+  .board-card:focus-within .board-card__handle {
+    opacity: 1;
+  }
+}
+
+/* The copy that follows the pointer while a card is dragged. */
+.board-card--lifted {
+  cursor: grabbing;
+  box-shadow: var(--shadow-dialog);
+  transform: rotate(2deg);
 }

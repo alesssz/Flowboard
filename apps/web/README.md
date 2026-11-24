@@ -37,14 +37,15 @@ apps/web/
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── Tooltip.tsx     hover text drawn above its parent
 │   ├── api-status/     header badge: GET /api/health on load, retried while it fails
-│   ├── board/          BoardPage (loads the board) → BoardView (with AddColumn) → BoardColumn (with
-│   │                   ColumnHeader: rename, colour, Delete column; and AddCard) → BoardCard;
+│   ├── board/          BoardPage (loads the board) → BoardView (drag and drop, AddColumn) → BoardColumn
+│   │                   (sortable, with ColumnHeader: rename, colour, Delete column; and AddCard) →
+│   │                   BoardCard; DragHandle, the grip for keyboard moves;
 │   │                   CardDialog (a card's detail in two columns, loads its comments) with CardFields
 │   │                   (title and description saved by themselves, details in DetailRow panels, Delete
 │   │                   card); FieldControls, the pencil, save state and delete
 │   │                   confirmation both editors use; their parts (Labels, DueDate, Assignees, Avatar);
 │   │                   queries (board-queries.ts), writes (column-mutations.ts, card-mutations.ts,
-│   │                   through board-cache.ts), date helpers
+│   │                   move-mutations.ts, through board-cache.ts), date helpers
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -59,7 +60,10 @@ apps/web/
 - The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
 - API data is read with **TanStack Query**: each query's key and fetcher are defined once with `queryOptions` (`board/board-queries.ts`) and used with `useQuery`. Keys go from general to specific (`['boards']`, `['boards', id]`, `['cards', id, 'comments']`), so related data can be refreshed together. A 4xx is not retried (`main.tsx`); other failures are retried 3 times.
 - A component reading a query renders its data first, then the error, then the loading state: a failed background refresh keeps what is on screen.
-- Writes are TanStack Query mutations (`board/column-mutations.ts`, `board/card-mutations.ts`). Each waits for the API, then writes the column or card it returns into the cached board (`updateBoard` in `board/board-cache.ts`, over `setQueryData`), so every view of it changes together without reloading the board. Deleting a column or a card also drops the cached comments of the cards that went. Nothing changes on screen before the API has accepted it; optimistic updates come with drag and drop.
+- Writes are TanStack Query mutations (`board/column-mutations.ts`, `board/card-mutations.ts`). Each waits for the API, then writes the column or card it returns into the cached board (`updateBoard` in `board/board-cache.ts`, over `setQueryData`), so every view of it changes together without reloading the board. Deleting a column or a card also drops the cached comments of the cards that went. Nothing changes on screen before the API has accepted it, except moves.
+- Moves are optimistic (`board/move-mutations.ts`): the cached board changes at once, with `moveCardInBoard` and `moveColumnInBoard` in `board/board-cache.ts`, the same rule as the API's, then the API's board replaces it, unless more moves are still on their way. A refused move puts back the board as it was before it, and the board's header says why (**Not moved: …**, with **Dismiss**).
+- Drag and drop uses dnd-kit (`@dnd-kit/core`, `@dnd-kit/sortable`), held in `board/BoardView.tsx`: columns in a horizontal sortable list, each column's cards in a vertical one, a card crossing into another column joining it as the pointer crosses. The mouse drags a whole card after 6 px, a touch after a 250 ms press (a swipe still scrolls), and a column by its grip. The keyboard lifts a card or a column from its grip (`board/DragHandle.tsx`): Space or Enter, the arrows (Left and Right change a card's column), Space or Enter to drop, Escape to cancel; announcements name the item and its place ("position 2 of 4 in Review"). A copy follows the pointer (`DragOverlay`) while the item's place shows faded; after the drop the dropped order stays on screen until the cache has it, so the drop animation lands where the item went.
+- The card dialog's **Column** row moves a card without dragging: another column (to its bottom) or another position.
 - The card dialog never changes shape while a card is edited (`board/CardDialog.tsx`, `board/CardFields.tsx`). Two columns: title, description and comments; then the details (labels, due date, assignees) and **Delete card**, which move under the title on a phone.
 - Title and description are text areas drawn as text (a tint on hover, a ring on focus) and save by themselves (`board/use-autosave-text.ts`): on leaving the field, on Enter (title) or Ctrl or ⌘ + Enter (description), and for the description a second after typing stops. A status beside the field reads "Saving…" (with a spinner), then "Saved" in a green pill with a check, for two seconds; a refused save keeps the text, with the API's message and **Try again**. Escape restores the saved text; with nothing to restore it closes the dialog. An empty title is never sent. The dialog opens with the focus on Close, so a stray key edits nothing.
 - Each detail is a button opening a panel over the dialog (`board/DetailRow.tsx`, a native `popover`: the browser closes it on Escape or a click outside, and it is placed in JavaScript below the button). Labels and assignees save each tick; the due date saves when the panel closes, as a date typed by hand passes through unwanted valid days, and Escape discards it. Each save shows the same badge beside the detail's name (`board/use-saved-notice.ts`); a refused one shows its message under the value and in the panel.

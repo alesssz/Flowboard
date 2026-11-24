@@ -1,5 +1,5 @@
 // Card reads and writes, shaped as the @flowboard/shared types.
-import type { Card, CardComment, CreateCardRequest, UpdateCardRequest } from '@flowboard/shared';
+import type { Card, CardComment, CreateCardRequest, MoveCardRequest, UpdateCardRequest } from '@flowboard/shared';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError } from '../errors.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -86,6 +86,48 @@ function rejectUnknownIds(field: string, noun: string, requested: string[], foun
   if (unknown.length > 0) {
     throw new HttpError(400, `${field}: no ${noun} with id ${unknown.join(', ')} on this card's board`);
   }
+}
+
+/**
+ * Moves the card to `index` among the cards of `columnId`, and renumbers the columns it leaves and enters
+ * from 0, which also closes gaps and ties. The id of the card's board, or null when there is no card with
+ * that id; a column that is not on the card's board is an HttpError 400.
+ */
+export function moveCard(prisma: PrismaClient, cardId: string, { columnId, index }: MoveCardRequest): Promise<string | null> {
+  return prisma.$transaction(async (tx) => {
+    const card = await tx.card.findUnique({ where: { id: cardId }, select: { columnId: true, column: { select: { boardId: true } } } });
+    if (card === null) return null;
+    const { boardId } = card.column;
+    const target = await tx.column.findFirst({ where: { id: columnId, boardId }, select: { id: true } });
+    if (target === null) throw new HttpError(400, `columnId: no column with id ${columnId} on this card's board`);
+
+    // Moves touching the same columns wait for each other, locking in id order so two never deadlock.
+    const columnIds = [...new Set([card.columnId, columnId])].sort();
+    await tx.$queryRaw`SELECT id FROM "Column" WHERE id = ANY(${columnIds}) ORDER BY id FOR UPDATE`;
+
+    const cardIdsIn = async (id: string) =>
+      (await tx.card.findMany({ where: { columnId: id }, orderBy: [{ position: 'asc' }, { id: 'asc' }], select: { id: true } })).map(
+        (row) => row.id,
+      );
+    const left = (await cardIdsIn(card.columnId)).filter((id) => id !== cardId);
+    const entered = columnId === card.columnId ? left : await cardIdsIn(columnId);
+    entered.splice(Math.min(index, entered.length), 0, cardId);
+
+    if (columnId !== card.columnId) await placeCards(tx, card.columnId, left);
+    await placeCards(tx, columnId, entered);
+    return boardId;
+  });
+}
+
+type Transaction = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
+
+// One statement per column: each card gets the column and its index in `cardIds` as its position.
+async function placeCards(tx: Transaction, columnId: string, cardIds: string[]): Promise<void> {
+  if (cardIds.length === 0) return;
+  await tx.$executeRaw`
+    UPDATE "Card" AS card SET "columnId" = ${columnId}, "position" = (placed.ordinality - 1)::int
+    FROM unnest(${cardIds}::text[]) WITH ORDINALITY AS placed(id, ordinality)
+    WHERE card.id = placed.id`;
 }
 
 /** Deletes the card and its comments; false when there is no card with that id. */

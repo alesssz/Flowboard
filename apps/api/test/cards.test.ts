@@ -1,4 +1,4 @@
-// Card writes, and a card's comments: create in a column, change fields, delete, read the comments.
+// Card writes, and a card's comments: create in a column, change fields, move, delete, read the comments.
 import { describe, expect, it } from 'vitest';
 import { createBoard } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
@@ -105,6 +105,87 @@ describe('PATCH /api/cards/:cardId', () => {
 
   it('answers 404 for a card that does not exist', async () => {
     const response = await api.patch('/api/cards/missing').send({ title: 'Third' });
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('No card with id missing');
+  });
+});
+
+describe('POST /api/cards/:cardId/move', () => {
+  const idsOf = (column: { cards: { id: string }[] }) => column.cards.map((card) => card.id);
+
+  it('moves a card within its column, answering with the board', async () => {
+    const { board, columns, cards } = await createBoard(prisma);
+
+    const response = await api.post(`/api/cards/${cards.second.id}/move`).send({ columnId: columns.todo.id, index: 0 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(board.id);
+    expect(idsOf(response.body.columns[0])).toEqual([cards.second.id, cards.first.id]);
+  });
+
+  it('moves a card into another column at the index given, keeping its fields', async () => {
+    const { columns, cards } = await createBoard(prisma);
+
+    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
+
+    expect(idsOf(response.body.columns[0])).toEqual([cards.second.id]);
+    expect(idsOf(response.body.columns[1])).toEqual([cards.first.id]);
+    expect(response.body.columns[1].cards[0]).toMatchObject({ title: 'First', dueDate: '2026-12-01', commentCount: 2 });
+  });
+
+  it('puts the card last when the index is past the end', async () => {
+    const { columns, cards } = await createBoard(prisma);
+
+    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.todo.id, index: 99 });
+
+    expect(idsOf(response.body.columns[0])).toEqual([cards.second.id, cards.first.id]);
+  });
+
+  it('renumbers the positions of both columns from 0, closing gaps and ties', async () => {
+    const { columns, cards } = await createBoard(prisma);
+    const third = await prisma.card.create({ data: { columnId: columns.todo.id, title: 'Third', position: 7 } });
+    await prisma.card.update({ where: { id: cards.second.id }, data: { position: 7 } });
+
+    await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
+
+    const positions = await prisma.card.findMany({ orderBy: { position: 'asc' }, select: { id: true, columnId: true, position: true } });
+    expect(positions.filter((card) => card.columnId === columns.todo.id).map((card) => card.position)).toEqual([0, 1]);
+    expect(positions.find((card) => card.id === cards.first.id)).toMatchObject({ columnId: columns.done.id, position: 0 });
+    expect(positions.map((card) => card.id)).toContain(third.id);
+  });
+
+  it.each([
+    [{ index: 0 }, expect.stringMatching(/^columnId: /)],
+    [{ columnId: 'any', index: -1 }, expect.stringMatching(/^index: /)],
+    [{ columnId: 'any', index: 1.5 }, expect.stringMatching(/^index: /)],
+    [{ columnId: 'any', index: 0, position: 0 }, 'Unrecognized key: "position"'],
+  ])('refuses %j with a 400 naming the field', async (body, message) => {
+    const { cards } = await createBoard(prisma);
+
+    const response = await api.post(`/api/cards/${cards.first.id}/move`).send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toEqual(message);
+  });
+
+  it('refuses a column from another board, moving nothing', async () => {
+    const { columns, cards } = await createBoard(prisma);
+    const other = await createBoard(prisma, 'Other');
+
+    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: other.columns.done.id, index: 0 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(`columnId: no column with id ${other.columns.done.id} on this card's board`);
+    expect(await prisma.card.findUnique({ where: { id: cards.first.id }, select: { columnId: true } })).toEqual({
+      columnId: columns.todo.id,
+    });
+  });
+
+  it('answers 404 for a card that does not exist', async () => {
+    const { columns } = await createBoard(prisma);
+
+    const response = await api.post('/api/cards/missing/move').send({ columnId: columns.todo.id, index: 0 });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('No card with id missing');
