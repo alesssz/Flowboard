@@ -1,97 +1,82 @@
-// A card's editable fields, for its detail dialog. Each edits in place and saves through the API on its
-// own: the field shows "Saving…" until the API answers, and stays open with the error if it refuses.
-// An edit closed from inside it (Save, Cancel, Enter, Escape) gives the focus back to the field's pencil
-// button; one closed by clicking elsewhere leaves it where the click put it.
+// A card's editable fields, for its detail dialog. Nothing changes shape while editing: the title and the
+// description are text areas drawn as text, saved by themselves (useAutosaveText), and each detail opens its
+// editor in a panel over the dialog (DetailRow), saving each change as it is made.
 import {
+  type Board,
   type Card,
   cardDescriptionMaxLength,
   cardTitleMaxLength,
-  type Label,
-  type Member,
+  type Column,
   type UpdateCardRequest,
 } from '@flowboard/shared';
-import { type FormEvent, type KeyboardEvent, type ReactNode, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
 import { Avatar } from './Avatar.tsx';
-import { cancelOnEscape } from './cancel-on-escape.ts';
 import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
+import { DetailRow } from './DetailRow.tsx';
 import { DueDate } from './DueDate.tsx';
-import { ConfirmDelete, EditButton, SaveState } from './FieldControls.tsx';
-import { Labels } from './Labels.tsx';
+import { ConfirmDelete } from './FieldControls.tsx';
+import { useAutoGrow } from './use-auto-grow.ts';
+import { useAutosaveText } from './use-autosave-text.ts';
+import { useSavedNotice } from './use-saved-notice.ts';
 import './CardFields.css';
+
+/** Pause in typing, in milliseconds, after which the description saves. */
+const DESCRIPTION_IDLE_MS = 1000;
 
 interface CardTitleFieldProps {
   boardId: string;
   card: Card;
-  /** The dialog is labelled by this id, so a heading keeps it while the title is edited. */
+  column: Column;
+  /** The dialog is labelled by this id: a hidden heading keeps the saved title under it. */
   titleId: string;
 }
 
-/** The title as the dialog's heading; a click on it, or on the pencil, edits it. Enter or leaving the field saves. */
-export function CardTitleField({ boardId, card, titleId }: CardTitleFieldProps) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [focusPencil, setFocusPencil] = useState(false);
-  const update = useUpdateCard(boardId, card.id);
+/** The column the card is in, then the title. Enter or leaving the field saves; Escape restores the saved title. */
+export function CardTitleField({ boardId, card, column, titleId }: CardTitleFieldProps) {
+  const autosave = useAutosaveText({ boardId, card, field: 'title' });
+  const areaRef = useAutoGrow(autosave.value);
 
-  function handleEdit() {
-    setDraft(card.title);
-  }
-
-  function finish(returnFocus: boolean) {
-    update.reset();
-    setDraft(null);
-    setFocusPencil(returnFocus);
-  }
-
-  function save(returnFocus: boolean) {
-    if (draft === null || update.isPending) return;
-    const title = draft.trim();
-    // An empty title is not a change anyone means: the card keeps its own.
-    if (title === '' || title === card.title) {
-      finish(returnFocus);
-      return;
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    // A title is one line: Enter saves instead of breaking it.
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      autosave.save();
+    } else {
+      undoOnEscape(event, autosave.cancel);
     }
-    update.mutate({ title }, { onSuccess: () => finish(returnFocus) });
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    save(true);
-  }
-
-  function handleBlur() {
-    save(false);
-  }
-
-  if (draft === null) {
-    return (
-      <div className="card-field card-field--title">
-        {/* Mouse users click the text; the pencil button is the way in for the keyboard. */}
-        <h2 id={titleId} className="card-field__title" onClick={handleEdit}>
-          {card.title}
-        </h2>
-        <EditButton label="Edit title" autoFocus={focusPencil} onClick={handleEdit} />
-      </div>
-    );
   }
 
   return (
-    <form className="card-field card-field--title" onSubmit={handleSubmit}>
+    <div className="card-field">
+      <div className="card-field__meta">
+        <p className="card-field__column" data-color={column.color}>
+          <span className="card-field__column-dot" aria-hidden="true" />
+          {column.title}
+        </p>
+        <SaveStatus
+          pending={autosave.pending}
+          justSaved={autosave.justSaved}
+          savedKey={autosave.savedKey}
+          error={autosave.error}
+          onRetry={autosave.save}
+        />
+      </div>
       <h2 id={titleId} className="visually-hidden">
         {card.title}
       </h2>
-      <input
-        className="card-field__input card-field__input--title"
+      <textarea
+        ref={areaRef}
+        className="card-field__text card-field__text--title"
         aria-label="Title"
-        value={draft}
+        rows={1}
+        value={autosave.value}
         maxLength={cardTitleMaxLength}
-        readOnly={update.isPending}
-        autoFocus
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => cancelOnEscape(event, () => finish(true))}
-        onBlur={handleBlur}
+        onChange={(event) => autosave.handleChange(event.target.value)}
+        onFocus={autosave.handleFocus}
+        onBlur={autosave.handleBlur}
+        onKeyDown={handleKeyDown}
       />
-      <SaveState pending={update.isPending} error={update.error} />
-    </form>
+    </div>
   );
 }
 
@@ -101,259 +86,220 @@ interface CardDescriptionFieldProps {
   headingId: string;
 }
 
-/** Plain text with its line breaks; the pencil opens a text area with Save and Cancel (Ctrl or ⌘ + Enter saves). */
+/** Plain text with its line breaks; saved a moment after typing stops, on leaving the field, or on Ctrl or ⌘ + Enter. */
 export function CardDescriptionField({ boardId, card, headingId }: CardDescriptionFieldProps) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [focusPencil, setFocusPencil] = useState(false);
-  const update = useUpdateCard(boardId, card.id);
-
-  function handleEdit() {
-    setDraft(card.description);
-  }
-
-  function handleFinish() {
-    update.reset();
-    setDraft(null);
-    setFocusPencil(true);
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (draft === null || update.isPending) return;
-    const description = draft.trim();
-    if (description === card.description) {
-      handleFinish();
-      return;
-    }
-    update.mutate({ description }, { onSuccess: handleFinish });
-  }
+  const autosave = useAutosaveText({ boardId, card, field: 'description', idleDelay: DESCRIPTION_IDLE_MS });
+  const areaRef = useAutoGrow(autosave.value);
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
-      event.currentTarget.form?.requestSubmit();
-      return;
+      autosave.save();
+    } else {
+      undoOnEscape(event, autosave.cancel);
     }
-    cancelOnEscape(event, handleFinish);
   }
 
   return (
     <section className="card-field" aria-labelledby={headingId}>
-      <div className="card-field__heading-row">
+      <div className="card-field__meta">
         <h3 id={headingId} className="card-field__heading">
           Description
         </h3>
-        {draft === null && card.description !== '' && (
-          <EditButton label="Edit description" autoFocus={focusPencil} onClick={handleEdit} />
-        )}
+        <SaveStatus
+          pending={autosave.pending}
+          justSaved={autosave.justSaved}
+          savedKey={autosave.savedKey}
+          error={autosave.error}
+          onRetry={autosave.save}
+        />
       </div>
-
-      {draft === null ? (
-        card.description === '' ? (
-          <button type="button" className="card-field__placeholder" autoFocus={focusPencil} onClick={handleEdit}>
-            Add a description…
-          </button>
-        ) : (
-          <p className="card-field__text">{card.description}</p>
-        )
-      ) : (
-        <form className="card-field__form" onSubmit={handleSubmit}>
-          <textarea
-            className="card-field__input card-field__textarea"
-            aria-labelledby={headingId}
-            value={draft}
-            rows={6}
-            maxLength={cardDescriptionMaxLength}
-            readOnly={update.isPending}
-            autoFocus
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <FormActions pending={update.isPending} error={update.error} onCancel={handleFinish} />
-        </form>
-      )}
+      <textarea
+        ref={areaRef}
+        className="card-field__text card-field__text--description"
+        aria-labelledby={headingId}
+        placeholder="Add a description…"
+        rows={3}
+        value={autosave.value}
+        maxLength={cardDescriptionMaxLength}
+        onChange={(event) => autosave.handleChange(event.target.value)}
+        onFocus={autosave.handleFocus}
+        onBlur={autosave.handleBlur}
+        onKeyDown={handleKeyDown}
+      />
     </section>
   );
 }
 
-interface CardDueDateFieldProps {
+interface CardDetailsProps {
+  /** For its id, and the labels and members a card can be given. */
+  board: Board;
+  card: Card;
+  today: Date;
+}
+
+/** Labels, due date and assignees, one row each; a row's button opens its editor in a panel. */
+export function CardDetails({ board, card, today }: CardDetailsProps) {
+  return (
+    <dl className="card-field__details">
+      <ChoiceRow
+        boardId={board.id}
+        card={card}
+        name="Labels"
+        options={board.labels}
+        selectedIds={card.labels.map((label) => label.id)}
+        toChanges={(labelIds) => ({ labelIds })}
+        value={
+          card.labels.length === 0
+            ? null
+            : card.labels.map((label) => (
+                <span key={label.id} className="card-field__pill" data-color={label.color}>
+                  {label.name}
+                </span>
+              ))
+        }
+        renderOption={(label) => (
+          <span className="card-field__pill" data-color={label.color}>
+            {label.name}
+          </span>
+        )}
+      />
+      <DueRow boardId={board.id} card={card} today={today} />
+      <ChoiceRow
+        boardId={board.id}
+        card={card}
+        name="Assignees"
+        options={board.members}
+        selectedIds={card.assignees.map((member) => member.id)}
+        toChanges={(assigneeIds) => ({ assigneeIds })}
+        value={
+          card.assignees.length === 0 ? null : (
+            <span className="card-field__members">
+              {card.assignees.map((member) => (
+                <span key={member.id} className="card-field__member">
+                  <Avatar member={member} />
+                  {member.name}
+                </span>
+              ))}
+            </span>
+          )
+        }
+        renderOption={(member) => (
+          <span className="card-field__member">
+            <Avatar member={member} />
+            {member.name}
+          </span>
+        )}
+      />
+    </dl>
+  );
+}
+
+interface DueRowProps {
   boardId: string;
   card: Card;
   today: Date;
 }
 
-/** The Due entry of the dialog's <dl>: the date, or None; the pencil opens the browser's date input, with Save, Remove and Cancel. */
-export function CardDueDateField({ boardId, card, today }: CardDueDateFieldProps) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const [focusPencil, setFocusPencil] = useState(false);
+// The date is saved when the panel closes (Done, Enter, a click outside), not on each change: typing a
+// date by hand passes through valid but unwanted days (year 0002 on the way to 2026).
+function DueRow({ boardId, card, today }: DueRowProps) {
   const update = useUpdateCard(boardId, card.id);
+  const notice = useSavedNotice();
+  const [draft, setDraft] = useState('');
+  const draftRef = useRef('');
 
-  function handleEdit() {
-    setDraft(card.dueDate ?? '');
+  function changeDraft(next: string) {
+    draftRef.current = next;
+    setDraft(next);
   }
 
-  function handleFinish() {
+  function handleOpen() {
     update.reset();
-    setDraft(null);
-    setFocusPencil(true);
+    changeDraft(card.dueDate ?? '');
   }
 
-  function save(dueDate: string | null) {
-    if (update.isPending) return;
-    if (dueDate === card.dueDate) {
-      handleFinish();
-      return;
-    }
-    update.mutate({ dueDate }, { onSuccess: handleFinish });
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    // The input is '' while its date is cleared or incomplete: nothing to save.
-    if (draft !== null && draft !== '') save(draft);
-  }
-
-  function handleRemove() {
-    save(null);
-  }
-
-  if (draft === null) {
-    return (
-      <Fact name="Due" edit={<EditButton label="Edit due date" autoFocus={focusPencil} onClick={handleEdit} />}>
-        {card.dueDate === null ? <p className="card-field__none">None</p> : <DueDate date={card.dueDate} today={today} />}
-      </Fact>
-    );
+  function handleClose(cancelled: boolean) {
+    const dueDate = draftRef.current;
+    // '' is a cleared or incomplete input: nothing to save.
+    if (cancelled || dueDate === '' || dueDate === card.dueDate) return;
+    update.mutate({ dueDate }, { onSuccess: notice.notifySaved });
   }
 
   return (
-    <Fact name="Due">
-      <form className="card-field__form" onSubmit={handleSubmit}>
-        <input
-          type="date"
-          className="card-field__input card-field__input--date"
-          aria-label="Due date"
-          value={draft}
-          readOnly={update.isPending}
-          autoFocus
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => cancelOnEscape(event, handleFinish)}
-        />
-        <FormActions pending={update.isPending} error={update.error} onCancel={handleFinish}>
-          {card.dueDate !== null && (
-            <button type="button" className="field-control__button" onClick={handleRemove}>
-              Remove
+    <DetailRow
+      name="Due"
+      value={card.dueDate === null ? <None /> : <DueDate date={card.dueDate} today={today} as="span" />}
+      onOpen={handleOpen}
+      onClose={handleClose}
+      status={<SaveStatus pending={update.isPending} justSaved={notice.justSaved} savedKey={notice.savedKey} error={null} />}
+      note={<SaveNote error={update.error} />}
+    >
+      {(close) => (
+        <>
+          <input
+            type="date"
+            className="card-field__date"
+            aria-label="Due date"
+            value={draft}
+            onChange={(event) => changeDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              close();
+            }}
+          />
+          <div className="field-control__actions">
+            <button type="button" className="field-control__button field-control__button--primary" onClick={close}>
+              Done
             </button>
-          )}
-        </FormActions>
-      </form>
-    </Fact>
-  );
-}
-
-interface CardLabelsFieldProps {
-  boardId: string;
-  card: Card;
-  /** The board's labels, the ones offered. */
-  labels: Label[];
-}
-
-/** The Labels entry of the dialog's <dl>; the pencil lists every label of the board with a checkbox, each change saved at once. */
-export function CardLabelsField({ boardId, card, labels }: CardLabelsFieldProps) {
-  return (
-    <ChoiceField
-      boardId={boardId}
-      card={card}
-      name="Labels"
-      options={labels}
-      selectedIds={card.labels.map((label) => label.id)}
-      toChanges={(labelIds) => ({ labelIds })}
-      selected={card.labels.length > 0 ? <Labels labels={card.labels} /> : null}
-      renderOption={(label) => (
-        <span className="card-field__label-pill" data-color={label.color}>
-          {label.name}
-        </span>
+            {card.dueDate !== null && (
+              <button
+                type="button"
+                className="field-control__button"
+                onClick={() => {
+                  changeDraft('');
+                  update.mutate({ dueDate: null }, { onSuccess: notice.notifySaved });
+                  close();
+                }}
+              >
+                Remove date
+              </button>
+            )}
+          </div>
+        </>
       )}
-    />
+    </DetailRow>
   );
 }
 
-interface CardAssigneesFieldProps {
+interface ChoiceRowProps<T extends { id: string }> {
   boardId: string;
   card: Card;
-  /** The board's members, the people offered. */
-  members: Member[];
-}
-
-/** The Assignees entry of the dialog's <dl>; the pencil lists everyone on the board with a checkbox, each change saved at once. */
-export function CardAssigneesField({ boardId, card, members }: CardAssigneesFieldProps) {
-  return (
-    <ChoiceField
-      boardId={boardId}
-      card={card}
-      name="Assignees"
-      options={members}
-      selectedIds={card.assignees.map((member) => member.id)}
-      toChanges={(assigneeIds) => ({ assigneeIds })}
-      selected={
-        card.assignees.length > 0 ? (
-          <ul className="card-field__members">
-            {card.assignees.map((member) => (
-              <li key={member.id}>
-                <Avatar member={member} />
-                {member.name}
-              </li>
-            ))}
-          </ul>
-        ) : null
-      }
-      renderOption={(member) => (
-        <span className="card-field__member">
-          <Avatar member={member} />
-          {member.name}
-        </span>
-      )}
-    />
-  );
-}
-
-interface ChoiceFieldProps<T extends { id: string }> {
-  boardId: string;
-  card: Card;
-  /** The checkbox group's name for screen readers, and the pencil's ("Edit labels"). */
+  /** The row's name, and the checkbox group's. */
   name: string;
   /** Every choice, in display order. */
   options: T[];
   selectedIds: string[];
   toChanges: (ids: string[]) => UpdateCardRequest;
   /** What the card has; null shows None. */
-  selected: ReactNode;
+  value: ReactNode;
   renderOption: (option: T) => ReactNode;
 }
 
 // The checkboxes show what the API last returned: a click changes one only once the API has saved it.
-function ChoiceField<T extends { id: string }>({
+function ChoiceRow<T extends { id: string }>({
   boardId,
   card,
   name,
   options,
   selectedIds,
   toChanges,
-  selected,
+  value,
   renderOption,
-}: ChoiceFieldProps<T>) {
-  const [editing, setEditing] = useState(false);
-  const [focusPencil, setFocusPencil] = useState(false);
+}: ChoiceRowProps<T>) {
   const update = useUpdateCard(boardId, card.id);
-
-  function handleEdit() {
-    setEditing(true);
-  }
-
-  function handleDone() {
-    update.reset();
-    setEditing(false);
-    setFocusPencil(true);
-  }
+  const notice = useSavedNotice();
 
   function handleToggle(id: string, checked: boolean) {
     if (update.isPending) return;
@@ -361,45 +307,37 @@ function ChoiceField<T extends { id: string }>({
     const next = options
       .map((option) => option.id)
       .filter((optionId) => (optionId === id ? checked : selectedIds.includes(optionId)));
-    update.mutate(toChanges(next));
-  }
-
-  if (!editing) {
-    return (
-      <Fact
-        name={name}
-        edit={<EditButton label={`Edit ${name.toLowerCase()}`} autoFocus={focusPencil} onClick={handleEdit} />}
-      >
-        {selected ?? <p className="card-field__none">None</p>}
-      </Fact>
-    );
+    update.mutate(toChanges(next), { onSuccess: notice.notifySaved });
   }
 
   return (
-    <Fact name={name}>
-      <fieldset className="card-field__choices" aria-busy={update.isPending}>
-        <legend className="visually-hidden">{name}</legend>
-        {options.length === 0 && <p className="card-field__none">This board has none yet</p>}
-        {options.map((option, index) => (
-          <label key={option.id} className="card-field__choice">
-            <input
-              type="checkbox"
-              checked={selectedIds.includes(option.id)}
-              autoFocus={index === 0}
-              onChange={(event) => handleToggle(option.id, event.target.checked)}
-              onKeyDown={(event) => cancelOnEscape(event, handleDone)}
-            />
-            {renderOption(option)}
-          </label>
-        ))}
-        <div className="field-control__actions">
-          <button type="button" className="field-control__button" onClick={handleDone}>
-            Done
-          </button>
-          <SaveState pending={update.isPending} error={update.error} />
-        </div>
-      </fieldset>
-    </Fact>
+    <DetailRow
+      name={name}
+      value={value ?? <None />}
+      onOpen={update.reset}
+      status={<SaveStatus pending={update.isPending} justSaved={notice.justSaved} savedKey={notice.savedKey} error={null} />}
+      note={<SaveNote error={update.error} />}
+    >
+      {() => (
+        <>
+          <fieldset className="card-field__choices" aria-busy={update.isPending}>
+            <legend className="visually-hidden">{name}</legend>
+            {options.length === 0 && <p className="card-field__none">This board has none yet</p>}
+            {options.map((option) => (
+              <label key={option.id} className="card-field__choice">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(option.id)}
+                  onChange={(event) => handleToggle(option.id, event.target.checked)}
+                />
+                {renderOption(option)}
+              </label>
+            ))}
+          </fieldset>
+          <SaveNote error={update.error} />
+        </>
+      )}
+    </DetailRow>
   );
 }
 
@@ -430,49 +368,68 @@ export function DeleteCard({ boardId, card, onDeleted }: DeleteCardProps) {
   );
 }
 
-interface FactProps {
-  name: string;
-  /** The pencil button, beside the name; absent while editing. */
-  edit?: ReactNode;
-  children: ReactNode;
-}
-
-// One entry of the dialog's <dl>: a name with its pencil, then the value or its editor.
-function Fact({ name, edit, children }: FactProps) {
-  return (
-    <div className="card-field__fact">
-      <dt className="card-field__fact-name">
-        {name}
-        {edit}
-      </dt>
-      <dd className="card-field__fact-value">{children}</dd>
-    </div>
-  );
-}
-
-interface FormActionsProps {
+interface SaveStatusProps {
   pending: boolean;
+  /** Shows "Saved" for a moment after a save. */
+  justSaved?: boolean;
+  /** Changes with each save, restarting the badge's animation. */
+  savedKey?: number;
   error: Error | null;
-  onCancel: () => void;
-  /** Extra buttons between Save and Cancel. */
-  children?: ReactNode;
+  /** Offered with the error: sends the same change again. */
+  onRetry?: () => void;
 }
 
-function FormActions({ pending, error, onCancel, children }: FormActionsProps) {
-  function handleCancel() {
-    if (!pending) onCancel();
-  }
-
+// Always rendered, so screen readers know the live region before it first speaks; it sits beside a heading,
+// so its text coming and going moves nothing.
+function SaveStatus({ pending, justSaved = false, savedKey, error, onRetry }: SaveStatusProps) {
   return (
-    <div className="field-control__actions">
-      <button type="submit" className="field-control__button field-control__button--primary" aria-disabled={pending}>
-        Save
-      </button>
-      {children}
-      <button type="button" className="field-control__button" aria-disabled={pending} onClick={handleCancel}>
-        Cancel
-      </button>
-      <SaveState pending={pending} error={error} />
-    </div>
+    <p className="card-field__status" role="status">
+      {pending ? (
+        <span className="card-field__saving">
+          <span className="card-field__spinner" aria-hidden="true" />
+          Saving…
+        </span>
+      ) : error !== null ? (
+        <span className="card-field__error">
+          Not saved: {error.message}
+          {onRetry !== undefined && (
+            <button type="button" className="card-field__retry" onClick={onRetry}>
+              Try again
+            </button>
+          )}
+        </span>
+      ) : justSaved ? (
+        <span key={savedKey} className="card-field__saved">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 8.5l3 3 6-7" />
+          </svg>
+          Saved
+        </span>
+      ) : null}
+    </p>
   );
+}
+
+interface SaveNoteProps {
+  error: Error | null;
+}
+
+// A refused save, under a detail's value and in its panel: longer than the badge beside the name has room for.
+function SaveNote({ error }: SaveNoteProps) {
+  if (error === null) return null;
+  return (
+    <p className="card-field__note card-field__note--error" role="alert">
+      Not saved: {error.message}
+    </p>
+  );
+}
+
+function None() {
+  return <span className="card-field__none">None</span>;
+}
+
+// Escape with an unsaved change undoes it, and preventDefault keeps the key from also closing the dialog;
+// with nothing to undo, the key closes the dialog as usual.
+function undoOnEscape(event: KeyboardEvent<HTMLElement>, cancel: () => boolean) {
+  if (event.key === 'Escape' && cancel()) event.preventDefault();
 }

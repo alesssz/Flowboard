@@ -1,5 +1,5 @@
-// Controls shared by the in-place editors of cards and columns: the pencil, the save state, and a delete
-// button that asks first. Buttons are never disabled while a request runs (a disabled button drops the
+// Controls for the in-place editors: the pencil and the save state (column titles), and a delete button that
+// asks first (cards and columns). Buttons are never disabled while a request runs (a disabled button drops the
 // focus): their handlers ignore clicks instead, and aria-disabled says so.
 import { useState } from 'react';
 import { cancelOnEscape } from './cancel-on-escape.ts';

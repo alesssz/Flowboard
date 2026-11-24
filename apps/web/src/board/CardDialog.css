@@ -1,8 +1,9 @@
-/* A card's detail: a centred modal over a dimmed board, scrolling when it is taller than the screen. */
+/* A card's detail: a centred modal over a dimmed board, scrolling when it is taller than the screen.
+   Two columns: title, description and comments; then a tinted column with the details and Delete card. */
 
 .card-dialog {
-  width: min(560px, 100% - 2 * var(--gutter));
-  max-height: min(760px, 100dvh - 2 * var(--gutter));
+  width: min(780px, 100% - 2 * var(--gutter));
+  max-height: min(820px, 100dvh - 2 * var(--gutter));
   padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -18,44 +19,89 @@
 
 /* Fills the dialog: a click that reaches the dialog element itself came from the backdrop. */
 .card-dialog__content {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 18px 20px 22px;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-areas:
+    'title details'
+    'description details'
+    'comments details'
+    'comments delete';
+  min-height: 100%;
 }
 
-.card-dialog__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.card-dialog__column {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 2px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.card-dialog__column-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tone);
-}
-
-.card-dialog__heading-block {
-  flex: 1;
+.card-dialog__title,
+.card-dialog__description,
+.card-dialog__comments-section {
   min-width: 0;
+  padding: 0 24px 0 22px;
+}
+
+.card-dialog__title {
+  grid-area: title;
+  padding-top: 18px;
+}
+
+.card-dialog__description {
+  grid-area: description;
+  padding-top: 18px;
+}
+
+.card-dialog__comments-section {
+  grid-area: comments;
+  padding-top: 22px;
+  padding-bottom: 24px;
+}
+
+/* The tinted column: the details, then Delete card at its foot. Its top leaves room for Close. */
+.card-dialog__details,
+.card-dialog__delete {
+  background: var(--palette-gray-tint);
+  border-left: 1px solid var(--color-border);
+}
+
+.card-dialog__details {
+  grid-area: details;
+  padding: 56px 18px 16px;
+}
+
+.card-dialog__delete {
+  grid-area: delete;
+  padding: 0 18px 20px;
+}
+
+@media (max-width: 640px) {
+  .card-dialog__content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: 'title' 'details' 'description' 'comments' 'delete';
+  }
+
+  .card-dialog__title {
+    padding-right: 56px;
+  }
+
+  .card-dialog__details {
+    margin-top: 16px;
+    padding: 14px 22px;
+    border-left: none;
+    border-block: 1px solid var(--color-border);
+  }
+
+  .card-dialog__delete {
+    padding: 0 22px 22px;
+    background: none;
+    border-left: none;
+  }
 }
 
 .card-dialog__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
   display: grid;
-  flex-shrink: 0;
   place-items: center;
   width: 32px;
   height: 32px;
@@ -86,24 +132,14 @@
   stroke-linecap: round;
 }
 
-.card-dialog__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 32px;
-  margin: 0;
-}
-
-.card-dialog__heading {
-  margin: 0 0 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
 .card-dialog__heading {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .card-dialog__count {
@@ -196,9 +232,4 @@
   position: relative;
   font-size: 0.75rem;
   color: var(--color-text-muted);
-}
-
-.card-dialog__footer {
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
 }

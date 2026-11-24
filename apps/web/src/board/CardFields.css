@@ -1,46 +1,33 @@
-/* A card's editable fields in its dialog: the value with a pencil button, or its editor with actions below.
-   The buttons and the save state are FieldControls.css. */
+/* A card's fields in its dialog: the title and description drawn as text but editable, the details' rows
+   and the contents of their panels. Buttons and the delete confirmation are FieldControls.css. */
 
-.card-field--title {
-  flex: 1;
-  min-width: 0;
+.card-field__meta {
   display: flex;
-  align-items: flex-start;
-  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px 12px;
+  min-height: 24px;
+  margin-bottom: 2px;
 }
 
-.card-field__title {
-  margin: 0;
-  padding: 2px 0;
-  font-size: 1.2rem;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-  cursor: text;
-}
-
-form.card-field--title {
-  flex-direction: column;
-  gap: 6px;
-}
-
-.card-field__text {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-.card-field__fact-name,
-.card-field__heading-row {
+.card-field__column {
   display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 26px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
-.card-field__fact-name,
+.card-field__column-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
 .card-field__heading {
   margin: 0;
   font-size: 0.78rem;
@@ -48,8 +35,172 @@ form.card-field--title {
   color: var(--color-text-muted);
 }
 
-.card-field__fact-value {
+/* Text areas that read as text: a tint on hover, a ring on focus, and the same box in every state. */
+.card-field__text {
+  display: block;
+  box-sizing: border-box;
+  width: calc(100% + 12px);
+  margin: 0 -6px;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  resize: none;
+  overflow: hidden;
+}
+
+.card-field__text:hover {
+  background: var(--palette-gray-soft);
+}
+
+.card-field__text:focus {
+  background: var(--color-bg);
+  border-color: var(--color-border-strong);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-text) 30%, transparent);
+}
+
+.card-field__text::placeholder {
+  color: var(--color-text-muted);
+}
+
+.card-field__text--title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card-field__text--description {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.card-field__status {
   margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.card-field__saving,
+.card-field__saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px 1px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.card-field__saving {
+  color: var(--color-text-muted);
+  background: var(--palette-gray-soft);
+}
+
+.card-field__saved {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+}
+
+.card-field__saved svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card-field__spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-field__saved {
+    animation: card-field-saved 2s ease-out both;
+  }
+
+  .card-field__spinner {
+    animation: card-field-spin 0.8s linear infinite;
+  }
+}
+
+/* Pops in, then fades during the last half second of the two "Saved" stays (SAVED_NOTICE_MS). */
+@keyframes card-field-saved {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  8%,
+  75% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes card-field-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card-field__error {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  color: var(--color-danger);
+}
+
+.card-field__retry {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- Details --- */
+
+.card-field__details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+}
+
+.card-field__pill {
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+}
+
+.card-field__members {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-field__member {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .card-field__none {
@@ -58,76 +209,25 @@ form.card-field--title {
   color: var(--color-text-muted);
 }
 
-.card-field__members {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.85rem;
-}
-
-.card-field__members li,
-.card-field__member {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* --- Editors --- */
-
-.card-field__form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.card-field__input {
-  width: 100%;
-  padding: 6px 8px;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-}
-
-.card-field__input:focus-visible {
-  outline: 2px solid var(--color-accent-text);
-  outline-offset: 1px;
-}
-
-.card-field__input[readonly] {
+.card-field__note {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
   color: var(--color-text-muted);
 }
 
-.card-field__input--title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1.3;
+.card-field__note--error {
+  color: var(--color-danger);
 }
 
-.card-field__input--date {
-  width: auto;
-  color-scheme: light dark;
-}
-
-.card-field__textarea {
-  line-height: 1.55;
-  resize: vertical;
-}
+/* --- Inside a detail's panel --- */
 
 .card-field__choices {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 180px;
+  gap: 8px;
   margin: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  padding: 0;
+  border: none;
 }
 
 .card-field__choice {
@@ -145,35 +245,20 @@ form.card-field--title {
   accent-color: var(--color-accent);
 }
 
-.card-field__label-pill {
-  padding: 1px 7px;
-  border-radius: 5px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--tone-text);
-  background: var(--tone-soft);
-}
-
-.card-field__placeholder {
-  width: 100%;
-  padding: 10px;
+.card-field__date {
+  padding: 6px 8px;
   font: inherit;
-  font-size: 0.85rem;
-  text-align: left;
-  color: var(--color-text-muted);
-  background: var(--palette-gray-soft);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.card-field__placeholder:hover {
+  font-size: 0.9rem;
   color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  color-scheme: light dark;
 }
 
-.card-field__placeholder:focus-visible,
-.card-field__choice input:focus-visible {
+.card-field__retry:focus-visible,
+.card-field__choice input:focus-visible,
+.card-field__date:focus-visible {
   outline: 2px solid var(--color-accent-text);
   outline-offset: 2px;
 }

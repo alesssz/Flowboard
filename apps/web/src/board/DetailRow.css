@@ -1,0 +1,76 @@
+/* A card detail in the dialog's side column: a small uppercase name, the value as a quiet button, the panel. */
+
+.detail-row {
+  position: relative;
+}
+
+/* In the dd for valid markup, drawn on the name's line at the right. */
+.detail-row__status {
+  position: absolute;
+  top: -3px;
+  right: 0;
+}
+
+.detail-row__name {
+  margin: 0 0 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.detail-row__value {
+  margin: 0;
+}
+
+.detail-row__button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  width: calc(100% + 12px);
+  min-height: 30px;
+  margin: 0 -6px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.detail-row__button:hover,
+.detail-row__button[data-open] {
+  background: var(--palette-gray-soft);
+}
+
+.detail-row__button:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 1px;
+}
+
+/* A native popover: the browser's centring is replaced by the position place() computes. */
+.detail-row__panel {
+  position: fixed;
+  inset: auto;
+  width: min(280px, 100vw - 16px);
+  max-height: min(420px, 100dvh - 16px);
+  margin: 0;
+  padding: 12px;
+  overflow-y: auto;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.detail-row__panel:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

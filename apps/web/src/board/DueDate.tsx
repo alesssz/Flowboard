@@ -7,13 +7,15 @@ interface DueDateProps {
   /** Calendar day, 'YYYY-MM-DD'. */
   date: string;
   today: Date;
+  /** span inside phrasing content, such as a button. */
+  as?: 'p' | 'span';
 }
 
-export function DueDate({ date, today }: DueDateProps) {
+export function DueDate({ date, today, as: Tag = 'p' }: DueDateProps) {
   const status = getDueStatus(date, today);
 
   return (
-    <p className={`due-date due-date--${status}`}>
+    <Tag className={`due-date due-date--${status}`}>
       <svg className="due-date__icon" viewBox="0 0 16 16" aria-hidden="true">
         <rect x="2" y="3" width="12" height="11" rx="2" />
         <path d="M2 7h12M5.5 1.5v3M10.5 1.5v3" />
@@ -22,6 +24,6 @@ export function DueDate({ date, today }: DueDateProps) {
       <span className="visually-hidden">{status === 'overdue' ? 'Overdue: ' : 'Due: '}</span>
       <time dateTime={date}>{formatDueDate(date, today)}</time>
       <Tooltip text={formatFullDate(date)} />
-    </p>
+    </Tag>
   );
 }
