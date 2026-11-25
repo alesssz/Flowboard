@@ -7,6 +7,7 @@ What the API defends against today, where each defence lives and what checks it,
 - [Status](#status)
 - [Defences](#defences)
 - [Configuration](#configuration)
+- [Accounts](#accounts)
 - [Not covered yet](#not-covered-yet)
 
 ---
@@ -27,6 +28,7 @@ Flowboard is not deployed and has no accounts: whoever reaches the API can read 
 | SQL injection | Queries go through Prisma; the few raw ones are tagged templates, which send every value as a parameter | `apps/api/src/*/…-queries.ts` | code review |
 | A card linked to another board's labels, members or columns | Every id in a write is checked against the card's board: `400` | `card-queries.ts` | `cards.test.ts` |
 | Script in user text (XSS) | React escapes all text it renders; the web app never sets HTML from data (`dangerouslySetInnerHTML`) | `apps/web/src` | code review |
+| A copy of the database gives away passwords | Only a salted scrypt hash is stored ([Accounts](#accounts)) | `apps/api/src/auth/passwords.ts` | `apps/api/test/passwords.test.ts` |
 | Internals leaked by errors | An unexpected error answers a fixed message, with the details only in the server's log; no `X-Powered-By` | `apps/api/src/errors.ts` | `app.test.ts`, `security.test.ts` |
 
 The headers are set in `security.ts` rather than with `helmet`: helmet's defaults are made for HTML pages, and an API answering JSON needs only these five.
@@ -40,9 +42,22 @@ The headers are set in `security.ts` rather than with `helmet`: helmet's default
 
 Express's `trust proxy` is off, so `X-Forwarded-Host` and `X-Forwarded-For` are ignored. Behind the platform's proxy, turning it on is a decision for the deployment: the Host check would then read the forwarded host, which only the proxy may set.
 
+## Accounts
+
+**Data.** A `User` has an email, a name and a password hash. The email is stored trimmed and lowercased, so its unique index ignores case. A board's `Member` links to the user it stands for (`userId`, one member per user and board); deleting an account unlinks its members instead of deleting them, so the name stays on their comments and cards.
+
+**Passwords** (`apps/api/src/auth/passwords.ts`) are hashed with scrypt from `node:crypto`. Argon2id was set aside because its package is native: an install script to allow, binaries to download, a wider supply chain, for an algorithm OWASP ranks alongside scrypt.
+- Parameters: N = 2¹⁴, r = 8, p = 5, one of OWASP's equivalent settings, the one using the least memory (16 MiB a hash), so sign-ins at the same moment fit a small server.
+- A 16-byte random salt per hash, a 32-byte key, compared in constant time.
+- Stored as a PHC string, `$scrypt$ln=14,r=8,p=5$<salt>$<key>`. Each hash carries its parameters, so raising them later still verifies the older hashes, and `needsRehash` marks them to be replaced at the next sign-in.
+- Passwords are normalised to NFKC before hashing, so the same password typed on systems that encode accents differently matches.
+- A stored hash that is malformed, uses another algorithm, has a short key or names parameters past a cap is refused, never trusted: a tampered row cannot make every password match, or make one sign-in take minutes.
+
+**Sessions** (to come with sign-in): a random token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie, and only its SHA-256 hash in the database. The cookie is out of reach of the page's scripts, so an XSS cannot carry it away. Being a row, a session ends when it is deleted: signing out, or changing the password, closes it at once. A JWT was set aside: it stays valid until it expires whatever the server knows, and a web app that keeps it leaves it within reach of scripts.
+
 ## Not covered yet
 
-- **Accounts and permissions** (Roadmap: Collaboration). Every route will check that the signed-in user is a member of the board the id belongs to, with tests that try to read and write another user's board. Passwords are hashed with argon2id, and sign-in attempts are limited per account and per address. The session is to be decided between an `HttpOnly`, `Secure`, `SameSite` cookie, out of reach of the page's scripts, and a token the web app keeps; with a cookie, writes also check the `Origin` header.
+- **Sign-in and permissions** (Roadmap: Collaboration), on the [accounts](#accounts) that exist. Every route will check that the signed-in user is a member of the board the id belongs to, with tests that try to read and write another user's board. Sign-in attempts are limited per account and per address, and an unknown email costs the same time as a wrong password, so the answer does not reveal which accounts exist. Writes also check the `Origin` header.
 - **Rate limiting**: none. Sign-in first, then every route, per client.
 - **Production** (Roadmap: Production):
   - HTTPS only, with HSTS;

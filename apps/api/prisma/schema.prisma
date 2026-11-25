@@ -73,17 +73,33 @@ model Label {
   @@index([boardId])
 }
 
-// Someone who works on a board; accounts will come with sign-in.
+// An account. The email is stored trimmed and lowercased, so the unique index ignores case.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  // scrypt, with its parameters and salt: src/auth/passwords.ts.
+  passwordHash String
+  createdAt    DateTime @default(now())
+  members      Member[]
+}
+
+// Someone who works on a board, linked to their account once they have one. A deleted account
+// leaves the member, so their name stays on their comments and cards.
 model Member {
   id       String    @id @default(cuid())
   board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
   boardId  String
+  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId   String?
   name     String
   color    PaletteColor
   cards    Card[]
   comments Comment[]
 
-  @@index([boardId])
+  // Also serves the lookups by board, so boardId needs no index of its own.
+  @@unique([boardId, userId])
+  @@index([userId])
 }
 
 model Comment {
