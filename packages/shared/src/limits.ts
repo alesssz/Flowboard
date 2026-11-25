@@ -9,3 +9,15 @@ export const cardDescriptionMaxLength = 10_000;
 
 /** Longest column title, in characters, after trimming. */
 export const columnTitleMaxLength = 100;
+
+/** Shortest password at sign-up, in characters: NIST SP 800-63B-4's minimum for a password used alone. */
+export const passwordMinLength = 15;
+
+/** Longest password, in characters: room for any passphrase, a bound on the work of hashing it. */
+export const passwordMaxLength = 256;
+
+/** Longest email address, in characters (RFC 5321's limit on a path). */
+export const emailMaxLength = 254;
+
+/** Longest display name, in characters, after trimming. */
+export const userNameMaxLength = 100;

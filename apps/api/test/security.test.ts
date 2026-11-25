@@ -46,6 +46,36 @@ describe('the Host check', () => {
   });
 });
 
+describe('the Origin check', () => {
+  it.each([
+    ['another site', 'https://attacker.example'],
+    ['a sibling subdomain', 'https://evil.localhost.example'],
+    ['a sandboxed frame or a file', 'null'],
+  ])('refuses a write from a page of %s with a JSON 403, without running the route', async (_scenario, origin) => {
+    const { columns } = await createBoard(prisma);
+
+    const response = await api.delete(`/api/columns/${columns.todo.id}`).set('Origin', origin);
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({ error: 'Forbidden', message: 'Origin not allowed' });
+    expect(await prisma.column.count({ where: { id: columns.todo.id } })).toBe(1);
+  });
+
+  it('accepts a write from the web app, and from a client that sends no Origin', async () => {
+    const { columns } = await createBoard(prisma);
+
+    expect((await api.patch(`/api/columns/${columns.todo.id}`).set('Origin', 'http://localhost:5873').send({ title: 'Next' })).status).toBe(200);
+    expect((await api.patch(`/api/columns/${columns.todo.id}`).send({ title: 'Later' })).status).toBe(200);
+  });
+
+  it('lets reads through: the browser keeps their answers from other origins', async () => {
+    const response = await api.get('/api/health').set('Origin', 'https://attacker.example');
+
+    expect(response.status).toBe(200);
+    expect(response.headers).not.toHaveProperty('access-control-allow-origin');
+  });
+});
+
 describe('the security headers', () => {
   it.each([
     ['a success', '/api/health', 'localhost', 200],

@@ -4,12 +4,13 @@
  */
 import type { HealthResponse } from '@flowboard/shared';
 import express, { type Express } from 'express';
+import { authRoutes } from './auth/auth-routes.ts';
 import { boardRoutes } from './boards/board-routes.ts';
 import { cardRoutes } from './cards/card-routes.ts';
 import { columnRoutes } from './columns/column-routes.ts';
 import type { PrismaClient } from './db/client.ts';
 import { handleError, sendError } from './errors.ts';
-import { checkHost, setSecurityHeaders } from './security.ts';
+import { checkHost, checkOrigin, setSecurityHeaders } from './security.ts';
 
 export interface AppOptions {
   /** Host names accepted besides localhost, 127.0.0.1 and [::1] (ALLOWED_HOSTS). */
@@ -25,6 +26,7 @@ export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOption
   // Before the body is read, and on every response, errors included.
   app.use(setSecurityHeaders);
   app.use(checkHost(allowedHosts));
+  app.use(checkOrigin(allowedHosts));
   // The longest description with every character escaped (\u0001, 6 bytes) is 60 kB.
   app.use(express.json({ limit: '100kb' }));
 
@@ -42,6 +44,7 @@ export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOption
     res.json(body);
   });
 
+  app.use('/api', authRoutes(prisma));
   app.use('/api', boardRoutes(prisma));
   app.use('/api', columnRoutes(prisma));
   app.use('/api', cardRoutes(prisma));

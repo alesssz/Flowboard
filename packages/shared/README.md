@@ -6,8 +6,8 @@ What the web app and the API agree on: the types of every request and response b
 
 | Import | Contents | Used by |
 |---|---|---|
-| `@flowboard/shared` | Types (`Board`, `Card`, `UpdateCardRequest`…), limits (`cardTitleMaxLength`…) and the palette (`paletteColors`) | both apps |
-| `@flowboard/shared/schemas` | Zod schemas of the request bodies (`createColumnRequestSchema`, `updateCardRequestSchema`…) | the API |
+| `@flowboard/shared` | Types (`Board`, `Card`, `User`, `UpdateCardRequest`…), limits (`cardTitleMaxLength`, `passwordMinLength`…) and the palette (`paletteColors`) | both apps |
+| `@flowboard/shared/schemas` | Zod schemas of the request bodies (`createColumnRequestSchema`, `updateCardRequestSchema`, `signUpRequestSchema`…) | the API |
 
 ```ts
 import { type Card, cardTitleMaxLength } from '@flowboard/shared';
@@ -44,9 +44,11 @@ src/
 ├── index.ts           main entry point: types, limits and palette
 ├── schemas.ts         @flowboard/shared/schemas: the Zod schemas
 ├── board.ts           Board, BoardSummary, Column, Card, CardComment, Label, Member
+├── auth.ts            User, the signed-in user
+├── auth-requests.ts   sign-up and sign-in schemas, and SignUpRequest, SignInRequest
 ├── column-requests.ts column request schemas, and CreateColumnRequest, UpdateColumnRequest
 ├── card-requests.ts   card request schemas, and CreateCardRequest, UpdateCardRequest
-├── limits.ts          field limits, free of Zod
+├── limits.ts          field and password limits, free of Zod
 ├── palette.ts         paletteColors and PaletteColor, free of Zod; mirrored by the database enum
 ├── error.ts           ApiError, the body of every API error response
 └── health.ts          HealthResponse (GET /api/health)

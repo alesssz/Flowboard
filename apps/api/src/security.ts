@@ -1,9 +1,13 @@
-// Defences every request goes through before its route: the Host check and the security headers.
+// Defences every request goes through before its route: the Host and Origin checks and the security headers.
 import type { RequestHandler } from 'express';
 import { sendError } from './errors.ts';
 
 /** Always accepted: a page can never make the browser send these for a host it controls. */
 const localHosts = ['localhost', '127.0.0.1', '[::1]'];
+
+export function isLocalHost(hostname: string): boolean {
+  return localHosts.includes(hostname.toLowerCase());
+}
 
 /** ALLOWED_HOSTS: host names, without port, comma-separated. */
 export function readAllowedHosts(value = process.env.ALLOWED_HOSTS): string[] {
@@ -29,6 +33,34 @@ export function checkHost(allowedHosts: readonly string[]): RequestHandler {
     }
     next();
   };
+}
+
+const readOnlyMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * A 403 for a write sent by a page of another site, which the browser names in Origin: the session cookie
+ * is SameSite=Lax, and this also covers sites that count as the same one (a sibling subdomain). Clients
+ * other than browsers send no Origin and pass.
+ */
+export function checkOrigin(allowedHosts: readonly string[]): RequestHandler {
+  const allowed = new Set([...localHosts, ...allowedHosts]);
+  return (req, res, next) => {
+    const origin = req.get('Origin');
+    if (readOnlyMethods.has(req.method) || origin === undefined || allowed.has(hostnameOf(origin))) {
+      next();
+      return;
+    }
+    sendError(res, 403, 'Origin not allowed');
+  };
+}
+
+// '' for an Origin that is not a URL, such as "null" from a sandboxed frame or a file.
+function hostnameOf(origin: string): string {
+  try {
+    return new URL(origin).hostname;
+  } catch {
+    return '';
+  }
 }
 
 /** Headers for a JSON API: nothing in a response runs, is framed, sniffed, cached or read by another origin. */
