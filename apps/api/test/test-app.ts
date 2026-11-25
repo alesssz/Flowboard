@@ -10,8 +10,8 @@ export function useTestApp() {
   const api = request(createApp(prisma));
 
   beforeEach(async () => {
-    // Every table hangs off Board, so the cascade empties them all.
-    await prisma.$executeRaw`TRUNCATE "Board" CASCADE`;
+    // Every table hangs off Board or User, so the cascade empties them all.
+    await prisma.$executeRaw`TRUNCATE "Board", "User" CASCADE`;
   });
 
   afterAll(async () => {

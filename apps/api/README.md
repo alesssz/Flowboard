@@ -39,7 +39,8 @@ The root `package.json` forwards the `db:` scripts (`pnpm db:migrate`) and adds 
 - **Client**: generated into `src/generated/prisma/` (gitignored) by every script that runs or compiles the code, so a fresh clone or CI needs no extra step and no database. It connects through the `node-postgres` driver adapter (`@prisma/adapter-pg`).
 - **Install script**: `@prisma/engines` downloads the schema engine that `migrate` runs, so it is allowlisted in `pnpm-workspace.yaml`.
 - **Order**: rows carry an integer `position` among their siblings (columns on a board, cards in a column, labels on a board). Queries sort by it; the API returns arrays in that order and never the positions.
-- **Deletes** cascade from a board to everything on it.
+- **Deletes** cascade from a board to everything on it. Deleting a user unlinks their members (`userId` set to null) and keeps them.
+- **Accounts**: a `User` has an email (stored trimmed and lowercased, unique), a name and a scrypt password hash (`src/auth/passwords.ts`). A board's `Member` links to at most one user, and a user to at most one member per board ([docs/security.md](../../docs/security.md#accounts)).
 
 ## Structure
 
@@ -52,6 +53,8 @@ src/
 ├── index.ts               entry point: configuration, listen, graceful shutdown (SIGINT/SIGTERM)
 ├── app.ts                 createApp(prisma, options): middleware, routes, JSON 404, error handler
 ├── security.ts            the Host check (ALLOWED_HOSTS) and the security headers, before every route
+├── auth/
+│   └── passwords.ts       hashPassword, verifyPassword, needsRehash: scrypt, stored as a PHC string
 ├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
@@ -71,8 +74,8 @@ test/
 ├── global-setup.ts        once per run: picks the test database, applies the migrations
 ├── test-app.ts            useTestApp(): the app and a Prisma client, the database emptied before each test
 ├── fixtures.ts            createBoard(): a board with columns, cards, labels, members and comments
-├── *.test.ts              what every route shares (app, security), then one file per resource (boards,
-│                          columns, cards)
+├── *.test.ts              what every route shares (app, security), one file per resource (boards,
+│                          columns, cards), and password hashing (passwords)
 └── tsconfig.json          the tests' type-check, extending the API's
 vitest.config.ts           test files, global setup, one file at a time
 ```
@@ -124,7 +127,7 @@ Invoke-RestMethod http://localhost:3700/api/boards
 `pnpm test` (or `make test`) runs every route through HTTP: [Supertest](https://github.com/forwardemail/supertest) sends requests to `createApp()` without opening a port, and [Vitest](https://vitest.dev/) runs the files.
 
 - **Database.** The tests use `flowboard_test`, in the same container as the development database, which they never touch. Before the first file, the global setup applies the migrations to it (`prisma migrate deploy`, which creates it on the first run), so a new migration reaches it by itself. PostgreSQL must be up (`pnpm db:up`).
-- **Isolation.** Every test starts from an empty database (`TRUNCATE "Board" CASCADE`, which reaches every table) and builds what it needs with `createBoard()`. The files share the database, so they run one at a time.
+- **Isolation.** Every test starts from an empty database (`TRUNCATE "Board", "User" CASCADE`, which reaches every table) and builds what it needs with `createBoard()`. The files share the database, so they run one at a time.
 - **Safety.** A database whose name does not end in `_test` is refused before anything runs, whatever `TEST_DATABASE_URL` says.
 - **Fixtures** are created out of display order (the second card before the first, the last label first), so a test of an order checks the API's sorting, not insertion order.
 - A test's name states its scenario; it arranges, acts once, then asserts on the status, the body and, for writes, the rows left in the database.
