@@ -9,14 +9,24 @@ import { cardRoutes } from './cards/card-routes.ts';
 import { columnRoutes } from './columns/column-routes.ts';
 import type { PrismaClient } from './db/client.ts';
 import { handleError, sendError } from './errors.ts';
+import { checkHost, setSecurityHeaders } from './security.ts';
+
+export interface AppOptions {
+  /** Host names accepted besides localhost, 127.0.0.1 and [::1] (ALLOWED_HOSTS). */
+  allowedHosts?: readonly string[];
+}
 
 /** A new, independent app instance, reading and writing through `prisma`. */
-export function createApp(prisma: PrismaClient): Express {
+export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOptions = {}): Express {
   const app = express();
 
-  app.use(express.json());
   // No framework fingerprint in response headers.
   app.disable('x-powered-by');
+  // Before the body is read, and on every response, errors included.
+  app.use(setSecurityHeaders);
+  app.use(checkHost(allowedHosts));
+  // The longest description with every character escaped (\u0001, 6 bytes) is 60 kB.
+  app.use(express.json({ limit: '100kb' }));
 
   /**
    * GET /api/health — liveness probe for the web app's status panel and, once

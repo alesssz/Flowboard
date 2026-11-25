@@ -11,7 +11,7 @@ pnpm dev                              # API and web app together
 pnpm --filter @flowboard/api dev      # API only
 ```
 
-The server listens on http://localhost:3700; set `PORT` to change it (`$env:PORT=4700` in PowerShell, or in `.env`). The web app's dev proxy targets port 3700, so update `apps/web/vite.config.ts` too. The server starts even while the database is down; requests that need it answer `500` until it is back. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+The server listens on `127.0.0.1` port 3700 (http://localhost:3700), out of reach of other devices on the network; set `PORT` to change the port (`$env:PORT=4700` in PowerShell, or in `.env`). The web app's dev proxy targets `127.0.0.1:3700`, so update `apps/web/vite.config.ts` too. It answers only requests addressed to itself: a `Host` header other than `localhost`, `127.0.0.1`, `[::1]` or one of `ALLOWED_HOSTS` gets a `403` ([docs/security.md](../../docs/security.md)). The server starts even while the database is down; requests that need it answer `500` until it is back. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -50,7 +50,8 @@ prisma/
 prisma.config.ts           Prisma CLI configuration
 src/
 ├── index.ts               entry point: configuration, listen, graceful shutdown (SIGINT/SIGTERM)
-├── app.ts                 createApp(prisma): middleware, routes, JSON 404, error handler
+├── app.ts                 createApp(prisma, options): middleware, routes, JSON 404, error handler
+├── security.ts            the Host check (ALLOWED_HOSTS) and the security headers, before every route
 ├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
@@ -70,7 +71,8 @@ test/
 ├── global-setup.ts        once per run: picks the test database, applies the migrations
 ├── test-app.ts            useTestApp(): the app and a Prisma client, the database emptied before each test
 ├── fixtures.ts            createBoard(): a board with columns, cards, labels, members and comments
-├── *.test.ts              one file per resource (app, boards, columns, cards)
+├── *.test.ts              what every route shares (app, security), then one file per resource (boards,
+│                          columns, cards)
 └── tsconfig.json          the tests' type-check, extending the API's
 vitest.config.ts           test files, global setup, one file at a time
 ```
@@ -99,8 +101,10 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 | Status | When |
 |---|---|
-| `400` | Malformed JSON; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
+| `400` | Malformed JSON, or a write with no JSON body; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
+| `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route |
 | `404` | No board, column or card with that id; no route |
+| `413` | A body over 100 kB, which is not read |
 | `500` | Anything unexpected: logged by the server, no details sent |
 
 **Writes.** A `PATCH` changes only the fields present, and needs at least one. Each write runs in one transaction and answers with the column or card as it now is, so the client needs no reload. A new column goes after the board's last one, a new card after its column's last one; two created at the same moment may share a position until reordering renumbers them. Deleting a column deletes its cards and their comments (database cascades).
@@ -133,6 +137,8 @@ Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
 |---|---|---|
 | `DATABASE_URL` | none, required | PostgreSQL connection URL; `.env.example` has the one for `compose.yaml`'s database |
 | `PORT` | `3700` | Port the server listens on |
+| `HOST` | `127.0.0.1` | Interface the server listens on: the loopback only; `0.0.0.0` in a container |
+| `ALLOWED_HOSTS` | none | Host names the API answers besides `localhost`, `127.0.0.1` and `[::1]`, comma-separated, without port: the deployed domain |
 | `TEST_DATABASE_URL` | the development container's `flowboard_test` | Database the tests run on; its name must end in `_test`. An environment variable, for CI: the tests never read `.env` |
 
 ## Conventions
@@ -140,6 +146,7 @@ Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
 - Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - Every route lives under **`/api`**, the only prefix the web app's dev proxy forwards.
 - Every response with a body is **JSON**, errors included; a `DELETE` answers `204` with none.
+- What must apply to every request (`security.ts`) is mounted before `express.json()`, so a refused request is never parsed, and its answer carries the security headers too.
 - Request bodies go through **`parseBody(schema, req.body)`** with a schema from `@flowboard/shared/schemas`, before anything reads them. The API has no Zod dependency of its own: `parseBody` needs only the schema's `safeParse`.
 - A request that cannot be served throws **`HttpError(status, message)`** from wherever it is found (a route, a query), and the error handler answers in the `ApiError` shape.
 - Queries `select` the fields a response needs and map them to the shared types in `*-queries.ts`; routes never return Prisma's objects as they are.
