@@ -1,6 +1,6 @@
 # CI and repository security
 
-What GitHub checks on every push, the repository settings that protect the code and its supply chain, and how to verify them all from the terminal.
+What GitHub checks on every push, the repository settings that protect the code and its supply chain, and how to verify them all from the terminal. The application's own defences are in [security.md](security.md).
 
 ## Contents
 

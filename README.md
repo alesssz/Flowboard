@@ -156,7 +156,7 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 |---|---|
 | PowerShell: `pnpm.ps1 cannot be loaded because running scripts is disabled on this system` | Windows' default execution policy blocks the `pnpm.ps1` shim. Once per user: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` |
 | `ERR_PNPM_IGNORED_BUILDS` after adding a dependency | pnpm blocked its install script. Review it with `pnpm approve-builds` (select with Space) and commit the `allowBuilds` entry it writes to `pnpm-workspace.yaml`, or leave it blocked |
-| `Cannot start the server on port 3700: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3701`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
+| `Cannot start the server on 127.0.0.1 port 3700: listen EADDRINUSE` | Another process holds the port, usually a forgotten `pnpm dev`. Stop it, or run the API elsewhere (`$env:PORT=3701`) and change the proxy `target` in `apps/web/vite.config.ts` to match |
 | `Error: Port 5873 is already in use` | Another Vite dev server is running (`strictPort` stops instead of moving to 5874). Stop it |
 | The header shows **API offline** | The API is not running or crashed: check the `apps/api` lines in the `pnpm dev` output, or start it alone with `pnpm --filter @flowboard/api dev`. The badge retries on its own (after 1 s, doubling up to 30 s); **Retry** checks at once |
 | `[vite] http proxy error: /api/health` with `ECONNREFUSED 127.0.0.1:3700` when `pnpm dev` starts | Harmless: an open tab reloaded before the API was listening. The badge reconnects on its own; Vite logs every failed proxy request and has no option to silence it |
@@ -169,7 +169,9 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 
 ## CI and security
 
-Every push runs type-checking, linting, the production build and the API's tests on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
+Every push runs type-checking, linting, the production build and the API's tests on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md).
+
+The API listens on the loopback only, answers only requests addressed to itself (the `Host` check, against DNS rebinding) and sends JSON that a browser will not run, frame or cache. Bodies are size-limited and checked against strict schemas. The threats covered, how each is tested and what accounts and deployment will add: [docs/security.md](docs/security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
 
 ## Conventions
 

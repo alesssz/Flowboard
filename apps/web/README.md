@@ -47,7 +47,7 @@ apps/web/
 │   │                   queries (board-queries.ts), writes (column-mutations.ts, card-mutations.ts,
 │   │                   move-mutations.ts, through board-cache.ts), date helpers
 │   └── index.css       global styles, design tokens, light and dark themes
-├── vite.config.ts      React plugin, dev proxy /api → localhost:3700
+├── vite.config.ts      React plugin, dev proxy /api → 127.0.0.1:3700
 ├── tsconfig.json       solution file referencing the two projects below
 ├── tsconfig.app.json   browser code (src/)
 ├── tsconfig.node.json  vite.config.ts (Node)

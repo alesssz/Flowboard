@@ -15,9 +15,11 @@ export default defineConfig({
     // /api/* to the API. The browser sees a single origin, so development needs
     // no CORS setup and no API host in the code; production will serve both
     // from one domain to keep the same contract.
+    // The target is the API's HOST and PORT (apps/api/src/index.ts): 127.0.0.1, not localhost,
+    // which may resolve to ::1 first, where the API does not listen.
     proxy: {
       '/api': {
-        target: 'http://localhost:3700',
+        target: 'http://127.0.0.1:3700',
         changeOrigin: true,
       },
     },
