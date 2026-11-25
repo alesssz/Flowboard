@@ -82,6 +82,20 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
   members      Member[]
+  sessions     Session[]
+}
+
+// A signed-in browser: src/auth/sessions.ts. The cookie holds the token, the table only its hash.
+model Session {
+  // SHA-256 of the cookie's token, hex: a copy of the table cannot sign anyone in.
+  id        String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  // Pushed back while the session is used, never past createdAt plus the absolute limit.
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 // Someone who works on a board, linked to their account once they have one. A deleted account

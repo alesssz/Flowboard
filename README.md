@@ -200,7 +200,7 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [ ] Web app tests
 
 **Collaboration**
-- [ ] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)): accounts and password hashing done; sign-in, permissions and the web app's pages to come
+- [ ] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)): accounts, sign-up, sign-in and sessions in the API done; permissions and the web app's pages to come
 - [ ] Live updates and presence (Socket.IO)
 - [ ] Board roles and permissions
 - [ ] Concurrent editing of card descriptions (Yjs)
