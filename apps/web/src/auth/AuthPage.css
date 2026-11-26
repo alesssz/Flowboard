@@ -52,6 +52,15 @@
   color: var(--color-accent-text);
 }
 
+.auth__notice {
+  margin: 0 0 16px;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  color: var(--palette-amber-text);
+  background: var(--palette-amber-soft);
+  border-radius: 9px;
+}
+
 .auth__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

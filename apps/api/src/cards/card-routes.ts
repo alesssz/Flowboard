@@ -2,6 +2,7 @@
 import type { Board, Card, CardComment } from '@flowboard/shared';
 import { createCardRequestSchema, moveCardRequestSchema, updateCardRequestSchema } from '@flowboard/shared/schemas';
 import { Router } from 'express';
+import { signedInUser } from '../auth/require-session.ts';
 import { findBoard } from '../boards/board-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
@@ -15,7 +16,7 @@ export function cardRoutes(prisma: PrismaClient): Router {
   /** POST /api/columns/:columnId/cards — CreateCardRequest → 201 Card · 400 · 404 */
   router.post('/columns/:columnId/cards', async (req, res) => {
     const request = parseBody(createCardRequestSchema, req.body);
-    const body: Card | null = await createCard(prisma, req.params.columnId, request);
+    const body: Card | null = await createCard(prisma, signedInUser(res).id, req.params.columnId, request);
     if (body === null) {
       sendError(res, 404, `No column with id ${req.params.columnId}`);
       return;
@@ -26,7 +27,7 @@ export function cardRoutes(prisma: PrismaClient): Router {
   /** PATCH /api/cards/:cardId — UpdateCardRequest → 200 Card · 400 · 404 */
   router.patch('/cards/:cardId', async (req, res) => {
     const changes = parseBody(updateCardRequestSchema, req.body);
-    const body: Card | null = await updateCard(prisma, req.params.cardId, changes);
+    const body: Card | null = await updateCard(prisma, signedInUser(res).id, req.params.cardId, changes);
     if (body === null) {
       sendError(res, 404, `No card with id ${req.params.cardId}`);
       return;
@@ -37,8 +38,9 @@ export function cardRoutes(prisma: PrismaClient): Router {
   /** POST /api/cards/:cardId/move — MoveCardRequest → 200 Board, as it now is · 400 · 404 */
   router.post('/cards/:cardId/move', async (req, res) => {
     const request = parseBody(moveCardRequestSchema, req.body);
-    const boardId = await moveCard(prisma, req.params.cardId, request);
-    const body: Board | null = boardId === null ? null : await findBoard(prisma, boardId);
+    const userId = signedInUser(res).id;
+    const boardId = await moveCard(prisma, userId, req.params.cardId, request);
+    const body: Board | null = boardId === null ? null : await findBoard(prisma, userId, boardId);
     if (body === null) {
       sendError(res, 404, `No card with id ${req.params.cardId}`);
       return;
@@ -48,7 +50,7 @@ export function cardRoutes(prisma: PrismaClient): Router {
 
   /** DELETE /api/cards/:cardId — 204, with its comments · 404 */
   router.delete('/cards/:cardId', async (req, res) => {
-    if (!(await deleteCard(prisma, req.params.cardId))) {
+    if (!(await deleteCard(prisma, signedInUser(res).id, req.params.cardId))) {
       sendError(res, 404, `No card with id ${req.params.cardId}`);
       return;
     }
@@ -57,7 +59,7 @@ export function cardRoutes(prisma: PrismaClient): Router {
 
   /** GET /api/cards/:cardId/comments — 200 → CardComment[], oldest first · 404 */
   router.get('/cards/:cardId/comments', async (req, res) => {
-    const body: CardComment[] | null = await findCardComments(prisma, req.params.cardId);
+    const body: CardComment[] | null = await findCardComments(prisma, signedInUser(res).id, req.params.cardId);
     if (body === null) {
       sendError(res, 404, `No card with id ${req.params.cardId}`);
       return;

@@ -1,5 +1,6 @@
 // Card reads and writes, shaped as the @flowboard/shared types.
 import type { Card, CardComment, CreateCardRequest, MoveCardRequest, UpdateCardRequest } from '@flowboard/shared';
+import { memberOf } from '../boards/access.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError } from '../errors.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -20,6 +21,11 @@ export const cardFields = {
 
 type CardRow = Prisma.CardGetPayload<{ select: typeof cardFields }>;
 
+/** The card with this id, if it is on a board `userId` is a member of. */
+function cardOf(userId: string, cardId: string) {
+  return { id: cardId, column: { board: memberOf(userId) } } satisfies Prisma.CardWhereInput;
+}
+
 export function toCard({ dueDate, _count, ...card }: CardRow): Card {
   return {
     ...card,
@@ -29,10 +35,10 @@ export function toCard({ dueDate, _count, ...card }: CardRow): Card {
   };
 }
 
-/** The new card, at the bottom of the column, or null when there is no column with that id. */
-export function createCard(prisma: PrismaClient, columnId: string, request: CreateCardRequest): Promise<Card | null> {
+/** The new card, at the bottom of the column, or null when there is no column with that id on a board of `userId`'s. */
+export function createCard(prisma: PrismaClient, userId: string, columnId: string, request: CreateCardRequest): Promise<Card | null> {
   return prisma.$transaction(async (tx) => {
-    const column = await tx.column.findUnique({ where: { id: columnId }, select: { id: true } });
+    const column = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { id: true } });
     if (column === null) return null;
 
     // Two cards created at the same moment may share a position; reordering will renumber them.
@@ -46,12 +52,12 @@ export function createCard(prisma: PrismaClient, columnId: string, request: Crea
 }
 
 /**
- * The card after the changes, or null when there is no card with that id. Labels and assignees
- * must belong to the card's board: an id from another board, or from none, is an HttpError 400.
+ * The card after the changes, or null when there is no card with that id on a board of `userId`'s. Labels and
+ * assignees must belong to the card's board: an id from another board, or from none, is an HttpError 400.
  */
-export function updateCard(prisma: PrismaClient, cardId: string, changes: UpdateCardRequest): Promise<Card | null> {
+export function updateCard(prisma: PrismaClient, userId: string, cardId: string, changes: UpdateCardRequest): Promise<Card | null> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.card.findUnique({ where: { id: cardId }, select: { column: { select: { boardId: true } } } });
+    const existing = await tx.card.findFirst({ where: cardOf(userId, cardId), select: { column: { select: { boardId: true } } } });
     if (existing === null) return null;
     const { boardId } = existing.column;
 
@@ -91,11 +97,11 @@ function rejectUnknownIds(field: string, noun: string, requested: string[], foun
 /**
  * Moves the card to `index` among the cards of `columnId`, and renumbers the columns it leaves and enters
  * from 0, which also closes gaps and ties. The id of the card's board, or null when there is no card with
- * that id; a column that is not on the card's board is an HttpError 400.
+ * that id on a board of `userId`'s; a column that is not on the card's board is an HttpError 400.
  */
-export function moveCard(prisma: PrismaClient, cardId: string, { columnId, index }: MoveCardRequest): Promise<string | null> {
+export function moveCard(prisma: PrismaClient, userId: string, cardId: string, { columnId, index }: MoveCardRequest): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
-    const card = await tx.card.findUnique({ where: { id: cardId }, select: { columnId: true, column: { select: { boardId: true } } } });
+    const card = await tx.card.findFirst({ where: cardOf(userId, cardId), select: { columnId: true, column: { select: { boardId: true } } } });
     if (card === null) return null;
     const { boardId } = card.column;
     const target = await tx.column.findFirst({ where: { id: columnId, boardId }, select: { id: true } });
@@ -130,16 +136,16 @@ async function placeCards(tx: Transaction, columnId: string, cardIds: string[]):
     WHERE card.id = placed.id`;
 }
 
-/** Deletes the card and its comments; false when there is no card with that id. */
-export async function deleteCard(prisma: PrismaClient, cardId: string): Promise<boolean> {
-  const { count } = await prisma.card.deleteMany({ where: { id: cardId } });
+/** Deletes the card and its comments; false when there is no card with that id on a board of `userId`'s. */
+export async function deleteCard(prisma: PrismaClient, userId: string, cardId: string): Promise<boolean> {
+  const { count } = await prisma.card.deleteMany({ where: cardOf(userId, cardId) });
   return count > 0;
 }
 
-/** The card's comments, oldest first, or null when there is no card with that id. */
-export async function findCardComments(prisma: PrismaClient, cardId: string): Promise<CardComment[] | null> {
-  const card = await prisma.card.findUnique({
-    where: { id: cardId },
+/** The card's comments, oldest first, or null when there is no card with that id on a board of `userId`'s. */
+export async function findCardComments(prisma: PrismaClient, userId: string, cardId: string): Promise<CardComment[] | null> {
+  const card = await prisma.card.findFirst({
+    where: cardOf(userId, cardId),
     select: {
       comments: {
         orderBy: { createdAt: 'asc' },

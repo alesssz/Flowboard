@@ -17,7 +17,7 @@ export default function App() {
   }
 
   // Data first: a failed background refresh keeps the page that is on screen.
-  if (me.data !== undefined && me.data !== null) {
+  if (me.data?.status === 'signed-in') {
     return (
       <div className="app">
         <header className="app__header">
@@ -29,7 +29,7 @@ export default function App() {
           </span>
           <div className="app__header-end">
             <ApiStatusBadge />
-            <AccountMenu user={me.data} />
+            <AccountMenu user={me.data.user} />
           </div>
         </header>
 
@@ -43,8 +43,8 @@ export default function App() {
   return (
     <div className="app">
       <main className="app__main">
-        {me.data === null ? (
-          <AuthPage />
+        {me.data?.status === 'signed-out' ? (
+          <AuthPage sessionEnded={me.data.ended} />
         ) : me.isError ? (
           <PageMessage
             title="Cannot reach Flowboard"

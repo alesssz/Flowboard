@@ -1,5 +1,6 @@
 // Column reads and writes, shaped as the @flowboard/shared types.
 import type { Column, CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from '@flowboard/shared';
+import { memberOf } from '../boards/access.ts';
 import { cardFields, toCard } from '../cards/card-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -18,10 +19,15 @@ export function toColumn({ cards, ...column }: ColumnRow): Column {
   return { ...column, cards: cards.map(toCard) };
 }
 
-/** The new column, after the board's last one, or null when there is no board with that id. */
-export function createColumn(prisma: PrismaClient, boardId: string, request: CreateColumnRequest): Promise<Column | null> {
+/** The new column, after the board's last one, or null when `userId` is a member of no board with that id. */
+export function createColumn(
+  prisma: PrismaClient,
+  userId: string,
+  boardId: string,
+  request: CreateColumnRequest,
+): Promise<Column | null> {
   return prisma.$transaction(async (tx) => {
-    const board = await tx.board.findUnique({ where: { id: boardId }, select: { id: true } });
+    const board = await tx.board.findFirst({ where: { id: boardId, ...memberOf(userId) }, select: { id: true } });
     if (board === null) return null;
 
     // Two columns created at the same moment may share a position; reordering will renumber them.
@@ -34,10 +40,15 @@ export function createColumn(prisma: PrismaClient, boardId: string, request: Cre
   });
 }
 
-/** The column after the changes, or null when there is no column with that id. */
-export function updateColumn(prisma: PrismaClient, columnId: string, changes: UpdateColumnRequest): Promise<Column | null> {
+/** The column after the changes, or null when there is no column with that id on a board of `userId`'s. */
+export function updateColumn(
+  prisma: PrismaClient,
+  userId: string,
+  columnId: string,
+  changes: UpdateColumnRequest,
+): Promise<Column | null> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.column.findUnique({ where: { id: columnId }, select: { id: true } });
+    const existing = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { id: true } });
     if (existing === null) return null;
 
     const column = await tx.column.update({
@@ -51,11 +62,11 @@ export function updateColumn(prisma: PrismaClient, columnId: string, changes: Up
 
 /**
  * Moves the column to `index` among its board's columns, and renumbers them from 0. The id of the board,
- * or null when there is no column with that id.
+ * or null when there is no column with that id on a board of `userId`'s.
  */
-export function moveColumn(prisma: PrismaClient, columnId: string, { index }: MoveColumnRequest): Promise<string | null> {
+export function moveColumn(prisma: PrismaClient, userId: string, columnId: string, { index }: MoveColumnRequest): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
-    const column = await tx.column.findUnique({ where: { id: columnId }, select: { boardId: true } });
+    const column = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { boardId: true } });
     if (column === null) return null;
     const { boardId } = column;
 
@@ -77,8 +88,8 @@ export function moveColumn(prisma: PrismaClient, columnId: string, { index }: Mo
   });
 }
 
-/** Deletes the column with its cards and their comments; false when there is no column with that id. */
-export async function deleteColumn(prisma: PrismaClient, columnId: string): Promise<boolean> {
-  const { count } = await prisma.column.deleteMany({ where: { id: columnId } });
+/** Deletes the column with its cards and their comments; false when there is no column with that id on a board of `userId`'s. */
+export async function deleteColumn(prisma: PrismaClient, userId: string, columnId: string): Promise<boolean> {
+  const { count } = await prisma.column.deleteMany({ where: { id: columnId, board: memberOf(userId) } });
   return count > 0;
 }

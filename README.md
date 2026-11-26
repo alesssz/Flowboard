@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Every signed-in account sees the same board for now. Next: permissions, so each account reaches only the boards it is a member of. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows the account's board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Each account reaches only the boards it is a member of. Next: writing comments. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -171,7 +171,7 @@ It runs from PowerShell, Git Bash and zsh alike. Options are passed as variables
 
 Every push runs type-checking, linting, the production build and the API's tests on GitHub Actions; a weekly audit, and any change to the dependencies, runs `pnpm audit`. Workflows use only GitHub's own actions, pinned to commit hashes, with a read-only token. The repository has secret scanning with push protection, CodeQL, private vulnerability reporting and a ruleset protecting `main`. Details and the reasons behind each setting: [docs/ci-and-security.md](docs/ci-and-security.md).
 
-The API listens on the loopback only, answers only requests addressed to itself (the `Host` check, against DNS rebinding) and sends JSON that a browser will not run, frame or cache. Bodies are size-limited and checked against strict schemas. The threats covered, how each is tested and what accounts and deployment will add: [docs/security.md](docs/security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
+The API listens on the loopback only, answers only requests addressed to itself (the `Host` check, against DNS rebinding) and sends JSON that a browser will not run, frame or cache. Bodies are size-limited and checked against strict schemas. Passwords are hashed with scrypt, sessions live in an `HttpOnly` cookie, sign-ins are rate-limited, and every board route needs a session and reaches only the boards the user is a member of. The threats covered, how each is tested and what deployment will add: [docs/security.md](docs/security.md). To report a vulnerability: [SECURITY.md](SECURITY.md).
 
 ## Conventions
 
@@ -200,9 +200,9 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [ ] Web app tests
 
 **Collaboration**
-- [ ] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)): accounts, sessions, and the web app's sign-up and sign-in pages done; permissions to come
+- [x] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)); each account reaches only the boards it is a member of
 - [ ] Live updates and presence (Socket.IO)
-- [ ] Board roles and permissions
+- [ ] Board roles (owner, read-only member) and inviting members
 - [ ] Concurrent editing of card descriptions (Yjs)
 
 **Production**

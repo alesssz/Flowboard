@@ -14,7 +14,7 @@ What the API defends against today, where each defence lives and what checks it,
 
 ## Status
 
-Flowboard is not deployed. Accounts and sessions exist, and the web app shows the board only once signed in, but the board, column and card routes do not ask for a session yet: whoever reaches the API can read and change every board. Today's defences therefore keep the API reachable only from the computer running it, protect the accounts themselves, and set the rules that still hold once every route needs a session: strict input, JSON-only responses that cannot run as a page, no internals in errors.
+Flowboard is not deployed. Every board, column and card route needs a session, and reaches only the boards the signed-in user is a member of. The API is reachable only from the computer running it; the accounts and sessions are protected against the usual attacks on them; input is strict, responses are JSON that cannot run as a page, and errors give nothing away. Roles within a board, inviting members and deployment are still to come ([Not covered yet](#not-covered-yet)).
 
 ## Defences
 
@@ -26,6 +26,8 @@ Flowboard is not deployed. Accounts and sessions exist, and the web app shows th
 | A response is run, framed or sniffed as a page | Every response is JSON, with `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Cross-Origin-Resource-Policy: same-origin`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store` | `setSecurityHeaders` in `security.ts` | `security.test.ts` |
 | Malformed, oversized or unexpected input | Request bodies checked against strict Zod schemas: an unknown field is a `400`. Lengths are limited, with the same limits on the web app's inputs. Bodies over 100 kB are a `413`, unread | `@flowboard/shared/schemas`, `apps/api/src/validation.ts`, `app.ts` | `security.test.ts`, each route's tests |
 | SQL injection | Queries go through Prisma; the few raw ones are tagged templates, which send every value as a parameter | `apps/api/src/*/…-queries.ts` | code review |
+| Someone without a session reads or changes a board | Every route under `/api/boards`, `/api/columns` and `/api/cards` needs a session: `401` otherwise, before the route runs | `requireSession` in `apps/api/src/auth/require-session.ts`, mounted in `app.ts` | `apps/api/test/permissions.test.ts` |
+| A signed-in user reads or changes another user's board (by guessing or reusing its ids) | Every query filters on the boards the user is a member of, in the query that reads or writes: another user's board, column or card is a `404`, the answer for an id that does not exist, and is left unchanged; the board list leaves it out | `memberOf` in `apps/api/src/boards/access.ts`, every `*-queries.ts` | `permissions.test.ts`, for every route |
 | A card linked to another board's labels, members or columns | Every id in a write is checked against the card's board: `400` | `card-queries.ts` | `cards.test.ts` |
 | Script in user text (XSS) | React escapes all text it renders; the web app never sets HTML from data (`dangerouslySetInnerHTML`) | `apps/web/src` | code review |
 | A copy of the database gives away passwords or sessions | Only a salted scrypt hash of each password, and the SHA-256 of each session token, are stored ([Accounts](#accounts)) | `apps/api/src/auth/passwords.ts`, `sessions.ts` | `apps/api/test/passwords.test.ts`, `auth.test.ts` |
@@ -74,7 +76,7 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
 
 ## Not covered yet
 
-- **Permissions** (Roadmap: Collaboration). Every board, column and card route will need a session, and check that the signed-in user is a member of the board the id belongs to, with tests that try to read and write another user's board.
+- **Roles and invitations** (Roadmap: Collaboration). Every member of a board can do everything on it, and members come only from the seed: no owner, no read-only member, no way to invite one or to create a board.
 - **Account management**: changing the password (ending the account's other sessions), resetting a forgotten one, verifying the email, deleting the account.
 - **Rate limiting** beyond sign-up and sign-in: none yet on the other routes.
 - **Production** (Roadmap: Production):

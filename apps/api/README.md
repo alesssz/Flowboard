@@ -56,11 +56,13 @@ src/
 ├── auth/
 │   ├── auth-routes.ts     sign up, sign in, sign out, GET /api/auth/me; the limits on attempts
 │   ├── sessions.ts        startSession, readSession, endSession: the Session rows and the cookie
+│   ├── require-session.ts requireSession, in front of the board, column and card routes; signedInUser
 │   ├── rate-limit.ts      RateLimiter: attempts per key in fixed windows, in memory
 │   └── passwords.ts       hashPassword, verifyPassword, needsRehash: scrypt, stored as a PHC string
 ├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
+│   ├── access.ts          memberOf(userId): the boards a user may reach, filtered in every query
 │   ├── board-routes.ts    GET /api/boards, GET /api/boards/:boardId
 │   └── board-queries.ts   board reads, mapped to the @flowboard/shared types
 ├── columns/
@@ -75,10 +77,13 @@ src/
 └── generated/prisma/      generated Prisma client (gitignored)
 test/
 ├── global-setup.ts        once per run: picks the test database, applies the migrations
-├── test-app.ts            useTestApp(): the app and a Prisma client, the database emptied before each test
-├── fixtures.ts            createBoard(): a board with columns, cards, labels, members and comments
-├── *.test.ts              what every route shares (app, security), accounts and sessions (auth), one file
-│                          per resource (boards, columns, cards), and password hashing (passwords)
+├── test-app.ts            useTestApp(): the app with and without a session (member, api) and a Prisma
+│                          client, the database emptied before each test
+├── fixtures.ts            createBoard(): a board with columns, cards, labels, members and comments, one
+│                          member signed in by memberCookie; createMemberAccount()
+├── *.test.ts              what every route shares (app, security), accounts and sessions (auth), who may
+│                          reach a board (permissions), one file per resource (boards, columns, cards),
+│                          and password hashing (passwords)
 └── tsconfig.json          the tests' type-check, extending the API's
 vitest.config.ts           test files, global setup, one file at a time
 ```
@@ -94,7 +99,7 @@ vitest.config.ts           test files, global setup, one file at a time
 | `POST` | `/api/auth/sign-in` | Signs in, ending any session the browser held; body `SignInRequest` | `200` `User`, with the session cookie · `400` · `401` · `429` |
 | `POST` | `/api/auth/sign-out` | Ends the browser's session and clears its cookie | `204`, no body, with or without a session |
 | `GET` | `/api/auth/me` | The signed-in user | `200` `User` · `401` |
-| `GET` | `/api/boards` | Every board, oldest first | `200` `BoardSummary[]` |
+| `GET` | `/api/boards` | The boards the user is a member of, oldest first | `200` `BoardSummary[]` |
 | `GET` | `/api/boards/:boardId` | A board with its columns and cards in display order, and the board's labels and members | `200` `Board` · `404` |
 | `POST` | `/api/boards/:boardId/columns` | Adds a column after the board's last one, with no cards; body `CreateColumnRequest` | `201` `Column` · `400` · `404` |
 | `PATCH` | `/api/columns/:columnId` | Renames or recolours the column; body `UpdateColumnRequest` | `200` `Column` · `400` · `404` |
@@ -112,9 +117,9 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 | Status | When |
 |---|---|
 | `400` | Malformed JSON, or a write with no JSON body; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
-| `401` | Wrong email or password, the same answer for both; no session, or one that has ended (`Not signed in`) |
+| `401` | Wrong email or password, the same answer for both; no session, or one that has ended (`Not signed in`), on `/api/auth/me` and on every board, column and card route |
 | `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route; a write whose `Origin` is another site's (`Origin not allowed`) |
-| `404` | No board, column or card with that id; no route |
+| `404` | No board, column or card with that id on a board the user is a member of: another user's answers as one that does not exist; no route |
 | `409` | Sign-up with an email that already has an account, in any case |
 | `413` | A body over 100 kB, which is not read |
 | `429` | Too many sign-ups and sign-ins from one address (100 in 15 minutes), or failed sign-ins for one email (10 in 15 minutes, counted from zero after a success); `Retry-After` gives the seconds to wait |
@@ -128,7 +133,9 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
 
-**Accounts.** Emails are trimmed and lowercased; names are trimmed. A password is kept exactly as typed, 15 to 256 characters at sign-up (`passwordMinLength`, `passwordMaxLength`); sign-in checks no minimum, so a rule raised later does not lock out older passwords. Sign-up and sign-in set the session cookie: `HttpOnly`, `SameSite=Lax`, `Path=/`, 30 days; named `flowboard_session` over plain HTTP on the loopback (development), and `__Host-flowboard_session`, `Secure`, everywhere else. The board, column and card routes do not ask for a session yet. Design and reasons: [docs/security.md](../../docs/security.md#accounts).
+**Accounts.** Emails are trimmed and lowercased; names are trimmed. A password is kept exactly as typed, 15 to 256 characters at sign-up (`passwordMinLength`, `passwordMaxLength`); sign-in checks no minimum, so a rule raised later does not lock out older passwords. Sign-up and sign-in set the session cookie: `HttpOnly`, `SameSite=Lax`, `Path=/`, 30 days; named `flowboard_session` over plain HTTP on the loopback (development), and `__Host-flowboard_session`, `Secure`, everywhere else. Design and reasons: [docs/security.md](../../docs/security.md#accounts).
+
+**Permissions.** Every route under `/api/boards`, `/api/columns` and `/api/cards` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column or card is a `404`. Every member can do everything on a board; boards are created only by the seed for now. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards
@@ -161,6 +168,7 @@ Set in `apps/api/.env`, documented in [`.env.example`](.env.example).
 - Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - Every route lives under **`/api`**, the only prefix the web app's dev proxy forwards.
 - Every response with a body is **JSON**, errors included; a `DELETE` answers `204` with none.
+- A board, column or card query takes the signed-in user's id (`signedInUser(res).id`) and filters on `memberOf(userId)`: through the board's members, never an id from the request alone.
 - What must apply to every request (`security.ts`) is mounted before `express.json()`, so a refused request is never parsed, and its answer carries the security headers too.
 - Request bodies go through **`parseBody(schema, req.body)`** with a schema from `@flowboard/shared/schemas`, before anything reads them. The API has no Zod dependency of its own: `parseBody` needs only the schema's `safeParse`.
 - A request that cannot be served throws **`HttpError(status, message)`** from wherever it is found (a route, a query), and the error handler answers in the `ApiError` shape.
