@@ -1,4 +1,4 @@
-// Who may reach a board: its members. Every board, column, card and comment query filters on memberOf.
+// Who may reach a board: its members. Every board, column, card, comment and label query filters on memberOf.
 import type { Prisma } from '../generated/prisma/client.ts';
 
 /**

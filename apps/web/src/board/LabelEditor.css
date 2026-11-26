@@ -1,0 +1,115 @@
+/* The label editor, in place of the list in a card's labels panel. */
+
+.label-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-editor__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label-editor__heading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.label-editor__preview {
+  min-width: 0;
+  padding: 1px 7px;
+  overflow: hidden;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+}
+
+.label-editor__legend {
+  margin-bottom: -4px;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.label-editor__input {
+  width: 100%;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+}
+
+.label-editor__input[aria-invalid] {
+  border-color: var(--color-danger);
+}
+
+.label-editor__error {
+  margin: -2px 0 0;
+  font-size: 0.78rem;
+  color: var(--color-danger);
+}
+
+.label-editor__colors {
+  margin: 0 0 4px;
+  padding: 0;
+  border: none;
+}
+
+/* A fieldset's legend takes no part in the form's gap. */
+.label-editor__colors .label-editor__legend {
+  margin-bottom: 10px;
+}
+
+.label-editor__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 4px;
+}
+
+.label-editor__swatch {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--tone);
+  cursor: pointer;
+}
+
+/* The ring marks the chosen colour by shape as well as by colour. */
+.label-editor__swatch:checked {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-text);
+}
+
+.label-editor__input:focus-visible,
+.label-editor__swatch:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 3px;
+}
+
+.label-editor__input:focus-visible {
+  outline-offset: 1px;
+}
+
+.label-editor__delete {
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}

@@ -49,6 +49,7 @@ src/
 ├── column-requests.ts  column request schemas, and CreateColumnRequest, UpdateColumnRequest
 ├── card-requests.ts    card request schemas, and CreateCardRequest, UpdateCardRequest
 ├── comment-requests.ts comment request schemas, and CreateCommentRequest, UpdateCommentRequest
+├── label-requests.ts   label request schemas, and CreateLabelRequest, UpdateLabelRequest
 ├── limits.ts           field and password limits, free of Zod
 ├── palette.ts          paletteColors and PaletteColor, free of Zod; mirrored by the database enum
 ├── error.ts            ApiError, the body of every API error response

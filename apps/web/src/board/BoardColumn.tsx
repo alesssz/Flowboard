@@ -34,6 +34,8 @@ export function BoardColumn({ boardId, column, onOpenCard, onDeleted }: BoardCol
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={isDragging ? 'board-column board-column--placeholder' : 'board-column'}
       data-color={column.color}
+      // BoardView finds a card's neighbour, or Add a card, by these after a deletion.
+      data-column-id={column.id}
       aria-labelledby={titleId}
     >
       <ColumnHeader
@@ -88,6 +90,7 @@ function SortableCard({ card, onOpen }: SortableCardProps) {
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={isDragging ? 'board-column__placeholder' : undefined}
+      data-card-id={card.id}
       {...pointerListeners}
     >
       <BoardCard
