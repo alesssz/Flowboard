@@ -24,6 +24,13 @@
   gap: 8px;
 }
 
+.app__header-end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
 .app__wordmark {
   font-size: 1.1rem;
   font-weight: 700;

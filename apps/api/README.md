@@ -24,7 +24,7 @@ The server listens on `127.0.0.1` port 3700 (http://localhost:3700), out of reac
 | `test` | `prisma generate --no-hints && vitest run` | Runs the tests once ([Tests](#tests)); `pnpm --filter @flowboard/api exec vitest` keeps watching |
 | `db:generate` | `prisma generate --no-hints` | Regenerates the Prisma client from the schema |
 | `db:migrate` | `prisma migrate dev` | Applies pending migrations; after a schema change, first creates one (`--name <name>`) |
-| `db:seed` | `prisma db seed` | Runs `src/db/seed.ts`: replaces every board with the sample board |
+| `db:seed` | `prisma db seed` | Runs `src/db/seed.ts`: replaces every board with the sample board, and creates the demo account (`demo@flowboard.local`, password `flowboard`) or resets its name and password |
 | `db:reset` | `prisma migrate reset && prisma db seed` | Drops every table, applies every migration, seeds (asks first) |
 | `db:studio` | `prisma studio --port 6255` | Prisma Studio on http://localhost:6255: browse and edit the data |
 
@@ -71,7 +71,7 @@ src/
 │   └── card-queries.ts    card reads and writes; cardFields and toCard, shared with the column and board queries
 ├── db/
 │   ├── client.ts          PrismaClient with the PostgreSQL adapter; DATABASE_URL check
-│   └── seed.ts            the sample board (pnpm db:seed)
+│   └── seed.ts            the sample board and the demo account (pnpm db:seed)
 └── generated/prisma/      generated Prisma client (gitignored)
 test/
 ├── global-setup.ts        once per run: picks the test database, applies the migrations

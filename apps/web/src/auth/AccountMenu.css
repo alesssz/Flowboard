@@ -1,0 +1,68 @@
+/* The signed-in user in the header: their name, Sign out, and why signing out failed. */
+
+.account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.account__name {
+  max-width: 20ch;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.account__sign-out {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.account__sign-out:hover {
+  background: var(--color-bg);
+}
+
+.account__sign-out[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.account__sign-out:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+/* Under the header, so the header keeps its height. */
+.account__error {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 2;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 2 * var(--gutter)));
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--color-on-danger);
+  background: var(--color-danger);
+  border-radius: 7px;
+}
+
+/* No room for the name beside the brand and the API badge. */
+@media (max-width: 600px) {
+  .account__name {
+    display: none;
+  }
+}

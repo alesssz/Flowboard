@@ -2,7 +2,7 @@
 // the card updates without reloading the board.
 import type { Card, CreateCardRequest, UpdateCardRequest } from '@flowboard/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { sendDelete, sendJson } from '../api.ts';
+import { sendEmpty, sendJson } from '../api.ts';
 import { updateBoard } from './board-cache.ts';
 import { cardCommentsQuery } from './board-queries.ts';
 
@@ -42,7 +42,7 @@ export function useUpdateCard(boardId: string, cardId: string) {
 export function useDeleteCard(boardId: string, cardId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => sendDelete(`/cards/${encodeURIComponent(cardId)}`),
+    mutationFn: () => sendEmpty('DELETE', `/cards/${encodeURIComponent(cardId)}`),
     onSuccess: () => {
       updateBoard(queryClient, boardId, (board) => ({
         ...board,
