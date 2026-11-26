@@ -1,4 +1,4 @@
-// The session check in front of the board, column and card routes: a 401 without one, the user in res.locals with.
+// The session check in front of the board, column, card and comment routes: a 401 without one, the user in res.locals with.
 import type { User } from '@flowboard/shared';
 import type { RequestHandler, Response } from 'express';
 import type { PrismaClient } from '../db/client.ts';

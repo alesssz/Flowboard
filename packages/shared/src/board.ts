@@ -49,6 +49,10 @@ export interface CardComment {
   body: string;
   /** ISO 8601 instant in UTC, e.g. '2026-11-18T09:30:00.000Z'. */
   createdAt: string;
+  /** When its body last changed, in the same form; null if never. */
+  editedAt: string | null;
+  /** Written by the signed-in user, who alone may edit or delete it. */
+  mine: boolean;
 }
 
 export interface Label {

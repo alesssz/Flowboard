@@ -7,6 +7,9 @@ export const cardTitleMaxLength = 200;
 /** Longest card description, in characters, after trimming. */
 export const cardDescriptionMaxLength = 10_000;
 
+/** Longest comment, in characters, after trimming. */
+export const commentBodyMaxLength = 5_000;
+
 /** Longest column title, in characters, after trimming. */
 export const columnTitleMaxLength = 100;
 

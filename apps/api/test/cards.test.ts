@@ -1,4 +1,4 @@
-// Card writes, and a card's comments: create in a column, change fields, move, delete, read the comments.
+// Card writes: create in a column, change fields, move, delete.
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createBoard, createMemberAccount } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
@@ -211,44 +211,6 @@ describe('DELETE /api/cards/:cardId', () => {
     await member.delete(`/api/cards/${cards.second.id}`);
 
     const response = await member.delete(`/api/cards/${cards.second.id}`);
-
-    expect(response.status).toBe(404);
-  });
-});
-
-describe('GET /api/cards/:cardId/comments', () => {
-  it('lists the comments oldest first, with their authors and ISO times', async () => {
-    const { cards, members, comments } = await createBoard(prisma);
-
-    const response = await member.get(`/api/cards/${cards.first.id}/comments`);
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([
-      {
-        id: comments.question.id,
-        body: 'Who takes this?',
-        createdAt: '2026-11-19T09:00:00.000Z',
-        author: { id: members.alex.id, name: 'Alex Moreno', color: 'amber' },
-      },
-      {
-        id: comments.reply.id,
-        body: 'Done on my side',
-        createdAt: '2026-11-20T10:00:00.000Z',
-        author: { id: members.robin.id, name: 'Robin Park', color: 'green' },
-      },
-    ]);
-  });
-
-  it('lists none for a card without comments', async () => {
-    const { cards } = await createBoard(prisma);
-
-    const response = await member.get(`/api/cards/${cards.second.id}/comments`);
-
-    expect(response.body).toEqual([]);
-  });
-
-  it('answers 404 for a card that does not exist', async () => {
-    const response = await member.get('/api/cards/missing/comments');
 
     expect(response.status).toBe(404);
   });

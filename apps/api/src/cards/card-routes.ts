@@ -1,5 +1,5 @@
-// Card routes: create in a column, change, move, delete, and read a card's comments.
-import type { Board, Card, CardComment } from '@flowboard/shared';
+// Card routes: create in a column, change, move, delete.
+import type { Board, Card } from '@flowboard/shared';
 import { createCardRequestSchema, moveCardRequestSchema, updateCardRequestSchema } from '@flowboard/shared/schemas';
 import { Router } from 'express';
 import { signedInUser } from '../auth/require-session.ts';
@@ -7,7 +7,7 @@ import { findBoard } from '../boards/board-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
 import { parseBody } from '../validation.ts';
-import { createCard, deleteCard, findCardComments, moveCard, updateCard } from './card-queries.ts';
+import { createCard, deleteCard, moveCard, updateCard } from './card-queries.ts';
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
 export function cardRoutes(prisma: PrismaClient): Router {
@@ -55,16 +55,6 @@ export function cardRoutes(prisma: PrismaClient): Router {
       return;
     }
     res.status(204).end();
-  });
-
-  /** GET /api/cards/:cardId/comments — 200 → CardComment[], oldest first · 404 */
-  router.get('/cards/:cardId/comments', async (req, res) => {
-    const body: CardComment[] | null = await findCardComments(prisma, signedInUser(res).id, req.params.cardId);
-    if (body === null) {
-      sendError(res, 404, `No card with id ${req.params.cardId}`);
-      return;
-    }
-    res.json(body);
   });
 
   return router;

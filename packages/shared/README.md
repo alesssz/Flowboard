@@ -41,15 +41,16 @@ Zod is a dependency of this package, not of the apps: the API reaches it through
 
 ```
 src/
-├── index.ts           main entry point: types, limits and palette
-├── schemas.ts         @flowboard/shared/schemas: the Zod schemas
-├── board.ts           Board, BoardSummary, Column, Card, CardComment, Label, Member
-├── auth.ts            User, the signed-in user
-├── auth-requests.ts   sign-up and sign-in schemas, and SignUpRequest, SignInRequest
-├── column-requests.ts column request schemas, and CreateColumnRequest, UpdateColumnRequest
-├── card-requests.ts   card request schemas, and CreateCardRequest, UpdateCardRequest
-├── limits.ts          field and password limits, free of Zod
-├── palette.ts         paletteColors and PaletteColor, free of Zod; mirrored by the database enum
-├── error.ts           ApiError, the body of every API error response
-└── health.ts          HealthResponse (GET /api/health)
+├── index.ts            main entry point: types, limits and palette
+├── schemas.ts          @flowboard/shared/schemas: the Zod schemas
+├── board.ts            Board, BoardSummary, Column, Card, CardComment, Label, Member
+├── auth.ts             User, the signed-in user
+├── auth-requests.ts    sign-up and sign-in schemas, and SignUpRequest, SignInRequest
+├── column-requests.ts  column request schemas, and CreateColumnRequest, UpdateColumnRequest
+├── card-requests.ts    card request schemas, and CreateCardRequest, UpdateCardRequest
+├── comment-requests.ts comment request schemas, and CreateCommentRequest, UpdateCommentRequest
+├── limits.ts           field and password limits, free of Zod
+├── palette.ts          paletteColors and PaletteColor, free of Zod; mirrored by the database enum
+├── error.ts            ApiError, the body of every API error response
+└── health.ts           HealthResponse (GET /api/health)
 ```

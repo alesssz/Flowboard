@@ -1,4 +1,4 @@
-// Who may reach a board: its members. Every board, column and card query filters on memberOf.
+// Who may reach a board: its members. Every board, column, card and comment query filters on memberOf.
 import type { Prisma } from '../generated/prisma/client.ts';
 
 /**
@@ -7,4 +7,14 @@ import type { Prisma } from '../generated/prisma/client.ts';
  */
 export function memberOf(userId: string) {
   return { members: { some: { userId } } } satisfies Prisma.BoardWhereInput;
+}
+
+/** The card with this id, if it is on a board `userId` is a member of. */
+export function cardOf(userId: string, cardId: string) {
+  return { id: cardId, column: { board: memberOf(userId) } } satisfies Prisma.CardWhereInput;
+}
+
+/** The comment with this id, if it is on a board `userId` is a member of, whoever wrote it. */
+export function commentOf(userId: string, commentId: string) {
+  return { id: commentId, card: { column: { board: memberOf(userId) } } } satisfies Prisma.CommentWhereInput;
 }

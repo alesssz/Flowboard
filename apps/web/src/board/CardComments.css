@@ -1,0 +1,124 @@
+/* What CardComments adds to the comment list in CardDialog.css: the edited mark, the options menu on the
+   user's own comments, the editor and the field to write a comment. */
+
+.comments__main {
+  min-width: 0;
+}
+
+.comments__edited {
+  position: relative;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.comments__edited::before {
+  content: '· ';
+}
+
+/* At the end of the name's line, so the comment takes no more height than its text. */
+.comments__menu-button {
+  align-self: center;
+  width: 24px;
+  height: 22px;
+  margin-left: auto;
+}
+
+.comments__menu-button svg circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.comments__menu-button[data-open] {
+  color: var(--color-text);
+  background: var(--palette-gray-soft);
+}
+
+/* Where the pointer can hover, the button shows on hover or focus, and while its menu is open; touch
+   screens always show it. */
+@media (hover: hover) {
+  .comments__item:not(:hover, :focus-within) .comments__menu-button:not([data-open]) {
+    opacity: 0;
+  }
+}
+
+/* A native popover, placed by usePopoverPanel under the button. */
+.comments__menu {
+  position: fixed;
+  inset: auto;
+  width: max-content;
+  min-width: 150px;
+  max-width: min(260px, 100vw - 16px);
+  margin: 0;
+  padding: 4px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.comments__menu:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Edit and Delete as menu items; the confirmation keeps its own buttons. */
+.comments__menu > .field-control__button {
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border: none;
+  border-radius: 6px;
+}
+
+.comments__menu > .field-control__confirm {
+  padding: 6px;
+}
+
+/* While Delete asks, the question is all the menu shows. */
+.comments__menu:has(.field-control__confirm) > .field-control__button {
+  display: none;
+}
+
+.comments__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.comments__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.comments__input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 9px;
+  resize: none;
+  overflow: hidden;
+}
+
+.comments__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.comments__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.comments__input:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 1px;
+}

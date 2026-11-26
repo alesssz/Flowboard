@@ -1,13 +1,9 @@
 // A card's detail in a modal dialog, in two columns: the title, description and comments on the left, the
 // details and Delete card on the right (below the title on a phone). Every field edits where it is.
 import type { Board, Card, Column } from '@flowboard/shared';
-import { useQuery } from '@tanstack/react-query';
 import { type MouseEvent, type PointerEvent, useEffect, useId, useRef } from 'react';
-import { Tooltip } from '../Tooltip.tsx';
-import { Avatar } from './Avatar.tsx';
-import { cardCommentsQuery } from './board-queries.ts';
+import { CardComments } from './CardComments.tsx';
 import { CardDescriptionField, CardDetails, CardTitleField, DeleteCard } from './CardFields.tsx';
-import { formatCommentTime, formatFullDateTime } from './comment-time.ts';
 import './CardDialog.css';
 
 interface CardDialogProps {
@@ -27,9 +23,6 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
   const descriptionId = useId();
   const commentsId = useId();
   const now = new Date();
-  const comments = useQuery(cardCommentsQuery(card.id));
-  // The card's own count until the comments arrive.
-  const commentCount = comments.data?.length ?? card.commentCount;
 
   // showModal(), not the open attribute: it makes the rest of the page inert, closes on Escape
   // and shows ::backdrop. The check skips StrictMode's second run, as showModal() on an open dialog throws.
@@ -41,10 +34,6 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
       closeRef.current?.focus();
     }
   }, []);
-
-  function handleRetryComments() {
-    void comments.refetch();
-  }
 
   function handleCloseClick() {
     dialogRef.current?.close();
@@ -99,54 +88,7 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
         </div>
 
         <section className="card-dialog__comments-section" aria-labelledby={commentsId}>
-          <h3 id={commentsId} className="card-dialog__heading">
-            Comments
-            {/* Screen readers get the count from the list itself. */}
-            {commentCount > 0 && (
-              <span className="card-dialog__count" aria-hidden="true">
-                {commentCount}
-              </span>
-            )}
-          </h3>
-          {comments.data === undefined ? (
-            comments.isError ? (
-              <div className="card-dialog__error" role="alert">
-                <p className="card-dialog__empty">Cannot load the comments</p>
-                <button
-                  type="button"
-                  className="card-dialog__retry"
-                  disabled={comments.isFetching}
-                  onClick={handleRetryComments}
-                >
-                  {comments.isFetching ? 'Retrying…' : 'Try again'}
-                </button>
-              </div>
-            ) : (
-              <p className="card-dialog__empty" role="status">
-                Loading comments…
-              </p>
-            )
-          ) : comments.data.length === 0 ? (
-            <p className="card-dialog__empty">No comments yet</p>
-          ) : (
-            <ol className="card-dialog__comments">
-              {comments.data.map((comment) => (
-                <li key={comment.id} className="card-dialog__comment">
-                  <Avatar member={comment.author} size="medium" />
-                  <div>
-                    <p className="card-dialog__comment-meta">
-                      <span className="card-dialog__comment-author">{comment.author.name}</span>
-                      <time className="card-dialog__comment-time" dateTime={comment.createdAt}>
-                        {formatCommentTime(comment.createdAt, now)}
-                        <Tooltip text={formatFullDateTime(comment.createdAt)} />
-                      </time>
-                    </p>
-                    <p className="card-dialog__comment-body">{comment.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
+          <CardComments boardId={board.id} card={card} headingId={commentsId} now={now} />
         </section>
 
         {/* Last in the page's order, after the comments; drawn at the foot of the details column. */}

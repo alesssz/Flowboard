@@ -9,6 +9,7 @@ import { requireSession } from './auth/require-session.ts';
 import { boardRoutes } from './boards/board-routes.ts';
 import { cardRoutes } from './cards/card-routes.ts';
 import { columnRoutes } from './columns/column-routes.ts';
+import { commentRoutes } from './comments/comment-routes.ts';
 import type { PrismaClient } from './db/client.ts';
 import { handleError, sendError } from './errors.ts';
 import { checkHost, checkOrigin, setSecurityHeaders } from './security.ts';
@@ -47,10 +48,11 @@ export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOption
 
   app.use('/api', authRoutes(prisma));
   // Every route under these paths needs a session; a new kind of resource adds its path here.
-  app.use(['/api/boards', '/api/columns', '/api/cards'], requireSession(prisma));
+  app.use(['/api/boards', '/api/columns', '/api/cards', '/api/comments'], requireSession(prisma));
   app.use('/api', boardRoutes(prisma));
   app.use('/api', columnRoutes(prisma));
   app.use('/api', cardRoutes(prisma));
+  app.use('/api', commentRoutes(prisma));
 
   // Unmatched routes: a JSON 404 in the API's error shape, not Express's HTML page.
   app.use((req, res) => {
