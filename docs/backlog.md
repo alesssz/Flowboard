@@ -13,7 +13,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - [Features (FEAT)](#features-feat)
   - [FEAT-1 A finished card still shows as overdue](#feat-1-a-finished-card-still-shows-as-overdue)
   - [FEAT-3 A board's labels cannot be managed](#feat-3-a-boards-labels-cannot-be-managed)
-  - [FEAT-4 Comments cannot be written](#feat-4-comments-cannot-be-written)
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
 - [Documentation (DOCS)](#documentation-docs)
@@ -102,20 +101,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - B) A labels section in a board settings dialog.
 
 **Recommended.** A: labels are created when a card needs one, as in most boards. Deleting a label removes it from every card, after a confirmation naming how many. Done when labels can be created, renamed, recoloured and deleted.
-
-### FEAT-4 Comments cannot be written
-
-**Priority:** medium · **Kind:** missing feature · **Found:** 2026-11-20
-
-**What is wrong.** A card's comments can be read, not written. A comment has an author, and there are no accounts yet.
-
-**Where.** `apps/api/src/cards/`; the comments section of `CardDialog.tsx`.
-
-**Options.**
-- A) Now, with the author picked from the board's members (or a fixed one), replaced by the signed-in user later.
-- B) With accounts and sign-in.
-
-**Recommended.** B: an author chosen by hand would be thrown away with sign-in, and so would the code choosing it. Done when a signed-in member can write, edit and delete their own comments.
 
 ## Tooling (OPS)
 

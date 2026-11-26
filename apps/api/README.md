@@ -56,21 +56,24 @@ src/
 ├── auth/
 │   ├── auth-routes.ts     sign up, sign in, sign out, GET /api/auth/me; the limits on attempts
 │   ├── sessions.ts        startSession, readSession, endSession: the Session rows and the cookie
-│   ├── require-session.ts requireSession, in front of the board, column and card routes; signedInUser
+│   ├── require-session.ts requireSession, in front of the board, column, card and comment routes; signedInUser
 │   ├── rate-limit.ts      RateLimiter: attempts per key in fixed windows, in memory
 │   └── passwords.ts       hashPassword, verifyPassword, needsRehash: scrypt, stored as a PHC string
 ├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
-│   ├── access.ts          memberOf(userId): the boards a user may reach, filtered in every query
+│   ├── access.ts          memberOf, cardOf, commentOf: what a user may reach, filtered in every query
 │   ├── board-routes.ts    GET /api/boards, GET /api/boards/:boardId
 │   └── board-queries.ts   board reads, mapped to the @flowboard/shared types
 ├── columns/
 │   ├── column-routes.ts   column create, update, delete
 │   └── column-queries.ts  column writes; columnFields and toColumn, shared with the board query
 ├── cards/
-│   ├── card-routes.ts     card create, update, delete; a card's comments
+│   ├── card-routes.ts     card create, update, delete
 │   └── card-queries.ts    card reads and writes; cardFields and toCard, shared with the column and board queries
+├── comments/
+│   ├── comment-routes.ts  a card's comments; write one; edit or delete one's own
+│   └── comment-queries.ts comment reads and writes, with the author check
 ├── db/
 │   ├── client.ts          PrismaClient with the PostgreSQL adapter; DATABASE_URL check
 │   └── seed.ts            the sample board and the demo account (pnpm db:seed)
@@ -109,7 +112,10 @@ vitest.config.ts           test files, global setup, one file at a time
 | `PATCH` | `/api/cards/:cardId` | Changes the fields given; body `UpdateCardRequest` | `200` `Card` · `400` · `404` |
 | `POST` | `/api/cards/:cardId/move` | Moves the card within its column or to another on the same board; body `MoveCardRequest` | `200` `Board` · `400` · `404` |
 | `DELETE` | `/api/cards/:cardId` | Deletes the card and its comments | `204`, no body · `404` |
-| `GET` | `/api/cards/:cardId/comments` | A card's comments, oldest first | `200` `CardComment[]` · `404` |
+| `GET` | `/api/cards/:cardId/comments` | A card's comments, oldest first, each saying whether it is the user's (`mine`) | `200` `CardComment[]` · `404` |
+| `POST` | `/api/cards/:cardId/comments` | Adds a comment by the user's member on the board; body `CreateCommentRequest` | `201` `CardComment` · `400` · `404` |
+| `PATCH` | `/api/comments/:commentId` | Changes the body of one's own comment, and sets `editedAt`; body `UpdateCommentRequest` | `200` `CardComment` · `400` · `403` · `404` |
+| `DELETE` | `/api/comments/:commentId` | Deletes one's own comment | `204`, no body · `403` · `404` |
 | any | any other path | No matching route | `404` |
 
 Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error": "Not Found", "message": "No board with id …" }`:
@@ -117,9 +123,9 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 | Status | When |
 |---|---|
 | `400` | Malformed JSON, or a write with no JSON body; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
-| `401` | Wrong email or password, the same answer for both; no session, or one that has ended (`Not signed in`), on `/api/auth/me` and on every board, column and card route |
-| `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route; a write whose `Origin` is another site's (`Origin not allowed`) |
-| `404` | No board, column or card with that id on a board the user is a member of: another user's answers as one that does not exist; no route |
+| `401` | Wrong email or password, the same answer for both; no session, or one that has ended (`Not signed in`), on `/api/auth/me` and on every board, column, card and comment route |
+| `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route; a write whose `Origin` is another site's (`Origin not allowed`); editing or deleting someone else's comment |
+| `404` | No board, column, card or comment with that id on a board the user is a member of: another user's answers as one that does not exist; no route |
 | `409` | Sign-up with an email that already has an account, in any case |
 | `413` | A body over 100 kB, which is not read |
 | `429` | Too many sign-ups and sign-ins from one address (100 in 15 minutes), or failed sign-ins for one email (10 in 15 minutes, counted from zero after a success); `Retry-After` gives the seconds to wait |
@@ -133,9 +139,11 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
 
+**Comment writes.** A body is trimmed at both ends, keeps its line breaks, and must keep at least one character (limit: `commentBodyMaxLength` in `@flowboard/shared`). The author is the user's member on the card's board, never a field of the request. Only the author may change or delete a comment; a change sets `editedAt`.
+
 **Accounts.** Emails are trimmed and lowercased; names are trimmed. A password is kept exactly as typed, 15 to 256 characters at sign-up (`passwordMinLength`, `passwordMaxLength`); sign-in checks no minimum, so a rule raised later does not lock out older passwords. Sign-up and sign-in set the session cookie: `HttpOnly`, `SameSite=Lax`, `Path=/`, 30 days; named `flowboard_session` over plain HTTP on the loopback (development), and `__Host-flowboard_session`, `Secure`, everywhere else. Design and reasons: [docs/security.md](../../docs/security.md#accounts).
 
-**Permissions.** Every route under `/api/boards`, `/api/columns` and `/api/cards` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column or card is a `404`. Every member can do everything on a board; boards are created only by the seed for now. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
+**Permissions.** Every route under `/api/boards`, `/api/columns`, `/api/cards` and `/api/comments` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column, card or comment is a `404`. Every member can do everything on a board, except edit or delete someone else's comment (`403`: they can see it, so there is nothing to hide); boards are created only by the seed for now. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards

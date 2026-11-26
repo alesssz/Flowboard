@@ -1,6 +1,6 @@
 // Card reads and writes, shaped as the @flowboard/shared types.
-import type { Card, CardComment, CreateCardRequest, MoveCardRequest, UpdateCardRequest } from '@flowboard/shared';
-import { memberOf } from '../boards/access.ts';
+import type { Card, CreateCardRequest, MoveCardRequest, UpdateCardRequest } from '@flowboard/shared';
+import { cardOf, memberOf } from '../boards/access.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError } from '../errors.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -20,11 +20,6 @@ export const cardFields = {
 } satisfies Prisma.CardSelect;
 
 type CardRow = Prisma.CardGetPayload<{ select: typeof cardFields }>;
-
-/** The card with this id, if it is on a board `userId` is a member of. */
-function cardOf(userId: string, cardId: string) {
-  return { id: cardId, column: { board: memberOf(userId) } } satisfies Prisma.CardWhereInput;
-}
 
 export function toCard({ dueDate, _count, ...card }: CardRow): Card {
   return {
@@ -140,20 +135,4 @@ async function placeCards(tx: Transaction, columnId: string, cardIds: string[]):
 export async function deleteCard(prisma: PrismaClient, userId: string, cardId: string): Promise<boolean> {
   const { count } = await prisma.card.deleteMany({ where: cardOf(userId, cardId) });
   return count > 0;
-}
-
-/** The card's comments, oldest first, or null when there is no card with that id on a board of `userId`'s. */
-export async function findCardComments(prisma: PrismaClient, userId: string, cardId: string): Promise<CardComment[] | null> {
-  const card = await prisma.card.findFirst({
-    where: cardOf(userId, cardId),
-    select: {
-      comments: {
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, body: true, createdAt: true, author: { select: memberFields } },
-      },
-    },
-  });
-  if (card === null) return null;
-
-  return card.comments.map((comment) => ({ ...comment, createdAt: comment.createdAt.toISOString() }));
 }

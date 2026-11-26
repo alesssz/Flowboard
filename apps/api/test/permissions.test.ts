@@ -1,4 +1,4 @@
-// Permissions: every board, column and card route needs a session, and reaches only the boards the user is a member of.
+// Permissions: every board, column, card and comment route needs a session, and reaches only the user's boards.
 import type { Test } from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createBoard, createMemberAccount } from './fixtures.ts';
@@ -25,13 +25,19 @@ const routes: [string, (client: Client, fixture: Fixture) => Test][] = [
   ],
   ['DELETE /api/cards/:cardId', (client, { cards }) => client.delete(`/api/cards/${cards.first.id}`)],
   ['GET /api/cards/:cardId/comments', (client, { cards }) => client.get(`/api/cards/${cards.first.id}/comments`)],
+  ['POST /api/cards/:cardId/comments', (client, { cards }) => client.post(`/api/cards/${cards.first.id}/comments`).send({ body: 'Hello' })],
+  // Robin Park's own comment: on the member's board, the author may change it.
+  ['PATCH /api/comments/:commentId', (client, { comments }) => client.patch(`/api/comments/${comments.reply.id}`).send({ body: 'Changed' })],
+  ['DELETE /api/comments/:commentId', (client, { comments }) => client.delete(`/api/comments/${comments.reply.id}`)],
 ];
 
-/** Everything a route could change on the board: columns and cards, in their order, with their fields. */
+/** Everything a route could change on the board: columns, cards and comments, with their fields. */
 function snapshot(boardId: string) {
   return prisma.board.findUniqueOrThrow({
     where: { id: boardId },
-    include: { columns: { orderBy: { id: 'asc' }, include: { cards: { orderBy: { id: 'asc' } } } } },
+    include: {
+      columns: { orderBy: { id: 'asc' }, include: { cards: { orderBy: { id: 'asc' }, include: { comments: { orderBy: { id: 'asc' } } } } } },
+    },
   });
 }
 
@@ -71,7 +77,7 @@ describe("on another user's board", () => {
     const response = await send(member, fixture);
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: 'Not Found', message: expect.stringMatching(/^No (board|column|card) with id /) });
+    expect(response.body).toEqual({ error: 'Not Found', message: expect.stringMatching(/^No (board|column|card|comment) with id /) });
     expect(await snapshot(fixture.board.id)).toEqual(before);
   });
 
