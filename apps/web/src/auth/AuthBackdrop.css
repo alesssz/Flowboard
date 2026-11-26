@@ -1,0 +1,96 @@
+/* The pictured board behind the sign-in form: tilted, faded and blurred, so it reads as a backdrop. */
+
+/* Fixed to the viewport, and clipping the tilted board: it never scrolls, nor makes the page scroll. */
+.auth-backdrop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-backdrop__board {
+  position: absolute;
+  inset: 24px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(200px, 1fr));
+  gap: 14px;
+  opacity: 0.55;
+  filter: blur(1.5px) saturate(0.9);
+  transform: rotate(-4deg) scale(1.12);
+  user-select: none;
+}
+
+.auth-backdrop__column {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px;
+  background: var(--tone-tint);
+  border-top: 3px solid var(--tone);
+  border-radius: var(--radius);
+}
+
+.auth-backdrop__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.auth-backdrop__count {
+  padding: 0 7px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-radius: 99px;
+}
+
+.auth-backdrop__card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-backdrop__label {
+  align-self: flex-start;
+  padding: 0 6px;
+  font-size: 0.68rem;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+  border-radius: 4px;
+}
+
+.auth-backdrop__people {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.auth-backdrop__avatar {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--tone-text);
+  background: var(--tone-soft);
+  border-radius: 50%;
+}
+
+@media (max-width: 600px) {
+  .auth-backdrop__board {
+    inset: 0;
+    grid-template-columns: repeat(2, 200px);
+  }
+}

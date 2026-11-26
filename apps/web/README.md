@@ -11,7 +11,7 @@ pnpm dev                              # web app and API together (recommended)
 pnpm --filter @flowboard/web dev      # web app only
 ```
 
-Open http://localhost:5873. The board comes from the API, and every edit is saved there, so it needs the API and its database ([Getting started](../../README.md#getting-started)). Without the API, the header reads "API offline", retries on its own and offers a retry button, and the board area shows the error with **Try again**. Known problems: [Troubleshooting](../../README.md#troubleshooting).
+Open http://localhost:5873 and sign in, or create an account. The board comes from the API, and every edit is saved there, so it needs the API and its database ([Getting started](../../README.md#getting-started)). Without the API, the header reads "API offline", retries on its own and offers a retry button, and the board area shows the error with **Try again**. Known problems: [Troubleshooting](../../README.md#troubleshooting).
 
 ## Scripts
 
@@ -31,12 +31,16 @@ apps/web/
 ├── public/             static files served as-is (favicon)
 ├── src/
 │   ├── main.tsx        mounts <App /> into #root, inside TanStack Query's QueryClientProvider
-│   ├── App.tsx         app shell: header, then the board
-│   ├── api.ts          fetchJson, sendJson, sendDelete: /api/… requests; an error status throws
+│   ├── App.tsx         app shell: header and board when signed in, else the sign-in page alone
+│   ├── api.ts          fetchJson, sendJson, sendEmpty: /api/… requests; an error status throws
 │   │                   ApiRequestError with the API's message, no answer a plain Error
+│   ├── PageMessage.tsx what stands in for a page while it loads or fails, with Try again
 │   ├── Logo.tsx        the mark, coloured by the theme tokens (same shapes as public/favicon.svg)
 │   ├── Tooltip.tsx     hover text drawn above its parent
 │   ├── api-status/     header badge: GET /api/health on load, retried while it fails
+│   ├── auth/           AuthPage (sign in, or create an account, over AuthBackdrop, a pictured board),
+│   │                   AccountMenu (the name and Sign out in the header), auth-queries.ts (who is signed
+│   │                   in, and the writes that change it)
 │   ├── board/          BoardPage (loads the board) → BoardView (drag and drop, ColumnsPanel) → BoardColumn
 │   │                   (sortable, with ColumnHeader: rename, colour, Delete column; and AddCard) →
 │   │                   BoardCard; DragHandle, the grip for keyboard moves;
@@ -59,6 +63,8 @@ apps/web/
 - Request and response bodies are typed in **`@flowboard/shared`**, imported with `import type`.
 - The API is called with relative URLs under `/api` (`fetch('/api/health')`), never with a host: the dev proxy forwards them, and production will serve both from one origin.
 - API data is read with **TanStack Query**: each query's key and fetcher are defined once with `queryOptions` (`board/board-queries.ts`) and used with `useQuery`. Keys go from general to specific (`['boards']`, `['boards', id]`, `['cards', id, 'comments']`), so related data can be refreshed together. A 4xx is not retried (`main.tsx`); other failures are retried 3 times.
+- Who is signed in is a query too (`meQuery` in `auth/auth-queries.ts`, `GET /api/auth/me`): the user, or `null` for the API's 401, so having no session is data, not an error. `App.tsx` shows the board for a user and `AuthPage` for `null`. The session itself is an `HttpOnly` cookie the browser sends with every `/api` request; the web app never sees it. Signing up, in or out writes the new user (or `null`) into that query and removes every other query, so nothing read as the previous user stays on screen or in the cache.
+- The sign-in page has no header: a panel on frosted glass over a pictured board (`auth/AuthBackdrop.tsx`, fixed markup hidden from screen readers; with no session there is no data to show), solid when the system asks for less transparency. **Sign in** and **Create account** are ARIA tabs over one form: the arrows, Home and End switch them and keep the focus on the tabs, and the typed email and password stay. The browser checks the fields first (`required`, `type="email"`, the minimum length at sign-up), then the API: a message about one field (`email: …`) shows under it, marks it `aria-invalid` and takes the focus there; any other (a wrong password, too many attempts) shows above the button.
 - A component reading a query renders its data first, then the error, then the loading state: a failed background refresh keeps what is on screen.
 - Writes are TanStack Query mutations (`board/column-mutations.ts`, `board/card-mutations.ts`). Each waits for the API, then writes the column or card it returns into the cached board (`updateBoard` in `board/board-cache.ts`, over `setQueryData`), so every view of it changes together without reloading the board. Deleting a column or a card also drops the cached comments of the cards that went. Nothing changes on screen before the API has accepted it, except moves.
 - Moves are optimistic (`board/move-mutations.ts`): the cached board changes at once, with `moveCardInBoard` and `moveColumnInBoard` in `board/board-cache.ts`, the same rule as the API's, then the API's board replaces it, unless more moves are still on their way. A refused move puts back the board as it was before it, and the board's header says why (**Not moved: …**, with **Dismiss**).
@@ -78,7 +84,7 @@ apps/web/
 - State with several shapes is a **discriminated union** (see `ApiStatus` in `api-status/ApiStatusBadge.tsx`).
 - CSS class names follow **BEM** (`block__element--modifier`).
 - Each component imports its own stylesheet, beside it (`BoardCard.tsx` → `BoardCard.css`); colours, radius and gutter come only from the tokens in `index.css`.
-- Code is grouped by feature (`board/`, `api-status/`), not by kind.
+- Code is grouped by feature (`board/`, `auth/`, `api-status/`), not by kind.
 - Colours a user picks (`paletteColors` in `@flowboard/shared`) are set with `data-color="…"`: it gives the element the `--tone-*` variables (`index.css`), so no component needs a modifier per colour. A new palette colour adds its four tokens per theme and its `data-color` rule.
 - Text only screen readers need (what a colour alone shows) goes in a `.visually-hidden` element (`index.css`).
 - Dialogs are a native `<dialog>` opened with `showModal()` (`board/CardDialog.tsx`): the browser traps focus, closes on Escape and gives focus back to the element that opened it. The component is mounted only while open, and its `onClose` unmounts it.

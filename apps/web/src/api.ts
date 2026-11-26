@@ -29,9 +29,9 @@ export async function sendJson<T>(method: 'POST' | 'PATCH', path: string, body: 
   return (await response.json()) as T;
 }
 
-/** DELETE `/api${path}`; the API answers 204 with no body. */
-export async function sendDelete(path: string): Promise<void> {
-  await request(path, { method: 'DELETE', headers: { Accept: 'application/json' } });
+/** POST or DELETE `/api${path}` with no body, to a route that answers 204 with none. */
+export async function sendEmpty(method: 'POST' | 'DELETE', path: string): Promise<void> {
+  await request(path, { method, headers: { Accept: 'application/json' } });
 }
 
 async function request(path: string, init: RequestInit): Promise<Response> {

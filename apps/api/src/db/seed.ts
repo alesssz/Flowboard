@@ -1,7 +1,11 @@
-// Development data (pnpm db:seed): replaces every board with one sample board, its labels, members and comments.
+// Development data (pnpm db:seed): the demo account, and one sample board replacing every board.
 import type { PaletteColor } from '@flowboard/shared';
+import { hashPassword } from '../auth/passwords.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
 import { createPrismaClient, readDatabaseUrl } from './client.ts';
+
+// A published password, so development data only. Shorter than sign-up allows, which sign-in does not check.
+const demoAccount = { email: 'demo@flowboard.local', password: 'flowboard', name: 'Ada Okafor' };
 
 interface SeedCard {
   title: string;
@@ -31,8 +35,19 @@ function minutesAgo(minutes: number): Date {
   return new Date(seededAt.getTime() - minutes * 60_000);
 }
 
-async function seed(tx: Prisma.TransactionClient): Promise<void> {
-  // Columns, cards, labels, members and comments go with their board (onDelete: Cascade).
+async function seed(tx: Prisma.TransactionClient, demoPasswordHash: string): Promise<void> {
+  // Created, or given back its name and password; its sessions stay.
+  const { email, name } = demoAccount;
+  const demo = await tx.user.upsert({
+    where: { email },
+    create: { email, name, passwordHash: demoPasswordHash },
+    update: { name, passwordHash: demoPasswordHash },
+    select: { id: true },
+  });
+
+  // Comments first: their authors' NoAction would stop the board's cascade (schema.prisma, Comment).
+  await tx.comment.deleteMany();
+  // Columns, cards, labels and members go with their board (onDelete: Cascade).
   await tx.board.deleteMany();
 
   const board = await tx.board.create({ data: { title: 'Website relaunch' } });
@@ -47,9 +62,10 @@ async function seed(tx: Prisma.TransactionClient): Promise<void> {
   const legal = await label('Legal', 'amber');
   const frontend = await label('Frontend', 'coral');
 
-  const member = (name: string, color: PaletteColor) =>
-    tx.member.create({ data: { boardId, name, color }, select: { id: true } });
-  const ada = await member('Ada Okafor', 'violet');
+  const member = (name: string, color: PaletteColor, userId?: string) =>
+    tx.member.create({ data: { boardId, name, color, userId }, select: { id: true } });
+  // The demo account works on the board as this member.
+  const ada = await member(demoAccount.name, 'violet', demo.id);
   const marco = await member('Marco Bianchi', 'amber');
   const lena = await member('Lena Fischer', 'green');
   const sam = await member('Sam Patel', 'blue');
@@ -199,9 +215,11 @@ async function seed(tx: Prisma.TransactionClient): Promise<void> {
 
 const prisma = createPrismaClient(readDatabaseUrl());
 try {
+  // Hashed first: scrypt takes a moment, which the transaction need not wait for.
+  const demoPasswordHash = await hashPassword(demoAccount.password);
   // All or nothing: a failure keeps the boards that were there.
-  await prisma.$transaction(seed);
-  console.log('Seeded the sample board');
+  await prisma.$transaction((tx) => seed(tx, demoPasswordHash));
+  console.log(`Seeded the sample board and the demo account: ${demoAccount.email}, password "${demoAccount.password}"`);
 } finally {
   await prisma.$disconnect();
 }

@@ -1,0 +1,266 @@
+/* Sign-in and sign-up page: the form on frosted glass, over a pictured board (AuthBackdrop). */
+
+.auth {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Above the middle, where the eye starts; less on a short window. */
+  padding: clamp(32px, 11vh, 120px) var(--gutter) 32px;
+  overflow: hidden auto;
+  isolation: isolate;
+}
+
+/* Fades the board around the panel, so the panel's edges stay clear. */
+.auth::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse 45% 60% at 50% 38%, var(--color-bg) 30%, transparent 100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.auth > .auth-backdrop {
+  z-index: -2;
+}
+
+.auth__panel {
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-dialog);
+  backdrop-filter: blur(12px);
+}
+
+.auth__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth__brand-accent {
+  color: var(--color-accent-text);
+}
+
+.auth__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: var(--palette-gray-soft);
+  border-radius: 10px;
+}
+
+.auth__tab {
+  padding: 7px 0;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.auth__tab:hover {
+  color: var(--color-text);
+}
+
+.auth__tab[aria-selected='true'] {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth__title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.auth__lead {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.auth__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.auth__control {
+  position: relative;
+}
+
+.auth__input {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  /* 16px or more: iOS zooms into a smaller field on focus. */
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 9px;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+
+.auth__input::placeholder {
+  color: var(--palette-gray);
+}
+
+.auth__input:hover {
+  border-color: var(--palette-gray);
+}
+
+.auth__input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent-text);
+  box-shadow: 0 0 0 3px var(--palette-coral-soft);
+}
+
+/* Room for the show-password button. */
+.auth__control:has(.auth__reveal) .auth__input {
+  padding-right: 44px;
+}
+
+.auth__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.auth__input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.auth__reveal {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth__reveal:hover,
+.auth__reveal[aria-pressed='true'] {
+  color: var(--color-text);
+}
+
+.auth__reveal svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.auth__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.auth__field-error,
+.auth__error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.auth__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  margin-top: 4px;
+  font: inherit;
+  font-weight: 650;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.auth__submit svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.auth__submit:hover {
+  filter: brightness(1.06);
+}
+
+.auth__submit[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.auth__tab:focus-visible,
+.auth__reveal:focus-visible,
+.auth__submit:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .auth {
+    padding-top: 32px;
+  }
+
+  .auth__panel {
+    padding: 22px 18px;
+  }
+}
+
+/* The system asks for less transparency: a solid panel. */
+@media (prefers-reduced-transparency: reduce) {
+  .auth__panel {
+    background: var(--color-surface);
+    backdrop-filter: none;
+  }
+}

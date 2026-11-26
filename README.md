@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Next: the board's labels and the web app's tests. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows a board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees) and deleted; the board's labels and comments are still read-only. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Every signed-in account sees the same board for now. Next: permissions, so each account reaches only the boards it is a member of. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -88,13 +88,13 @@ git config core.hooksPath .githooks           # once per clone: enables the comm
 cp apps/api/.env.example apps/api/.env        # once per clone: the API's settings (DATABASE_URL)
 pnpm db:up                                    # PostgreSQL in Docker, waiting until it accepts connections
 pnpm db:migrate                               # creates the tables
-pnpm db:seed                                  # the sample board
+pnpm db:seed                                  # the sample board and the demo account
 pnpm dev                                      # web app and API together, with reload on change
 ```
 
 With Make: `make setup`, the `cp` line, `make db-up db-migrate db-seed`, then `make dev`.
 
-Open http://localhost:5873: the header reads **API online** when both sides are up, and the board loads from the database.
+Open http://localhost:5873 and sign in with the seed's demo account, `demo@flowboard.local` and the password `flowboard` (development data only), or create an account (the **Create account** tab): the header reads **API online** when both sides are up, and the board loads from the database.
 
 Later sessions: `pnpm db:up`, then `pnpm dev`. The container has no restart policy, so it is down after Docker or the computer restarts; its data stays in the `db-data` volume until `docker compose down --volumes`. After pulling a new migration: `pnpm db:migrate`. Seeding again replaces every board with the sample board, its due dates counted from that day.
 
@@ -123,7 +123,7 @@ Run from the repository root. `dev`, `build`, `typecheck`, `lint` and `test` run
 | `pnpm db:up` | Starts PostgreSQL in Docker (`compose.yaml`) and waits until it accepts connections |
 | `pnpm db:down` | Stops and removes the container; the data stays in its volume |
 | `pnpm db:migrate` | Applies pending migrations; after a change to `apps/api/prisma/schema.prisma`, first creates one (`pnpm db:migrate --name add-card-cover`) |
-| `pnpm db:seed` | Replaces every board with the sample board |
+| `pnpm db:seed` | Replaces every board with the sample board, and creates the demo account or resets its name and password |
 | `pnpm db:reset` | Drops every table, applies every migration and seeds (asks first) |
 | `pnpm db:studio` | Opens Prisma Studio on http://localhost:6255: the data by model, with relations and enums, editable |
 | `pnpm audit` | Checks every dependency against the advisory database |
@@ -200,7 +200,7 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [ ] Web app tests
 
 **Collaboration**
-- [ ] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)): accounts, sign-up, sign-in and sessions in the API done; permissions and the web app's pages to come
+- [ ] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)): accounts, sessions, and the web app's sign-up and sign-in pages done; permissions to come
 - [ ] Live updates and presence (Socket.IO)
 - [ ] Board roles and permissions
 - [ ] Concurrent editing of card descriptions (Yjs)

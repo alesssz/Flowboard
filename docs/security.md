@@ -14,7 +14,7 @@ What the API defends against today, where each defence lives and what checks it,
 
 ## Status
 
-Flowboard is not deployed. Accounts and sessions exist, but the board, column and card routes do not ask for one yet: whoever reaches the API can read and change every board. Today's defences therefore keep the API reachable only from the computer running it, protect the accounts themselves, and set the rules that still hold once every route needs a session: strict input, JSON-only responses that cannot run as a page, no internals in errors.
+Flowboard is not deployed. Accounts and sessions exist, and the web app shows the board only once signed in, but the board, column and card routes do not ask for a session yet: whoever reaches the API can read and change every board. Today's defences therefore keep the API reachable only from the computer running it, protect the accounts themselves, and set the rules that still hold once every route needs a session: strict input, JSON-only responses that cannot run as a page, no internals in errors.
 
 ## Defences
 
@@ -68,6 +68,8 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
 **Sign-up and sign-in** (`apps/api/src/auth/auth-routes.ts`):
 - Passwords have 15 to 256 characters at sign-up, NIST SP 800-63B-4's minimum for a password used alone, with no rules on the kinds of characters. Sign-in checks no minimum, so a rule raised later does not lock out older passwords.
 - A wrong password and an unknown email get the same answer in the same time. Sign-up still tells that an email is taken (`409`): without email verification there is no other answer to give, and the limit per address slows anyone listing accounts that way.
+- The web app's forms (`apps/web/src/auth/AuthPage.tsx`) name their fields for password managers (`autocomplete`: `username`, `current-password`, `new-password`), accept pasting and show the password on request: a long password from a manager is the aim.
+- Signing in or out empties the web app's cache of everything but the signed-in user (`apps/web/src/auth/auth-queries.ts`), so a shared computer never shows the next user what the previous one read.
 - The limits are counted in the API's memory, so they hold for one instance and restart with it; several instances would share them through a store such as Redis.
 
 ## Not covered yet
@@ -79,5 +81,6 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
   - HTTPS only, with HSTS;
   - a Content Security Policy for the web app's pages;
   - secrets in the platform, never in the image;
+  - no seed: its demo account's password is in the repository;
   - a database unreachable from the internet, used through a role that cannot change the schema;
   - the API's container running as a user other than root.

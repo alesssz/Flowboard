@@ -120,8 +120,8 @@ model Comment {
   id        String   @id @default(cuid())
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   cardId    String
-  // NoAction is checked at the end of the statement: deleting a board removes its members and
-  // their comments together, while a member alone cannot be deleted before their comments.
+  // NoAction: a member cannot be deleted before their comments. Neither can a board that has any:
+  // its cascade reaches the members before the comments, under columns and cards. Delete them first.
   author    Member   @relation(fields: [authorId], references: [id], onDelete: NoAction)
   authorId  String
   body      String
