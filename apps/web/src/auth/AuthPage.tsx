@@ -26,7 +26,12 @@ function toFormError(message: string): FormError {
   return { field: field as FieldName, text: text.charAt(0).toUpperCase() + text.slice(1) };
 }
 
-export function AuthPage() {
+interface AuthPageProps {
+  /** The session ended while the app was in use: says so above the form. */
+  sessionEnded: boolean;
+}
+
+export function AuthPage({ sessionEnded }: AuthPageProps) {
   const [mode, setMode] = useState<Mode>('sign-in');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -82,6 +87,12 @@ export function AuthPage() {
             <span className="auth__brand-accent">Flow</span>board
           </span>
         </p>
+
+        {sessionEnded && (
+          <p className="auth__notice" role="status">
+            Your session has ended. Sign in again to go on.
+          </p>
+        )}
 
         <div className="auth__tabs" role="tablist" aria-label="Account">
           {modes.map((tab) => (

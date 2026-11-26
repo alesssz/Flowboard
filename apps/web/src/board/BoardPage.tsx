@@ -26,7 +26,9 @@ export function BoardPage() {
 
   // One board for now; a board switcher comes with board editing.
   const firstBoard = boards.data[0];
-  if (firstBoard === undefined) return <PageMessage title="No boards yet" />;
+  if (firstBoard === undefined) {
+    return <PageMessage title="No boards yet" detail="A board shows here once you are one of its members." />;
+  }
 
   return <LoadedBoard boardId={firstBoard.id} />;
 }

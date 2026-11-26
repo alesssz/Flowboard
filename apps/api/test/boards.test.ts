@@ -1,16 +1,25 @@
-// Board reads: the board list, and one board with its columns, cards, labels and members in display order.
-import { describe, expect, it } from 'vitest';
-import { createBoard } from './fixtures.ts';
+// Board reads: the user's boards, and one board with its columns, cards, labels and members in display order.
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoard, createMemberAccount } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
 
-const { api, prisma } = useTestApp();
+const { member, prisma } = useTestApp();
+// Robin Park's account exists in every test, board or not, so `member` is signed in.
+beforeEach(() => createMemberAccount(prisma));
 
 describe('GET /api/boards', () => {
-  it('lists every board, oldest first, without its content', async () => {
-    const newer = await prisma.board.create({ data: { title: 'Newer', createdAt: new Date('2026-11-02T00:00:00Z') } });
-    const older = await prisma.board.create({ data: { title: 'Older', createdAt: new Date('2026-11-01T00:00:00Z') } });
+  it("lists the boards the user is a member of, oldest first, without their content", async () => {
+    const { id: userId } = await createMemberAccount(prisma);
+    const board = (title: string, createdAt: string, members: { userId?: string }[]) =>
+      prisma.board.create({
+        data: { title, createdAt: new Date(createdAt), members: { create: members.map((m) => ({ name: 'Robin Park', color: 'green', ...m })) } },
+      });
+    const newer = await board('Newer', '2026-11-02T00:00:00Z', [{ userId }]);
+    const older = await board('Older', '2026-11-01T00:00:00Z', [{ userId }]);
+    await board('Not a member', '2026-10-01T00:00:00Z', [{}]);
+    await board('No members', '2026-10-01T00:00:00Z', []);
 
-    const response = await api.get('/api/boards');
+    const response = await member.get('/api/boards');
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
@@ -24,7 +33,7 @@ describe('GET /api/boards/:boardId', () => {
   it('returns columns, cards and labels by position, and members by name', async () => {
     const { board, columns, cards, labels, members } = await createBoard(prisma);
 
-    const response = await api.get(`/api/boards/${board.id}`);
+    const response = await member.get(`/api/boards/${board.id}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ id: board.id, title: 'Launch' });
@@ -44,7 +53,7 @@ describe('GET /api/boards/:boardId', () => {
   it('gives each card its due day, labels in board order, assignees by name and comment count', async () => {
     const { board, cards, labels, members } = await createBoard(prisma);
 
-    const response = await api.get(`/api/boards/${board.id}`);
+    const response = await member.get(`/api/boards/${board.id}`);
 
     expect(response.body.columns[0].cards[0]).toEqual({
       id: cards.first.id,
@@ -65,7 +74,7 @@ describe('GET /api/boards/:boardId', () => {
   });
 
   it('answers 404 for a board that does not exist', async () => {
-    const response = await api.get('/api/boards/missing');
+    const response = await member.get('/api/boards/missing');
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Not Found', message: 'No board with id missing' });

@@ -1,17 +1,43 @@
 // Test data, written through Prisma. Rows are created out of display order, so the tests see the API sort them.
+import { createHash, randomBytes } from 'node:crypto';
 import type { PrismaClient } from '../src/db/client.ts';
+
+const memberToken = randomBytes(32).toString('base64url');
+
+/** Signs a request in as Robin Park, the account createBoard makes a member of its boards. */
+export const memberCookie = `flowboard_session=${memberToken}`;
+
+/** Robin Park's account, with the session memberCookie names; created once per test, as the database is emptied. */
+export function createMemberAccount(prisma: PrismaClient) {
+  const email = 'robin@example.com';
+  return prisma.user.upsert({
+    where: { email },
+    // No password signs in to it: the tests use the session.
+    create: {
+      email,
+      name: 'Robin Park',
+      passwordHash: 'unused',
+      sessions: { create: { id: createHash('sha256').update(memberToken).digest('hex'), expiresAt: new Date('2099-01-01') } },
+    },
+    update: {},
+    select: { id: true },
+  });
+}
 
 /**
  * A board with two columns (To do with two cards, Done with none), two labels and two members.
  * The first card has a description, a due date, both labels, both members and two comments.
+ * Its member Robin Park is the account memberCookie signs in, unless `ofAnotherUser`: then no member has an account,
+ * and memberCookie cannot reach the board.
  */
-export async function createBoard(prisma: PrismaClient, title = 'Launch') {
+export async function createBoard(prisma: PrismaClient, title = 'Launch', { ofAnotherUser = false } = {}) {
   const board = await prisma.board.create({ data: { title } });
   const boardId = board.id;
+  const robinUserId = ofAnotherUser ? undefined : (await createMemberAccount(prisma)).id;
 
   const backend = await prisma.label.create({ data: { boardId, name: 'Backend', color: 'blue', position: 1 } });
   const design = await prisma.label.create({ data: { boardId, name: 'Design', color: 'violet', position: 0 } });
-  const robin = await prisma.member.create({ data: { boardId, name: 'Robin Park', color: 'green' } });
+  const robin = await prisma.member.create({ data: { boardId, name: 'Robin Park', color: 'green', userId: robinUserId } });
   const alex = await prisma.member.create({ data: { boardId, name: 'Alex Moreno', color: 'amber' } });
 
   const done = await prisma.column.create({ data: { boardId, title: 'Done', color: 'green', position: 1 } });

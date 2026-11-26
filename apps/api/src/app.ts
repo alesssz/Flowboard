@@ -5,6 +5,7 @@
 import type { HealthResponse } from '@flowboard/shared';
 import express, { type Express } from 'express';
 import { authRoutes } from './auth/auth-routes.ts';
+import { requireSession } from './auth/require-session.ts';
 import { boardRoutes } from './boards/board-routes.ts';
 import { cardRoutes } from './cards/card-routes.ts';
 import { columnRoutes } from './columns/column-routes.ts';
@@ -45,6 +46,8 @@ export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOption
   });
 
   app.use('/api', authRoutes(prisma));
+  // Every route under these paths needs a session; a new kind of resource adds its path here.
+  app.use(['/api/boards', '/api/columns', '/api/cards'], requireSession(prisma));
   app.use('/api', boardRoutes(prisma));
   app.use('/api', columnRoutes(prisma));
   app.use('/api', cardRoutes(prisma));

@@ -1,15 +1,17 @@
 // Card writes, and a card's comments: create in a column, change fields, move, delete, read the comments.
-import { describe, expect, it } from 'vitest';
-import { createBoard } from './fixtures.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoard, createMemberAccount } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
 
-const { api, prisma } = useTestApp();
+const { member, prisma } = useTestApp();
+// Robin Park's account exists in every test, board or not, so `member` is signed in.
+beforeEach(() => createMemberAccount(prisma));
 
 describe('POST /api/columns/:columnId/cards', () => {
   it('adds a trimmed card at the bottom of its column, with nothing else set', async () => {
     const { board, columns, cards } = await createBoard(prisma);
 
-    const response = await api.post(`/api/columns/${columns.todo.id}/cards`).send({ title: '  Third  ' });
+    const response = await member.post(`/api/columns/${columns.todo.id}/cards`).send({ title: '  Third  ' });
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
@@ -21,7 +23,7 @@ describe('POST /api/columns/:columnId/cards', () => {
       assignees: [],
       commentCount: 0,
     });
-    const after = await api.get(`/api/boards/${board.id}`);
+    const after = await member.get(`/api/boards/${board.id}`);
     expect(after.body.columns[0].cards.map((card: { id: string }) => card.id)).toEqual([
       cards.first.id,
       cards.second.id,
@@ -36,14 +38,14 @@ describe('POST /api/columns/:columnId/cards', () => {
   ])('refuses %j with a 400 naming the field', async (body, message) => {
     const { columns } = await createBoard(prisma);
 
-    const response = await api.post(`/api/columns/${columns.todo.id}/cards`).send(body);
+    const response = await member.post(`/api/columns/${columns.todo.id}/cards`).send(body);
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Bad Request', message });
   });
 
   it('answers 404 for a column that does not exist', async () => {
-    const response = await api.post('/api/columns/missing/cards').send({ title: 'Third' });
+    const response = await member.post('/api/columns/missing/cards').send({ title: 'Third' });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('No column with id missing');
@@ -54,7 +56,7 @@ describe('PATCH /api/cards/:cardId', () => {
   it('changes only the fields given, keeping labels in board order and assignees by name', async () => {
     const { cards, labels, members } = await createBoard(prisma);
 
-    const response = await api.patch(`/api/cards/${cards.second.id}`).send({
+    const response = await member.patch(`/api/cards/${cards.second.id}`).send({
       description: '  Notes  ',
       dueDate: '2026-12-24',
       labelIds: [labels.backend.id, labels.design.id],
@@ -70,7 +72,7 @@ describe('PATCH /api/cards/:cardId', () => {
   it('removes the due date with null, and every label with an empty list', async () => {
     const { cards } = await createBoard(prisma);
 
-    const response = await api.patch(`/api/cards/${cards.first.id}`).send({ dueDate: null, labelIds: [] });
+    const response = await member.patch(`/api/cards/${cards.first.id}`).send({ dueDate: null, labelIds: [] });
 
     expect(response.body).toMatchObject({ dueDate: null, labels: [] });
     expect(response.body.assignees).toHaveLength(2);
@@ -84,7 +86,7 @@ describe('PATCH /api/cards/:cardId', () => {
   ])('refuses %j with a 400', async (body, message) => {
     const { cards } = await createBoard(prisma);
 
-    const response = await api.patch(`/api/cards/${cards.first.id}`).send(body);
+    const response = await member.patch(`/api/cards/${cards.first.id}`).send(body);
 
     expect(response.status).toBe(400);
     expect(response.body.message).toEqual(message);
@@ -94,8 +96,8 @@ describe('PATCH /api/cards/:cardId', () => {
     const { cards } = await createBoard(prisma);
     const other = await createBoard(prisma, 'Other');
 
-    const labelResponse = await api.patch(`/api/cards/${cards.first.id}`).send({ labelIds: [other.labels.design.id] });
-    const memberResponse = await api.patch(`/api/cards/${cards.first.id}`).send({ assigneeIds: [other.members.alex.id] });
+    const labelResponse = await member.patch(`/api/cards/${cards.first.id}`).send({ labelIds: [other.labels.design.id] });
+    const memberResponse = await member.patch(`/api/cards/${cards.first.id}`).send({ assigneeIds: [other.members.alex.id] });
 
     expect(labelResponse.status).toBe(400);
     expect(labelResponse.body.message).toBe(`labelIds: no label with id ${other.labels.design.id} on this card's board`);
@@ -104,7 +106,7 @@ describe('PATCH /api/cards/:cardId', () => {
   });
 
   it('answers 404 for a card that does not exist', async () => {
-    const response = await api.patch('/api/cards/missing').send({ title: 'Third' });
+    const response = await member.patch('/api/cards/missing').send({ title: 'Third' });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('No card with id missing');
@@ -117,7 +119,7 @@ describe('POST /api/cards/:cardId/move', () => {
   it('moves a card within its column, answering with the board', async () => {
     const { board, columns, cards } = await createBoard(prisma);
 
-    const response = await api.post(`/api/cards/${cards.second.id}/move`).send({ columnId: columns.todo.id, index: 0 });
+    const response = await member.post(`/api/cards/${cards.second.id}/move`).send({ columnId: columns.todo.id, index: 0 });
 
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(board.id);
@@ -127,7 +129,7 @@ describe('POST /api/cards/:cardId/move', () => {
   it('moves a card into another column at the index given, keeping its fields', async () => {
     const { columns, cards } = await createBoard(prisma);
 
-    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
+    const response = await member.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
 
     expect(idsOf(response.body.columns[0])).toEqual([cards.second.id]);
     expect(idsOf(response.body.columns[1])).toEqual([cards.first.id]);
@@ -137,7 +139,7 @@ describe('POST /api/cards/:cardId/move', () => {
   it('puts the card last when the index is past the end', async () => {
     const { columns, cards } = await createBoard(prisma);
 
-    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.todo.id, index: 99 });
+    const response = await member.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.todo.id, index: 99 });
 
     expect(idsOf(response.body.columns[0])).toEqual([cards.second.id, cards.first.id]);
   });
@@ -147,7 +149,7 @@ describe('POST /api/cards/:cardId/move', () => {
     const third = await prisma.card.create({ data: { columnId: columns.todo.id, title: 'Third', position: 7 } });
     await prisma.card.update({ where: { id: cards.second.id }, data: { position: 7 } });
 
-    await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
+    await member.post(`/api/cards/${cards.first.id}/move`).send({ columnId: columns.done.id, index: 0 });
 
     const positions = await prisma.card.findMany({ orderBy: { position: 'asc' }, select: { id: true, columnId: true, position: true } });
     expect(positions.filter((card) => card.columnId === columns.todo.id).map((card) => card.position)).toEqual([0, 1]);
@@ -163,7 +165,7 @@ describe('POST /api/cards/:cardId/move', () => {
   ])('refuses %j with a 400 naming the field', async (body, message) => {
     const { cards } = await createBoard(prisma);
 
-    const response = await api.post(`/api/cards/${cards.first.id}/move`).send(body);
+    const response = await member.post(`/api/cards/${cards.first.id}/move`).send(body);
 
     expect(response.status).toBe(400);
     expect(response.body.message).toEqual(message);
@@ -173,7 +175,7 @@ describe('POST /api/cards/:cardId/move', () => {
     const { columns, cards } = await createBoard(prisma);
     const other = await createBoard(prisma, 'Other');
 
-    const response = await api.post(`/api/cards/${cards.first.id}/move`).send({ columnId: other.columns.done.id, index: 0 });
+    const response = await member.post(`/api/cards/${cards.first.id}/move`).send({ columnId: other.columns.done.id, index: 0 });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe(`columnId: no column with id ${other.columns.done.id} on this card's board`);
@@ -185,7 +187,7 @@ describe('POST /api/cards/:cardId/move', () => {
   it('answers 404 for a card that does not exist', async () => {
     const { columns } = await createBoard(prisma);
 
-    const response = await api.post('/api/cards/missing/move').send({ columnId: columns.todo.id, index: 0 });
+    const response = await member.post('/api/cards/missing/move').send({ columnId: columns.todo.id, index: 0 });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('No card with id missing');
@@ -196,7 +198,7 @@ describe('DELETE /api/cards/:cardId', () => {
   it('deletes the card and its comments, answering 204 with no body', async () => {
     const { cards } = await createBoard(prisma);
 
-    const response = await api.delete(`/api/cards/${cards.first.id}`);
+    const response = await member.delete(`/api/cards/${cards.first.id}`);
 
     expect(response.status).toBe(204);
     expect(response.text).toBe('');
@@ -206,9 +208,9 @@ describe('DELETE /api/cards/:cardId', () => {
 
   it('answers 404 once the card is gone', async () => {
     const { cards } = await createBoard(prisma);
-    await api.delete(`/api/cards/${cards.second.id}`);
+    await member.delete(`/api/cards/${cards.second.id}`);
 
-    const response = await api.delete(`/api/cards/${cards.second.id}`);
+    const response = await member.delete(`/api/cards/${cards.second.id}`);
 
     expect(response.status).toBe(404);
   });
@@ -218,7 +220,7 @@ describe('GET /api/cards/:cardId/comments', () => {
   it('lists the comments oldest first, with their authors and ISO times', async () => {
     const { cards, members, comments } = await createBoard(prisma);
 
-    const response = await api.get(`/api/cards/${cards.first.id}/comments`);
+    const response = await member.get(`/api/cards/${cards.first.id}/comments`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
@@ -240,13 +242,13 @@ describe('GET /api/cards/:cardId/comments', () => {
   it('lists none for a card without comments', async () => {
     const { cards } = await createBoard(prisma);
 
-    const response = await api.get(`/api/cards/${cards.second.id}/comments`);
+    const response = await member.get(`/api/cards/${cards.second.id}/comments`);
 
     expect(response.body).toEqual([]);
   });
 
   it('answers 404 for a card that does not exist', async () => {
-    const response = await api.get('/api/cards/missing/comments');
+    const response = await member.get('/api/cards/missing/comments');
 
     expect(response.status).toBe(404);
   });

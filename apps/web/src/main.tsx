@@ -1,14 +1,18 @@
 /**
  * Web app entry point, loaded by index.html: mounts the React tree into #root.
  */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isClientError } from './api.ts';
+import { handleSessionEnded } from './auth/auth-queries.ts';
 import './index.css';
 import App from './App.tsx';
 
-const queryClient = new QueryClient({
+const queryClient: QueryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: (error) => handleSessionEnded(queryClient, error) }),
+  // onSettled runs after a mutation's own onError, which may put a board back into the cache.
+  mutationCache: new MutationCache({ onSettled: (_data, error) => handleSessionEnded(queryClient, error) }),
   defaultOptions: {
     queries: {
       // Up to 3 retries, as by default, but none for a 4xx: a missing board stays missing.
