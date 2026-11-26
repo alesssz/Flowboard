@@ -14,6 +14,7 @@ export const cardFields = {
   title: true,
   description: true,
   dueDate: true,
+  completedAt: true,
   labels: { orderBy: { position: 'asc' }, select: labelFields },
   assignees: { orderBy: { name: 'asc' }, select: memberFields },
   _count: { select: { comments: true } },
@@ -21,11 +22,12 @@ export const cardFields = {
 
 type CardRow = Prisma.CardGetPayload<{ select: typeof cardFields }>;
 
-export function toCard({ dueDate, _count, ...card }: CardRow): Card {
+export function toCard({ dueDate, completedAt, _count, ...card }: CardRow): Card {
   return {
     ...card,
     // A date column comes back as midnight UTC, so the UTC date is the stored day.
     dueDate: dueDate === null ? null : dueDate.toISOString().slice(0, 10),
+    completedAt: completedAt === null ? null : completedAt.toISOString(),
     commentCount: _count.comments,
   };
 }
@@ -52,7 +54,10 @@ export function createCard(prisma: PrismaClient, userId: string, columnId: strin
  */
 export function updateCard(prisma: PrismaClient, userId: string, cardId: string, changes: UpdateCardRequest): Promise<Card | null> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.card.findFirst({ where: cardOf(userId, cardId), select: { column: { select: { boardId: true } } } });
+    const existing = await tx.card.findFirst({
+      where: cardOf(userId, cardId),
+      select: { completedAt: true, column: { select: { boardId: true } } },
+    });
     if (existing === null) return null;
     const { boardId } = existing.column;
 
@@ -72,6 +77,7 @@ export function updateCard(prisma: PrismaClient, userId: string, cardId: string,
         description: changes.description,
         // Stored as midnight UTC, which the date column keeps as the calendar day.
         dueDate: changes.dueDate === undefined ? undefined : changes.dueDate === null ? null : new Date(`${changes.dueDate}T00:00:00Z`),
+        completedAt: changes.completed === undefined ? undefined : changes.completed ? (existing.completedAt ?? new Date()) : null,
         labels: changes.labelIds === undefined ? undefined : { set: changes.labelIds.map((id) => ({ id })) },
         assignees: changes.assigneeIds === undefined ? undefined : { set: changes.assigneeIds.map((id) => ({ id })) },
       },

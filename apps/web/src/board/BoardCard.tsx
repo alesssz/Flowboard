@@ -30,6 +30,14 @@ export function BoardCard({ card, onOpen, dragHandle, lifted = false }: BoardCar
           The button is the way in for the keyboard and screen readers; its click bubbles to the card. */}
       <h3 className="board-card__title">
         <button type="button" className="board-card__open" aria-haspopup="dialog">
+          {card.completedAt !== null && (
+            <span className="board-card__done">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4 8.5l2.5 2.5 5.5-6" />
+              </svg>
+              <span className="visually-hidden">Completed: </span>
+            </span>
+          )}
           {card.title}
         </button>
       </h3>
@@ -40,7 +48,7 @@ export function BoardCard({ card, onOpen, dragHandle, lifted = false }: BoardCar
 
       {hasFooter && (
         <div className="board-card__footer">
-          {card.dueDate !== null && <DueDate date={card.dueDate} today={new Date()} />}
+          {card.dueDate !== null && <DueDate date={card.dueDate} today={new Date()} completed={card.completedAt !== null} />}
           {card.commentCount > 0 && (
             <p className="board-card__comments">
               <svg className="board-card__comments-icon" viewBox="0 0 16 16" aria-hidden="true">

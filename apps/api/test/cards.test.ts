@@ -19,6 +19,7 @@ describe('POST /api/columns/:columnId/cards', () => {
       title: 'Third',
       description: '',
       dueDate: null,
+      completedAt: null,
       labels: [],
       assignees: [],
       commentCount: 0,
@@ -78,10 +79,35 @@ describe('PATCH /api/cards/:cardId', () => {
     expect(response.body.assignees).toHaveLength(2);
   });
 
+  it('marks the card completed at the time of the request, and clears it with false', async () => {
+    const { cards } = await createBoard(prisma);
+    const before = Date.now();
+
+    const completed = await member.patch(`/api/cards/${cards.first.id}`).send({ completed: true });
+
+    expect(completed.status).toBe(200);
+    expect(completed.body.completedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(Date.parse(completed.body.completedAt)).toBeGreaterThanOrEqual(before);
+    expect(Date.parse(completed.body.completedAt)).toBeLessThanOrEqual(Date.now());
+    const cleared = await member.patch(`/api/cards/${cards.first.id}`).send({ completed: false });
+    expect(cleared.body.completedAt).toBeNull();
+  });
+
+  it('keeps the time a card was first completed when it is marked completed again', async () => {
+    const { cards } = await createBoard(prisma);
+    await prisma.card.update({ where: { id: cards.first.id }, data: { completedAt: new Date('2026-11-01T08:00:00Z') } });
+
+    const response = await member.patch(`/api/cards/${cards.first.id}`).send({ completed: true, title: 'Renamed' });
+
+    expect(response.body).toMatchObject({ title: 'Renamed', completedAt: '2026-11-01T08:00:00.000Z' });
+  });
+
   it.each([
     [{}, 'must change at least one field'],
     [{ title: '  ' }, 'title: must not be empty'],
     [{ dueDate: '2026-02-30' }, expect.stringMatching(/^dueDate: /)],
+    [{ completed: 'yes' }, expect.stringMatching(/^completed: /)],
+    [{ completed: true, completedAt: '2026-11-01T08:00:00Z' }, 'Unrecognized key: "completedAt"'],
     [{ labelIds: ['same', 'same'] }, 'labelIds: must not list an id twice'],
   ])('refuses %j with a 400', async (body, message) => {
     const { cards } = await createBoard(prisma);

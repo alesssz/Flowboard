@@ -60,6 +60,7 @@ describe('GET /api/boards/:boardId', () => {
       title: 'First',
       description: 'Line one\nLine two',
       dueDate: '2026-12-01',
+      completedAt: null,
       labels: [
         { id: labels.design.id, name: 'Design', color: 'violet' },
         { id: labels.backend.id, name: 'Backend', color: 'blue' },

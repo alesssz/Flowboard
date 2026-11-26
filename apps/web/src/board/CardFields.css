@@ -21,6 +21,92 @@
   color: var(--color-text-muted);
 }
 
+.card-field__where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin: 0;
+}
+
+.card-field__completed {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--palette-green-text);
+}
+
+/* The completion checkbox, then the title; a refused change goes on its own line under both. */
+.card-field__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0 8px;
+}
+
+.card-field__title-row > .card-field__text--title {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin-left: -4px;
+}
+
+.card-field__title-row > .card-field__note {
+  flex-basis: 100%;
+}
+
+/* Lined up with the title's first line. */
+.card-field__complete {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.card-field__complete-box {
+  appearance: none;
+  grid-area: 1 / 1;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.card-field__complete-box:hover {
+  border-color: var(--palette-green);
+}
+
+.card-field__complete-box:checked {
+  border-color: var(--palette-green);
+  background: var(--palette-green);
+}
+
+.card-field__complete-box:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+/* Drawn over the box, which takes the clicks. */
+.card-field__complete-check {
+  grid-area: 1 / 1;
+  place-self: center;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--color-surface);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.card-field__complete-box:checked + .card-field__complete-check {
+  visibility: visible;
+}
+
 .card-field__column-dot {
   width: 8px;
   height: 8px;

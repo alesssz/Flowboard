@@ -1,4 +1,4 @@
-/* A card's due date: grey while ahead, amber on the day, red once past. */
+/* A card's due date: grey while ahead, amber on the day, red once past, green on a completed card. */
 
 .due-date {
   position: relative;
@@ -23,6 +23,11 @@
 .due-date--overdue {
   color: var(--palette-red-text);
   background: var(--palette-red-soft);
+}
+
+.due-date--done {
+  color: var(--palette-green-text);
+  background: var(--palette-green-soft);
 }
 
 .due-date__icon {
