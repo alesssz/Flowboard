@@ -22,6 +22,8 @@ export const updateCardRequestSchema = z
     description: z.string().trim().max(cardDescriptionMaxLength).optional(),
     /** 'YYYY-MM-DD', or null to remove it. */
     dueDate: z.iso.date().nullable().optional(),
+    /** true marks the card completed, keeping the time it was first marked; false clears it. */
+    completed: z.boolean().optional(),
     /** Ids of the board's labels; replaces the card's labels. */
     labelIds: idSet.optional(),
     /** Ids of the board's members; replaces the card's assignees. */

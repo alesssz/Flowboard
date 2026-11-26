@@ -35,6 +35,8 @@ export interface Card {
   labels: Label[];
   /** Calendar day as `YYYY-MM-DD`, with no time or time zone; null when the card has none. */
   dueDate: string | null;
+  /** ISO 8601 instant in UTC when it was marked completed; null while it is not. A completed card is never overdue. */
+  completedAt: string | null;
   /** The people working on the card, in display order; empty when nobody is. */
   assignees: Member[];
   /** How many comments the card has; the comments themselves come with the card's detail. */

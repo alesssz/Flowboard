@@ -144,7 +144,7 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Column writes.** Titles are trimmed and keep at least one character (limit: `columnTitleMaxLength` in `@flowboard/shared`). `color` is one of `paletteColors`; the API does not pick one, the client sends it.
 
-**Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
+**Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `completed: true` sets `completedAt` to the time of the request, or keeps it when the card is already completed; `false` clears it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
 
 **Comment writes.** A body is trimmed at both ends, keeps its line breaks, and must keep at least one character (limit: `commentBodyMaxLength` in `@flowboard/shared`). The author is the user's member on the card's board, never a field of the request. Only the author may change or delete a comment; a change sets `editedAt`.
 

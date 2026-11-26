@@ -11,8 +11,10 @@ interface SeedCard {
   title: string;
   description?: string;
   labels?: { id: string }[];
-  /** Days from the seed day; negative is overdue. */
+  /** Days from the seed day; negative is overdue, unless the card is completed. */
   dueIn?: number;
+  /** Marked completed this many days before the seed. */
+  completedDaysAgo?: number;
   assignees?: { id: string }[];
   comments?: { author: { id: string }; body: string; minutesAgo: number }[];
 }
@@ -174,11 +176,12 @@ async function seed(tx: Prisma.TransactionClient, demoPasswordHash: string): Pro
       title: 'Done',
       color: 'green',
       cards: [
-        { title: 'Brand colours and type scale', labels: [design], assignees: [ada] },
+        { title: 'Brand colours and type scale', labels: [design], dueIn: -4, assignees: [ada], completedDaysAgo: 5 },
         {
           title: 'Analytics plan',
           description: 'Events for sign-up, trial start and plan change.',
           assignees: [marco],
+          completedDaysAgo: 2,
         },
       ],
     },
@@ -196,6 +199,7 @@ async function seed(tx: Prisma.TransactionClient, demoPasswordHash: string): Pro
             title: card.title,
             description: card.description ?? '',
             dueDate: card.dueIn === undefined ? null : dueIn(card.dueIn),
+            completedAt: card.completedDaysAgo === undefined ? null : minutesAgo(card.completedDaysAgo * 24 * 60),
             position: cardPosition,
             labels: { connect: card.labels ?? [] },
             assignees: { connect: card.assignees ?? [] },

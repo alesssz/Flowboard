@@ -11,9 +11,11 @@ import {
   type UpdateCardRequest,
 } from '@flowboard/shared';
 import { type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
+import { Tooltip } from '../Tooltip.tsx';
 import { Avatar } from './Avatar.tsx';
 import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
 import { DetailRow } from './DetailRow.tsx';
+import { formatDay } from './due-date.ts';
 import { DueDate } from './DueDate.tsx';
 import { ConfirmDelete, EditButton } from './FieldControls.tsx';
 import { LabelEditor } from './LabelEditor.tsx';
@@ -34,7 +36,10 @@ interface CardTitleFieldProps {
   titleId: string;
 }
 
-/** The column the card is in, then the title. Enter or leaving the field saves; Escape restores the saved title. */
+/**
+ * The column the card is in and, once completed, since when; then the completion checkbox and the title.
+ * Enter or leaving the title saves it; Escape restores the saved title.
+ */
 export function CardTitleField({ boardId, card, column, titleId }: CardTitleFieldProps) {
   const autosave = useAutosaveText({ boardId, card, field: 'title' });
   const areaRef = useAutoGrow(autosave.value);
@@ -52,9 +57,16 @@ export function CardTitleField({ boardId, card, column, titleId }: CardTitleFiel
   return (
     <div className="card-field">
       <div className="card-field__meta">
-        <p className="card-field__column" data-color={column.color}>
-          <span className="card-field__column-dot" aria-hidden="true" />
-          {column.title}
+        <p className="card-field__where">
+          <span className="card-field__column" data-color={column.color}>
+            <span className="card-field__column-dot" aria-hidden="true" />
+            {column.title}
+          </span>
+          {card.completedAt !== null && (
+            <span className="card-field__completed">
+              Completed <time dateTime={card.completedAt}>{formatDay(new Date(card.completedAt), new Date())}</time>
+            </span>
+          )}
         </p>
         <SaveStatus
           pending={autosave.pending}
@@ -67,19 +79,58 @@ export function CardTitleField({ boardId, card, column, titleId }: CardTitleFiel
       <h2 id={titleId} className="visually-hidden">
         {card.title}
       </h2>
-      <textarea
-        ref={areaRef}
-        className="card-field__text card-field__text--title"
-        aria-label="Title"
-        rows={1}
-        value={autosave.value}
-        maxLength={cardTitleMaxLength}
-        onChange={(event) => autosave.handleChange(event.target.value)}
-        onFocus={autosave.handleFocus}
-        onBlur={autosave.handleBlur}
-        onKeyDown={handleKeyDown}
-      />
+      <div className="card-field__title-row">
+        <CompletedBox boardId={boardId} card={card} />
+        <textarea
+          ref={areaRef}
+          className="card-field__text card-field__text--title"
+          aria-label="Title"
+          rows={1}
+          value={autosave.value}
+          maxLength={cardTitleMaxLength}
+          onChange={(event) => autosave.handleChange(event.target.value)}
+          onFocus={autosave.handleFocus}
+          onBlur={autosave.handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
     </div>
+  );
+}
+
+interface CompletedBoxProps {
+  boardId: string;
+  card: Card;
+}
+
+// A round checkbox before the title. It shows what the API last returned, as the details' checkboxes do;
+// a refused change says so under the title.
+function CompletedBox({ boardId, card }: CompletedBoxProps) {
+  const update = useUpdateCard(boardId, card.id);
+  const completed = card.completedAt !== null;
+
+  function handleChange(checked: boolean) {
+    if (!update.isPending) update.mutate({ completed: checked });
+  }
+
+  return (
+    <>
+      <span className="card-field__complete">
+        <input
+          type="checkbox"
+          className="card-field__complete-box"
+          aria-label="Completed"
+          aria-busy={update.isPending}
+          checked={completed}
+          onChange={(event) => handleChange(event.target.checked)}
+        />
+        <svg className="card-field__complete-check" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4 8.5l2.5 2.5 5.5-6" />
+        </svg>
+        <Tooltip text={completed ? 'Mark not completed' : 'Mark completed'} />
+      </span>
+      <SaveNote error={update.error} />
+    </>
   );
 }
 
@@ -290,7 +341,9 @@ function DueRow({ boardId, card, today }: DueRowProps) {
   return (
     <DetailRow
       name="Due"
-      value={card.dueDate === null ? <None /> : <DueDate date={card.dueDate} today={today} as="span" />}
+      value={
+        card.dueDate === null ? <None /> : <DueDate date={card.dueDate} today={today} as="span" completed={card.completedAt !== null} />
+      }
       onOpen={handleOpen}
       onClose={handleClose}
       status={<SaveStatus pending={update.isPending} justSaved={notice.justSaved} savedKey={notice.savedKey} error={null} />}

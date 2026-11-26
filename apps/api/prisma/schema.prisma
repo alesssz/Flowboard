@@ -52,6 +52,8 @@ model Card {
   description String    @default("")
   // A calendar day with no time zone; Prisma reads it as midnight UTC.
   dueDate     DateTime? @db.Date
+  // Set when the card is marked completed; null while it is not.
+  completedAt DateTime?
   position    Int
   labels      Label[]
   assignees   Member[]

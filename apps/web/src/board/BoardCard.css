@@ -53,6 +53,29 @@
   outline: none;
 }
 
+/* Before a completed card's title, on its first line. */
+.board-card__done {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border-radius: 50%;
+  color: var(--color-surface);
+  background: var(--palette-green);
+}
+
+.board-card__done svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Shown above the title, which comes first in the markup. */
 .board-card__labels {
   order: -1;

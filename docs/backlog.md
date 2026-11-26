@@ -8,8 +8,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 
 - [How this page works](#how-this-page-works)
   - [Template](#template)
-- [Features (FEAT)](#features-feat)
-  - [FEAT-1 A finished card still shows as overdue](#feat-1-a-finished-card-still-shows-as-overdue)
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
 - [Documentation (DOCS)](#documentation-docs)
@@ -51,23 +49,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 
 **Recommended.** Which option, why, and how to check it is done.
 ```
-
-## Features (FEAT)
-
-### FEAT-1 A finished card still shows as overdue
-
-**Priority:** medium · **Kind:** missing feature · **Found:** 2026-11-18
-
-**What is wrong.** A card's due date turns red once the day has passed, wherever the card is. Columns carry no meaning (`Column.color` is only a colour), so the web app cannot tell that a card in "Done" is finished: one with a past due date reads as late. The sample board hides it by giving its done cards no due date.
-
-**Where.** `Card` in `packages/shared/src/board.ts`; `getDueStatus` in `apps/web/src/board/due-date.ts`; `DueDate.tsx`.
-
-**Options.**
-- A) A completed flag on the card (`completedAt: string | null`), set by a checkbox on the card; a completed card's date loses the overdue colour.
-- B) A column marked as the finishing one; cards in it are completed.
-- C) A due date leaves the card when it moves to a finishing column.
-
-**Recommended.** A: it keeps columns free of meaning, works on boards with any workflow and records when the work ended. Done when a completed card with a past due date is not red, and its state is announced to screen readers.
 
 ## Tooling (OPS)
 
