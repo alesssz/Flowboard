@@ -8,11 +8,8 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 
 - [How this page works](#how-this-page-works)
   - [Template](#template)
-- [Interface (UI)](#interface-ui)
-  - [UI-1 Deleting a card leaves the focus nowhere](#ui-1-deleting-a-card-leaves-the-focus-nowhere)
 - [Features (FEAT)](#features-feat)
   - [FEAT-1 A finished card still shows as overdue](#feat-1-a-finished-card-still-shows-as-overdue)
-  - [FEAT-3 A board's labels cannot be managed](#feat-3-a-boards-labels-cannot-be-managed)
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
 - [Documentation (DOCS)](#documentation-docs)
@@ -55,22 +52,6 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 **Recommended.** Which option, why, and how to check it is done.
 ```
 
-## Interface (UI)
-
-### UI-1 Deleting a card leaves the focus nowhere
-
-**Priority:** low · **Kind:** accessibility · **Found:** 2026-11-20
-
-**What is wrong.** After **Delete card** is confirmed, the dialog closes and gives the focus back to the button that opened it, the deleted card's title, which is gone: the focus falls to the page. A keyboard or screen reader user starts again from the top of the page.
-
-**Where.** `DeleteCard` in `apps/web/src/board/CardFields.tsx`; `handleDeleted` in `CardDialog.tsx`; `BoardView.tsx`, which knows the columns.
-
-**Options.**
-- A) Focus the card that took the deleted one's place in its column (the next, else the previous), else the column's **Add a card**.
-- B) Always focus the column's **Add a card**.
-
-**Recommended.** A: it keeps the user where they were in the column. Done when, after a deletion, the focus is on a neighbouring card or on **Add a card**, checked with the keyboard alone.
-
 ## Features (FEAT)
 
 ### FEAT-1 A finished card still shows as overdue
@@ -86,21 +67,7 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - B) A column marked as the finishing one; cards in it are completed.
 - C) A due date leaves the card when it moves to a finishing column.
 
-**Recommended.** A: it keeps columns free of meaning, works on boards with any workflow and records when the work ended. To be done with board editing, which brings the controls. Done when a completed card with a past due date is not red, and its state is announced to screen readers.
-
-### FEAT-3 A board's labels cannot be managed
-
-**Priority:** medium · **Kind:** missing feature · **Found:** 2026-11-20
-
-**What is wrong.** A card can be given any of the board's labels, but the labels themselves (name, colour, order) come from the seed.
-
-**Where.** `Label` in `apps/api/prisma/schema.prisma`; the labels editor in `CardFields.tsx`.
-
-**Options.**
-- A) **Create label** and an edit button per label inside the card's labels editor.
-- B) A labels section in a board settings dialog.
-
-**Recommended.** A: labels are created when a card needs one, as in most boards. Deleting a label removes it from every card, after a confirmation naming how many. Done when labels can be created, renamed, recoloured and deleted.
+**Recommended.** A: it keeps columns free of meaning, works on boards with any workflow and records when the work ended. Done when a completed card with a past due date is not red, and its state is announced to screen readers.
 
 ## Tooling (OPS)
 

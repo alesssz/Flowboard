@@ -7,12 +7,14 @@ export type { CreateCommentRequest, UpdateCommentRequest } from './comment-reque
 export type { CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from './column-requests.ts';
 export type { ApiError } from './error.ts';
 export type { HealthResponse } from './health.ts';
+export type { CreateLabelRequest, UpdateLabelRequest } from './label-requests.ts';
 export {
   cardDescriptionMaxLength,
   cardTitleMaxLength,
   columnTitleMaxLength,
   commentBodyMaxLength,
   emailMaxLength,
+  labelNameMaxLength,
   passwordMaxLength,
   passwordMinLength,
   userNameMaxLength,

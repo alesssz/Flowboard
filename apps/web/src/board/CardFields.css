@@ -276,6 +276,49 @@
   cursor: pointer;
 }
 
+/* A label to tick, and its pencil at the end of the row; the pencil's height takes none of the list's gap. */
+.card-field__label-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0;
+}
+
+.card-field__label-choice .card-field__choice {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-field__create {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 -6px;
+  padding: 5px 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.card-field__create:hover {
+  color: var(--color-text);
+  background: var(--palette-gray-soft);
+}
+
+.card-field__create svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
 .card-field__choice input {
   width: 16px;
   height: 16px;
@@ -295,6 +338,7 @@
 }
 
 .card-field__retry:focus-visible,
+.card-field__create:focus-visible,
 .card-field__choice input:focus-visible,
 .card-field__select:focus-visible,
 .card-field__date:focus-visible {

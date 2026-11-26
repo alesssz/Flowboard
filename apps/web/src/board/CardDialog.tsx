@@ -13,9 +13,17 @@ interface CardDialogProps {
   column: Column;
   /** Called once the dialog has closed, by the close button, Escape or a click on the backdrop. */
   onClose: () => void;
+  /** Once the API has deleted the card, before the dialog closes: its column, and the card after it, else before it. */
+  onDeleted: (place: DeletedCardPlace) => void;
 }
 
-export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
+export interface DeletedCardPlace {
+  columnId: string;
+  /** Null when the column has no other card. */
+  neighbourId: string | null;
+}
+
+export function CardDialog({ board, card, column, onClose, onDeleted }: CardDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const pressedOnBackdrop = useRef(false);
@@ -39,7 +47,11 @@ export function CardDialog({ board, card, column, onClose }: CardDialogProps) {
     dialogRef.current?.close();
   }
 
+  // `column` is still the one from before the deletion, so it has the card.
   function handleDeleted() {
+    const index = column.cards.findIndex((other) => other.id === card.id);
+    const neighbour = column.cards[index + 1] ?? column.cards[index - 1];
+    onDeleted({ columnId: column.id, neighbourId: neighbour?.id ?? null });
     dialogRef.current?.close();
   }
 

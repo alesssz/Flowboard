@@ -27,7 +27,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { BoardCard } from './BoardCard.tsx';
 import { moveCardInBoard } from './board-cache.ts';
 import { BoardColumn, ColumnOverlay, type DragItem } from './BoardColumn.tsx';
-import { CardDialog } from './CardDialog.tsx';
+import { CardDialog, type DeletedCardPlace } from './CardDialog.tsx';
 import { ColumnsPanel } from './ColumnsPanel.tsx';
 import { useMoveCard, useMoveColumn } from './move-mutations.ts';
 import { useHiddenColumns } from './use-hidden-columns.ts';
@@ -64,6 +64,8 @@ export function BoardView({ board }: BoardViewProps) {
   const { hiddenIds, setHiddenIds } = useHiddenColumns(board.id);
   // Set by Add a column, so the board scrolls to the new column once it shows.
   const revealLastColumn = useRef(false);
+  // Set when the open card is deleted, so the focus goes to its neighbour once the card has left the board.
+  const focusAfterDelete = useRef<DeletedCardPlace | null>(null);
   const sensors = useSensors(
     // A few pixels of travel first, so a click still opens the card.
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -84,6 +86,20 @@ export function BoardView({ board }: BoardViewProps) {
     const row = columnsRef.current;
     row?.scrollTo({ left: row.scrollWidth, behavior: 'smooth' });
   }, [lastColumnId]);
+
+  // After every render: the one that removes the deleted card comes after the dialog has closed and given
+  // the focus back to that card, which is gone.
+  useEffect(() => {
+    const place = focusAfterDelete.current;
+    if (place === null) return;
+    focusAfterDelete.current = null;
+    const column = columnsRef.current?.querySelector(`[data-column-id="${window.CSS.escape(place.columnId)}"]`);
+    const target =
+      place.neighbourId === null
+        ? column?.querySelector<HTMLElement>('.add-card__open')
+        : column?.querySelector<HTMLElement>(`[data-card-id="${window.CSS.escape(place.neighbourId)}"] .board-card__open`);
+    (target ?? columnsRef.current)?.focus();
+  });
   const cardCount = board.columns.reduce((total, column) => total + column.cards.length, 0);
   const openCard = openCardId === null ? undefined : findCard(board, openCardId);
   const moveError = moveCard.error ?? moveColumn.error;
@@ -95,6 +111,10 @@ export function BoardView({ board }: BoardViewProps) {
 
   function handleCloseCard() {
     setOpenCardId(null);
+  }
+
+  function handleCardDeleted(place: DeletedCardPlace) {
+    focusAfterDelete.current = place;
   }
 
   // The focus was in the deleted column; the row of columns is the nearest place that stays.
@@ -264,6 +284,7 @@ export function BoardView({ board }: BoardViewProps) {
           card={openCard.card}
           column={openCard.column}
           onClose={handleCloseCard}
+          onDeleted={handleCardDeleted}
         />
       )}
     </section>

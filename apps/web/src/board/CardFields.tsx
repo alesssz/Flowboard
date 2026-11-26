@@ -7,6 +7,7 @@ import {
   cardDescriptionMaxLength,
   cardTitleMaxLength,
   type Column,
+  type Label,
   type UpdateCardRequest,
 } from '@flowboard/shared';
 import { type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
@@ -14,7 +15,8 @@ import { Avatar } from './Avatar.tsx';
 import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
 import { DetailRow } from './DetailRow.tsx';
 import { DueDate } from './DueDate.tsx';
-import { ConfirmDelete } from './FieldControls.tsx';
+import { ConfirmDelete, EditButton } from './FieldControls.tsx';
+import { LabelEditor } from './LabelEditor.tsx';
 import { useMoveCard } from './move-mutations.ts';
 import { useAutoGrow } from './use-auto-grow.ts';
 import { useAutosaveText } from './use-autosave-text.ts';
@@ -144,28 +146,7 @@ export function CardDetails({ board, card, today }: CardDetailsProps) {
   return (
     <dl className="card-field__details">
       <PlaceRow board={board} card={card} />
-      <ChoiceRow
-        boardId={board.id}
-        card={card}
-        name="Labels"
-        options={board.labels}
-        selectedIds={card.labels.map((label) => label.id)}
-        toChanges={(labelIds) => ({ labelIds })}
-        value={
-          card.labels.length === 0
-            ? null
-            : card.labels.map((label) => (
-                <span key={label.id} className="card-field__pill" data-color={label.color}>
-                  {label.name}
-                </span>
-              ))
-        }
-        renderOption={(label) => (
-          <span className="card-field__pill" data-color={label.color}>
-            {label.name}
-          </span>
-        )}
-      />
+      <LabelsRow board={board} card={card} />
       <DueRow boardId={board.id} card={card} today={today} />
       <ChoiceRow
         boardId={board.id}
@@ -349,6 +330,130 @@ function DueRow({ boardId, card, today }: DueRowProps) {
           </div>
         </>
       )}
+    </DetailRow>
+  );
+}
+
+// What the labels panel shows: the board's labels to tick, or the editor of one of them or of a new one.
+// `focus` is where the focus goes on coming back to the list.
+type LabelsView =
+  | { kind: 'list'; focus: `choice:${string}` | `edit:${string}` | 'create' | null }
+  | { kind: 'edit'; labelId: string }
+  | { kind: 'create' };
+
+interface LabelsRowProps {
+  board: Board;
+  card: Card;
+}
+
+// The board's labels to tick, as in ChoiceRow, each with a pencil that edits it, and Create label: both turn
+// the panel into the label's editor. A label created here goes on the card.
+function LabelsRow({ board, card }: LabelsRowProps) {
+  const update = useUpdateCard(board.id, card.id);
+  const notice = useSavedNotice();
+  const [view, setView] = useState<LabelsView>({ kind: 'list', focus: null });
+  const selectedIds = card.labels.map((label) => label.id);
+  const editing = view.kind === 'edit' ? board.labels.find((label) => label.id === view.labelId) : undefined;
+
+  function handleOpen() {
+    update.reset();
+    setView({ kind: 'list', focus: null });
+  }
+
+  function handleToggle(id: string, checked: boolean) {
+    if (update.isPending) return;
+    // In the board's order, as the card will show them.
+    const next = board.labels
+      .map((label) => label.id)
+      .filter((labelId) => (labelId === id ? checked : selectedIds.includes(labelId)));
+    update.mutate({ labelIds: next }, { onSuccess: notice.notifySaved });
+  }
+
+  function handleCreated(label: Label) {
+    setView({ kind: 'list', focus: `choice:${label.id}` });
+    // A new label is the board's last, so it goes last on the card too.
+    update.mutate({ labelIds: [...selectedIds, label.id] }, { onSuccess: notice.notifySaved });
+  }
+
+  function handleEditorClosed(deleted: boolean) {
+    setView({ kind: 'list', focus: view.kind === 'edit' && !deleted ? `edit:${view.labelId}` : 'create' });
+  }
+
+  function cardsWith(labelId: string): number {
+    return board.columns.flatMap((column) => column.cards).filter((other) => other.labels.some((label) => label.id === labelId)).length;
+  }
+
+  return (
+    <DetailRow
+      name="Labels"
+      value={
+        card.labels.length === 0 ? (
+          <None />
+        ) : (
+          card.labels.map((label) => (
+            <span key={label.id} className="card-field__pill" data-color={label.color}>
+              {label.name}
+            </span>
+          ))
+        )
+      }
+      onOpen={handleOpen}
+      status={<SaveStatus pending={update.isPending} justSaved={notice.justSaved} savedKey={notice.savedKey} error={null} />}
+      note={<SaveNote error={update.error} />}
+    >
+      {() =>
+        view.kind === 'create' || editing !== undefined ? (
+          <LabelEditor
+            // A fresh draft for each label.
+            key={editing?.id ?? 'new'}
+            boardId={board.id}
+            labels={board.labels}
+            label={editing ?? null}
+            cardCount={editing === undefined ? 0 : cardsWith(editing.id)}
+            onCreated={handleCreated}
+            onClose={handleEditorClosed}
+          />
+        ) : (
+          <>
+            <fieldset className="card-field__choices" aria-busy={update.isPending}>
+              <legend className="visually-hidden">Labels</legend>
+              {board.labels.length === 0 && <p className="card-field__none">This board has none yet</p>}
+              {board.labels.map((label) => (
+                <div key={label.id} className="card-field__label-choice">
+                  <label className="card-field__choice">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(label.id)}
+                      autoFocus={view.kind === 'list' && view.focus === `choice:${label.id}`}
+                      onChange={(event) => handleToggle(label.id, event.target.checked)}
+                    />
+                    <span className="card-field__pill" data-color={label.color}>
+                      {label.name}
+                    </span>
+                  </label>
+                  <EditButton
+                    label={`Edit label ${label.name}`}
+                    autoFocus={view.kind === 'list' && view.focus === `edit:${label.id}`}
+                    onClick={() => setView({ kind: 'edit', labelId: label.id })}
+                  />
+                </div>
+              ))}
+            </fieldset>
+            <button
+              type="button"
+              className="card-field__create"
+              autoFocus={view.kind === 'list' && view.focus === 'create'}
+              onClick={() => setView({ kind: 'create' })}
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" />
+              </svg>
+              Create label
+            </button>
+            <SaveNote error={update.error} />
+          </>
+        )
+      }
     </DetailRow>
   );
 }

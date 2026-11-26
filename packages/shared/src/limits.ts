@@ -13,6 +13,9 @@ export const commentBodyMaxLength = 5_000;
 /** Longest column title, in characters, after trimming. */
 export const columnTitleMaxLength = 100;
 
+/** Longest label name, in characters, after trimming: a label is a short pill on the card. */
+export const labelNameMaxLength = 30;
+
 /** Shortest password at sign-up, in characters: NIST SP 800-63B-4's minimum for a password used alone. */
 export const passwordMinLength = 15;
 
