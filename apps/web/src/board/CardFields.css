@@ -74,7 +74,11 @@
   cursor: pointer;
 }
 
-.card-field__complete-box:hover {
+.card-field__complete-box:disabled {
+  cursor: default;
+}
+
+.card-field__complete-box:not(:disabled):hover {
   border-color: var(--palette-green);
 }
 
@@ -139,6 +143,15 @@
 
 .card-field__text:hover {
   background: var(--palette-gray-soft);
+}
+
+/* A viewer's: text, with no tint that says it can be edited; the keyboard still sees its focus. */
+.card-field__text:read-only {
+  cursor: default;
+}
+
+.card-field__text:read-only:hover {
+  background: transparent;
 }
 
 .card-field__text:focus {

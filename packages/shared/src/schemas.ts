@@ -6,3 +6,4 @@ export { createCardRequestSchema, moveCardRequestSchema, updateCardRequestSchema
 export { createCommentRequestSchema, updateCommentRequestSchema } from './comment-requests.ts';
 export { createColumnRequestSchema, moveColumnRequestSchema, updateColumnRequestSchema } from './column-requests.ts';
 export { createLabelRequestSchema, updateLabelRequestSchema } from './label-requests.ts';
+export { updateMemberRequestSchema } from './member-requests.ts';

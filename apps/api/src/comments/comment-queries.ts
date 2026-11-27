@@ -1,6 +1,6 @@
 // Comment reads and writes, shaped as the @flowboard/shared types. Any member writes; only the author edits or deletes.
 import type { CardComment, CreateCommentRequest, UpdateCommentRequest } from '@flowboard/shared';
-import { cardOf, commentOf } from '../boards/access.ts';
+import { cardOf, commentOf, memberOf } from '../boards/access.ts';
 import { memberFields } from '../cards/card-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError } from '../errors.ts';
@@ -30,7 +30,7 @@ function toComment({ author: { userId: authorUserId, ...author }, createdAt, edi
 /** The card's comments, oldest first, or null when there is no card with that id on a board of `userId`'s. */
 export async function findCardComments(prisma: PrismaClient, userId: string, cardId: string): Promise<CardComment[] | null> {
   const card = await prisma.card.findFirst({
-    where: cardOf(userId, cardId),
+    where: cardOf(cardId, memberOf(userId)),
     select: { comments: { orderBy: { createdAt: 'asc' }, select: commentFields } },
   });
   if (card === null) return null;
@@ -46,7 +46,8 @@ export function createComment(
   { body }: CreateCommentRequest,
 ): Promise<CardComment | null> {
   return prisma.$transaction(async (tx) => {
-    const card = await tx.card.findFirst({ where: cardOf(userId, cardId), select: { column: { select: { boardId: true } } } });
+    // Any member comments, viewers too.
+    const card = await tx.card.findFirst({ where: cardOf(cardId, memberOf(userId)), select: { column: { select: { boardId: true } } } });
     if (card === null) return null;
     // There is one: memberOf found the board through it.
     const author = await tx.member.findUniqueOrThrow({
@@ -91,7 +92,10 @@ type Transaction = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 
 // False when the user cannot see the comment; an HttpError 403 when they can but did not write it.
 async function checkAuthor(tx: Transaction, userId: string, commentId: string): Promise<boolean> {
-  const comment = await tx.comment.findFirst({ where: commentOf(userId, commentId), select: { author: { select: { userId: true } } } });
+  const comment = await tx.comment.findFirst({
+    where: commentOf(commentId, memberOf(userId)),
+    select: { author: { select: { userId: true } } },
+  });
   if (comment === null) return false;
   if (comment.author.userId !== userId) throw new HttpError(403, 'Only its author can change or delete a comment');
   return true;

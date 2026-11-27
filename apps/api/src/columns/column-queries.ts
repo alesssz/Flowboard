@@ -1,6 +1,6 @@
 // Column reads and writes, shaped as the @flowboard/shared types.
 import type { Column, CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from '@flowboard/shared';
-import { memberOf } from '../boards/access.ts';
+import { editorOf, editorsOnly, refuseByRole } from '../boards/access.ts';
 import { cardFields, toCard } from '../cards/card-queries.ts';
 import type { PrismaClient } from '../db/client.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -19,7 +19,10 @@ export function toColumn({ cards, ...column }: ColumnRow): Column {
   return { ...column, cards: cards.map(toCard) };
 }
 
-/** The new column, after the board's last one, or null when `userId` is a member of no board with that id. */
+/**
+ * The new column, after the board's last one, or null when `userId` is a member of no board with that id; an
+ * HttpError 403 for a viewer, as for every column write.
+ */
 export function createColumn(
   prisma: PrismaClient,
   userId: string,
@@ -27,8 +30,11 @@ export function createColumn(
   request: CreateColumnRequest,
 ): Promise<Column | null> {
   return prisma.$transaction(async (tx) => {
-    const board = await tx.board.findFirst({ where: { id: boardId, ...memberOf(userId) }, select: { id: true } });
-    if (board === null) return null;
+    const board = await tx.board.findFirst({ where: { id: boardId, ...editorOf(userId) }, select: { id: true } });
+    if (board === null) {
+      await refuseByRole(tx, userId, { id: boardId }, editorsOnly);
+      return null;
+    }
 
     // Two columns created at the same moment may share a position; reordering will renumber them.
     const { _max } = await tx.column.aggregate({ where: { boardId }, _max: { position: true } });
@@ -48,8 +54,11 @@ export function updateColumn(
   changes: UpdateColumnRequest,
 ): Promise<Column | null> {
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { id: true } });
-    if (existing === null) return null;
+    const existing = await tx.column.findFirst({ where: { id: columnId, board: editorOf(userId) }, select: { id: true } });
+    if (existing === null) {
+      await refuseByRole(tx, userId, columnBoard(columnId), editorsOnly);
+      return null;
+    }
 
     const column = await tx.column.update({
       where: { id: columnId },
@@ -66,8 +75,11 @@ export function updateColumn(
  */
 export function moveColumn(prisma: PrismaClient, userId: string, columnId: string, { index }: MoveColumnRequest): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
-    const column = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { boardId: true } });
-    if (column === null) return null;
+    const column = await tx.column.findFirst({ where: { id: columnId, board: editorOf(userId) }, select: { boardId: true } });
+    if (column === null) {
+      await refuseByRole(tx, userId, columnBoard(columnId), editorsOnly);
+      return null;
+    }
     const { boardId } = column;
 
     // Column moves on the same board wait for each other.
@@ -90,6 +102,11 @@ export function moveColumn(prisma: PrismaClient, userId: string, columnId: strin
 
 /** Deletes the column with its cards and their comments; false when there is no column with that id on a board of `userId`'s. */
 export async function deleteColumn(prisma: PrismaClient, userId: string, columnId: string): Promise<boolean> {
-  const { count } = await prisma.column.deleteMany({ where: { id: columnId, board: memberOf(userId) } });
+  const { count } = await prisma.column.deleteMany({ where: { id: columnId, board: editorOf(userId) } });
+  if (count === 0) await refuseByRole(prisma, userId, columnBoard(columnId), editorsOnly);
   return count > 0;
+}
+
+function columnBoard(columnId: string) {
+  return { columns: { some: { id: columnId } } } satisfies Prisma.BoardWhereInput;
 }

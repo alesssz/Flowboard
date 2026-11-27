@@ -43,6 +43,16 @@
   cursor: pointer;
 }
 
+/* A viewer's value: the button's layout, without its padding to click on. */
+.detail-row__static {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-height: 30px;
+  font-size: 0.85rem;
+}
+
 .detail-row__button:hover,
 .detail-row__button[data-open] {
   background: var(--palette-gray-soft);

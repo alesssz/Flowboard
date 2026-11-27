@@ -1,5 +1,5 @@
 // Development data (pnpm db:seed): the demo account, and one sample board replacing every board.
-import type { PaletteColor } from '@flowboard/shared';
+import type { MemberRole, PaletteColor } from '@flowboard/shared';
 import { hashPassword } from '../auth/passwords.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
 import { createPrismaClient, readDatabaseUrl } from './client.ts';
@@ -64,10 +64,11 @@ async function seed(tx: Prisma.TransactionClient, demoPasswordHash: string): Pro
   const legal = await label('Legal', 'amber');
   const frontend = await label('Frontend', 'coral');
 
-  const member = (name: string, color: PaletteColor, userId?: string) =>
-    tx.member.create({ data: { boardId, name, color, userId }, select: { id: true } });
-  // The demo account works on the board as this member.
-  const ada = await member(demoAccount.name, 'violet', demo.id);
+  // The others have no account: they are names on cards and comments, and their role gives them nothing.
+  const member = (name: string, color: PaletteColor, account?: { userId: string; role: MemberRole }) =>
+    tx.member.create({ data: { boardId, name, color, ...account }, select: { id: true } });
+  // The demo account owns the board as this member.
+  const ada = await member(demoAccount.name, 'violet', { userId: demo.id, role: 'owner' });
   const marco = await member('Marco Bianchi', 'amber');
   const lena = await member('Lena Fischer', 'green');
   const sam = await member('Sam Patel', 'blue');

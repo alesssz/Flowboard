@@ -63,7 +63,8 @@ src/
 ├── errors.ts              HttpError, JSON error responses (ApiError), the error-handling middleware
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
-│   ├── access.ts          memberOf, cardOf, commentOf: what a user may reach, filtered in every query
+│   ├── access.ts          memberOf, editorOf, ownerOf, cardOf, commentOf: what a user may reach and change,
+│   │                      filtered in every query; refuseByRole, the 403
 │   ├── board-routes.ts    the user's boards, one board; create, rename, delete
 │   └── board-queries.ts   board reads and writes, mapped to the @flowboard/shared types
 ├── columns/
@@ -75,6 +76,9 @@ src/
 ├── comments/
 │   ├── comment-routes.ts  a card's comments; write one; edit or delete one's own
 │   └── comment-queries.ts comment reads and writes, with the author check
+├── members/
+│   ├── member-routes.ts   a board's members; change a role; remove a member, or leave
+│   └── member-queries.ts  member reads and writes, keeping an owner on every board
 ├── labels/
 │   ├── label-routes.ts    label create, update, delete
 │   └── label-queries.ts   label writes, with the check that a name is free on the board
@@ -126,6 +130,9 @@ vitest.config.ts           test files, global setup, one file at a time
 | `POST` | `/api/boards/:boardId/labels` | Adds a label after the board's last one; body `CreateLabelRequest` | `201` `Label` · `400` · `404` · `409` |
 | `PATCH` | `/api/labels/:labelId` | Renames or recolours the label, on every card that has it; body `UpdateLabelRequest` | `200` `Label` · `400` · `404` · `409` |
 | `DELETE` | `/api/labels/:labelId` | Deletes the label, which leaves every card that had it | `204`, no body · `404` |
+| `GET` | `/api/boards/:boardId/members` | The board's members with an account, by name, with their roles, and which one is the user (`you`) | `200` `BoardMember[]` · `404` |
+| `PATCH` | `/api/members/:memberId` | Changes a member's role; body `UpdateMemberRequest` | `200` `BoardMember` · `400` · `403` · `404` · `409` |
+| `DELETE` | `/api/members/:memberId` | Takes the member's account off the board: an owner removing them, or the user leaving | `204`, no body · `403` · `404` · `409` |
 | any | any other path | No matching route | `404` |
 
 Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error": "Not Found", "message": "No board with id …" }`:
@@ -134,9 +141,9 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 |---|---|
 | `400` | Malformed JSON, or a write with no JSON body; a body that fails its schema, one `field: problem` per issue, `;`-separated (`title: must not be empty`); a label, member or column id not on the card's board |
 | `401` | Wrong email or password, the same answer for both; no session, or one that has ended (`Not signed in`), on `/api/auth/me` and on every board, column, card, comment and label route |
-| `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route; a write whose `Origin` is another site's (`Origin not allowed`); editing or deleting someone else's comment |
-| `404` | No board, column, card, comment or label with that id on a board the user is a member of: another user's answers as one that does not exist; no route |
-| `409` | Sign-up with an email that already has an account, in any case; a label name the board already has, in any case |
+| `403` | A `Host` header that is not the API's own (`Host not allowed`), whatever the route; a write whose `Origin` is another site's (`Origin not allowed`); a write the user's role does not allow on a board they can see (a viewer changing columns, cards or labels; anyone but an owner renaming or deleting the board, changing a role or removing someone else); editing or deleting someone else's comment |
+| `404` | No board, column, card, comment, label or member (with an account) with that id on a board the user is a member of: another user's answers as one that does not exist; no route |
+| `409` | Sign-up with an email that already has an account, in any case; a label name the board already has, in any case; a role change or a removal that would leave the board without an owner |
 | `413` | A body over 100 kB, which is not read |
 | `429` | Too many sign-ups and sign-ins from one address (100 in 15 minutes), or failed sign-ins for one email (10 in 15 minutes, counted from zero after a success); `Retry-After` gives the seconds to wait |
 | `500` | Anything unexpected: logged by the server, no details sent |
@@ -145,7 +152,7 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Moves.** A move names the place, not a position: `index` among the column's cards (or the board's columns) counted without the item itself, so `0` is the top, and an index past the end puts it last. The move renumbers the positions of the columns it touches from 0, in one `UPDATE` per column, which also closes gaps and ties. Moves on the same columns (or, for column moves, the same board) wait for each other through row locks taken in id order, so two at once neither interleave nor deadlock. The answer is the whole board, which the web app puts in place of the order it guessed.
 
-**Board writes.** Titles are trimmed and keep at least one character (limit: `boardTitleMaxLength` in `@flowboard/shared`). A new board's member is the user, under their account's name, with an avatar colour derived from their id, the same on every board they create; it starts with the columns To do (gray), In progress (blue) and Done (green), and no labels. Deleting a board deletes its comments first, in the same transaction, as their authors' `NoAction` would stop the cascade; columns, cards, labels and members go with the board.
+**Board writes.** Titles are trimmed and keep at least one character (limit: `boardTitleMaxLength` in `@flowboard/shared`). A new board's member, its owner, is the user, under their account's name, with an avatar colour derived from their id, the same on every board they create; it starts with the columns To do (gray), In progress (blue) and Done (green), and no labels. Deleting a board deletes its comments first, in the same transaction, as their authors' `NoAction` would stop the cascade; columns, cards, labels and members go with the board.
 
 **Column writes.** Titles are trimmed and keep at least one character (limit: `columnTitleMaxLength` in `@flowboard/shared`). `color` is one of `paletteColors`; the API does not pick one, the client sends it.
 
@@ -155,9 +162,11 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Label writes.** Names are trimmed and keep at least one character (limit: `labelNameMaxLength` in `@flowboard/shared`), and are unique on a board whatever their case: another label's name is a `409`, its own in another case is a rename. Label writes on the same board wait for each other through a lock on the board's row, so two at once cannot both take a name. `color` is one of `paletteColors`, sent by the client. A label's place among the board's labels is the order it was created in. Deleting a label takes it off every card (database cascade on the link table).
 
+**Member writes.** A role is `owner`, `editor` or `viewer` (`memberRoles` in `@flowboard/shared`). Only an owner changes a role, their own included, and removes another member; anyone leaves. A board keeps at least one owner with an account: the change that would take the last one away is a `409`. Member writes on the same board wait for each other through a lock on the board's row, taken before anything is read, so two owners stepping down at once cannot both succeed. Removing a member, or leaving, unlinks their account (`userId` set to null) without deleting the member, so their name stays on their comments and cards; members without an account are not listed, and have no role to change.
+
 **Accounts.** Emails are trimmed and lowercased; names are trimmed. A password is kept exactly as typed, 15 to 256 characters at sign-up (`passwordMinLength`, `passwordMaxLength`); sign-in checks no minimum, so a rule raised later does not lock out older passwords. Sign-up and sign-in set the session cookie: `HttpOnly`, `SameSite=Lax`, `Path=/`, 30 days; named `flowboard_session` over plain HTTP on the loopback (development), and `__Host-flowboard_session`, `Secure`, everywhere else. Design and reasons: [docs/security.md](../../docs/security.md#accounts).
 
-**Permissions.** Every route under `/api/boards`, `/api/columns`, `/api/cards`, `/api/comments` and `/api/labels` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column, card, comment or label is a `404`. Every member can do everything on a board, except edit or delete someone else's comment (`403`: they can see it, so there is nothing to hide); any member can rename or delete a board until board roles arrive. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
+**Permissions.** Every route under `/api/boards`, `/api/columns`, `/api/cards`, `/api/comments`, `/api/labels` and `/api/members` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column, card, comment, label or member is a `404`. Writes filter on the role they need in the same way: `editorOf` (owner or editor) for columns, cards and labels, `ownerOf` for the board's title, its deletion and roles. When a filtered write finds nothing, `refuseByRole` tells the two cases apart: a member whose role does not allow it gets a `403` (they can see the board, so there is nothing to hide), anyone else the `404`. Any member, viewers included, reads the board and comments; only the author edits or deletes a comment (`403`). The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards

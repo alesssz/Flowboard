@@ -50,8 +50,12 @@ export function SaveState({ pending, error }: SaveStateProps) {
 interface ConfirmDeleteProps {
   /** The button's text, and the name of the confirmation: "Delete card". */
   label: string;
-  /** What goes, as a question; "This cannot be undone." follows it. */
+  /** What goes, as a question; `note` follows it. */
   question: string;
+  note?: string;
+  /** The confirming button, and its text while the request runs. */
+  confirmLabel?: string;
+  pendingLabel?: string;
   pending: boolean;
   error: Error | null;
   onDelete: () => void;
@@ -60,7 +64,17 @@ interface ConfirmDeleteProps {
 }
 
 /** The delete button, then a confirmation with Delete, focused, and Cancel; Escape cancels. */
-export function ConfirmDelete({ label, question, pending, error, onDelete, onCancel }: ConfirmDeleteProps) {
+export function ConfirmDelete({
+  label,
+  question,
+  note = 'This cannot be undone.',
+  confirmLabel = 'Delete',
+  pendingLabel = 'Deleting…',
+  pending,
+  error,
+  onDelete,
+  onCancel,
+}: ConfirmDeleteProps) {
   const [confirming, setConfirming] = useState(false);
   const [focusButton, setFocusButton] = useState(false);
 
@@ -94,7 +108,9 @@ export function ConfirmDelete({ label, question, pending, error, onDelete, onCan
 
   return (
     <div className="field-control__confirm" role="group" aria-label={label}>
-      <p className="field-control__confirm-text">{question} This cannot be undone.</p>
+      <p className="field-control__confirm-text">
+        {question} {note}
+      </p>
       <div className="field-control__actions">
         <button
           type="button"
@@ -104,7 +120,7 @@ export function ConfirmDelete({ label, question, pending, error, onDelete, onCan
           onClick={handleDelete}
           onKeyDown={(event) => cancelOnEscape(event, handleCancel)}
         >
-          {pending ? 'Deleting…' : 'Delete'}
+          {pending ? pendingLabel : confirmLabel}
         </button>
         <button
           type="button"

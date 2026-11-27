@@ -10,6 +10,7 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
   - [Template](#template)
 - [Tooling (OPS)](#tooling-ops)
   - [OPS-1 Resetting the data covers neither file storage nor production](#ops-1-resetting-the-data-covers-neither-file-storage-nor-production)
+  - [OPS-2 A sign-in test runs close to Vitest's time limit](#ops-2-a-sign-in-test-runs-close-to-vitests-time-limit)
 - [Documentation (DOCS)](#documentation-docs)
   - [DOCS-1 The README is a setup guide, not yet the project's showcase](#docs-1-the-readme-is-a-setup-guide-not-yet-the-projects-showcase)
 
@@ -65,6 +66,21 @@ The README's [Roadmap](../README.md#roadmap) lists the directions; a direction b
 - B) Separate targets per store (`db-reset`, `storage-reset`) in each environment, combined by hand.
 
 **Recommended.** A: the database and the files are only consistent when emptied together. To be done with attachments (bucket) and deployment (production). Done when a local reset leaves a seeded database and an empty bucket, and the production one does the same only after the typed confirmation, which `yes=1` does not skip.
+
+### OPS-2 A sign-in test runs close to Vitest's time limit
+
+**Priority:** low · **Kind:** test reliability · **Found:** 2026-11-27
+
+**What is wrong.** "counts an email from zero again after a sign-in succeeds" (`apps/api/test/auth.test.ts`) makes 19 failed sign-ins and one that succeeds, one after the other, each checking a password with scrypt: about 3.4 seconds on a development machine, against Vitest's default limit of 5. Under load (other test files, a browser running) it went over once and failed, then passed on every run again. In CI a slower runner could fail it at random.
+
+**Where.** The test in `apps/api/test/auth.test.ts`; `vitest.config.ts`.
+
+**Options.**
+- A) Give this test, and the other limit tests that check many passwords, a longer limit of their own (`it(name, fn, 15_000)`), with a comment saying why.
+- B) Raise `testTimeout` for every test in `vitest.config.ts`.
+- C) Let the tests run scrypt with a lower cost, through an option of `createApp`.
+
+**Recommended.** A: the time is real and comes from the hashing the test is about; a longer limit for every test would hide a test that hangs, and a cheaper hash would test something else. Done when the limit tests pass with their own limit and a full run under load stays green.
 
 ## Documentation (DOCS)
 

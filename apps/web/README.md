@@ -43,7 +43,8 @@ apps/web/
 │   │                   in, and the writes that change it)
 │   ├── board/          BoardPage (the board in the address, or the first; Create your first board) →
 │   │                   BoardView (drag and drop; BoardTitle: the list of boards, with CreateBoardForm,
-│   │                   and the rename field; ColumnsPanel; BoardMenu: Rename, Delete board) → BoardColumn
+│   │                   and the rename field; ColumnsPanel; BoardMenu: Members, with MembersDialog,
+│   │                   Rename, Delete board; the user's role for all below, board-role.ts) → BoardColumn
 │   │                   (sortable, with ColumnHeader: rename, colour, Delete column; and AddCard) →
 │   │                   BoardCard; DragHandle, the grip for keyboard moves;
 │   │                   CardDialog (a card's detail in two columns) with CardFields (title and
@@ -53,8 +54,9 @@ apps/web/
 │   │                   FieldControls, the pencil, save state and delete
 │   │                   confirmation both editors use; their parts (Labels, DueDate, Assignees, Avatar);
 │   │                   queries (board-queries.ts), writes (board-mutations.ts, column-mutations.ts,
-│   │                   card-mutations.ts, comment-mutations.ts, label-mutations.ts, move-mutations.ts,
-│   │                   through board-cache.ts), the address (use-board-route.ts), date helpers
+│   │                   card-mutations.ts, comment-mutations.ts, label-mutations.ts, member-mutations.ts,
+│   │                   move-mutations.ts, through board-cache.ts), the address (use-board-route.ts), date
+│   │                   helpers
 │   └── index.css       global styles, design tokens, light and dark themes
 ├── vite.config.ts      React plugin, dev proxy /api → 127.0.0.1:3700
 ├── tsconfig.json       solution file referencing the two projects below
@@ -76,6 +78,8 @@ apps/web/
 - Moves are optimistic (`board/move-mutations.ts`): the cached board changes at once, with `moveCardInBoard` and `moveColumnInBoard` in `board/board-cache.ts`, the same rule as the API's, then the API's board replaces it, unless more moves are still on their way. A refused move puts back the board as it was before it, and the board's header says why (**Not moved: …**, with **Dismiss**).
 - Drag and drop uses dnd-kit (`@dnd-kit/core`, `@dnd-kit/sortable`), held in `board/BoardView.tsx`: columns in a horizontal sortable list, each column's cards in a vertical one, a card crossing into another column joining it as the pointer crosses. The mouse drags a whole card after 6 px, a touch after a 250 ms press (a swipe still scrolls), and a column by its grip. The keyboard lifts a card or a column from its grip (`board/DragHandle.tsx`): Space or Enter, the arrows (Left and Right change a card's column), Space or Enter to drop, Escape to cancel; announcements name the item and its place ("position 2 of 4 in Review"). A copy follows the pointer (`DragOverlay`) while the item's place shows faded; after the drop the dropped order stays on screen until the cache has it, so the drop animation lands where the item went.
 - The card dialog's **Column** row moves a card without dragging: another column (to its bottom) or another position.
+- The user's role on the board (`Board.role`) reaches every part through a context (`board/board-role.ts`, `useCanEdit`, `useIsOwner`), and each hides what the role cannot change; the API refuses it anyway (`403`). A viewer sees **View only** beside the title, no grips, no **Add a card** or **Add a column**, no column options, and the card dialog as text: the title and description read-only, the details without their panels, the completion box disabled, no **Delete card**; comments stay open to them. Only an owner gets **Rename board** and **Delete board** in the board's menu (⋯).
+- **Members**, in the board's menu, opens a dialog (`board/MembersDialog.tsx`, `board/member-mutations.ts`) listing the members with an account, each with their role. An owner picks a role from a list, saved at once, and removes a member after a confirmation; everyone leaves the board from their own row, which then opens the first remaining board. A refused change (the last owner) shows the API's reason on its row. An owner stepping down sees the board change at once, as their role in the cached board follows.
 - Comments (`board/CardComments.tsx`, `board/comment-mutations.ts`): a field under the list writes one, its **Comment** button showing once something is typed; Ctrl or ⌘ + Enter sends it. The user's own comments (`mine`, from the API) have an options button (⋯) at the end of the name's line, shown on hover or focus where the pointer can hover, which opens a menu (a native `popover`, through `board/use-popover-panel.ts`) with **Edit** and **Delete**. The editor replaces the text: **Save** or Ctrl or ⌘ + Enter saves, Escape cancels without closing the dialog, and the focus goes back to the options button. **Delete** asks inside the menu, then the focus goes to the field. A changed comment reads "edited", with the time on hover. Each write updates the card's cached comments and its comment count on the board.
 - The card dialog never changes shape while a card is edited (`board/CardDialog.tsx`, `board/CardFields.tsx`). Two columns: title, description and comments; then the details (labels, due date, assignees) and **Delete card**, which move under the title on a phone.
 - A round checkbox before the title marks the card completed (`CompletedBox` in `board/CardFields.tsx`), saved at once; the line above the title then reads "Completed" and the day. A completed card's due date is green whatever the day, on the board and in the dialog, and screen readers hear "Completed, was due"; on the board the title starts with a green check, read as "Completed:".

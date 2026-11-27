@@ -1,6 +1,7 @@
 // A board as the web app shows it: columns left to right, cards top to bottom.
 // Array order is display order; how positions are stored is up to the API.
 import type { PaletteColor } from './palette.ts';
+import type { MemberRole } from './roles.ts';
 
 export interface Board {
   id: string;
@@ -10,6 +11,8 @@ export interface Board {
   labels: Label[];
   /** Everyone on the board, by name: the people a card can be assigned to. */
   members: Member[];
+  /** The signed-in user's role on it: what the web app lets them change. */
+  role: MemberRole;
 }
 
 /** A board in the board list, without its content. */
@@ -61,6 +64,16 @@ export interface Label {
   id: string;
   name: string;
   color: PaletteColor;
+}
+
+/** A member with an account, as the board's members list shows them; members without one are only names on cards. */
+export interface BoardMember {
+  id: string;
+  name: string;
+  color: PaletteColor;
+  role: MemberRole;
+  /** The signed-in user. */
+  you: boolean;
 }
 
 /** Someone who can be assigned to a board's cards. */

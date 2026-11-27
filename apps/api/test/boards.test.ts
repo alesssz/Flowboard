@@ -74,6 +74,14 @@ describe('GET /api/boards/:boardId', () => {
     expect(response.body.columns[0].cards[1]).toMatchObject({ description: '', dueDate: null, labels: [], assignees: [], commentCount: 0 });
   });
 
+  it.each(['owner', 'editor', 'viewer'] as const)("gives the user's own role, %s", async (role) => {
+    const { board } = await createBoard(prisma, 'Launch', { role });
+
+    const response = await member.get(`/api/boards/${board.id}`);
+
+    expect(response.body.role).toBe(role);
+  });
+
   it('answers 404 for a board that does not exist', async () => {
     const response = await member.get('/api/boards/missing');
 
@@ -83,7 +91,7 @@ describe('GET /api/boards/:boardId', () => {
 });
 
 describe('POST /api/boards', () => {
-  it('creates a trimmed board with the user as its member and the starter columns, last in the list', async () => {
+  it('creates a trimmed board with the user as its owner and the starter columns, last in the list', async () => {
     const { board: older } = await createBoard(prisma);
     const { id: userId } = await createMemberAccount(prisma);
 
@@ -100,8 +108,9 @@ describe('POST /api/boards', () => {
       ],
       labels: [],
       members: [{ id: expect.any(String), name: 'Robin Park', color: expect.any(String) }],
+      role: 'owner',
     });
-    expect(await prisma.member.findUniqueOrThrow({ where: { id: response.body.members[0].id } })).toMatchObject({ userId });
+    expect(await prisma.member.findUniqueOrThrow({ where: { id: response.body.members[0].id } })).toMatchObject({ userId, role: 'owner' });
     const list = await member.get('/api/boards');
     expect(list.body).toEqual([
       { id: older.id, title: 'Launch' },

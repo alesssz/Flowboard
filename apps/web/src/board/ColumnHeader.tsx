@@ -3,6 +3,7 @@
 import { type Column, columnTitleMaxLength, type PaletteColor, paletteColors } from '@flowboard/shared';
 import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { cancelOnEscape } from './cancel-on-escape.ts';
+import { useCanEdit } from './board-role.ts';
 import { useDeleteColumn, useUpdateColumn } from './column-mutations.ts';
 import { ConfirmDelete, EditButton, SaveState } from './FieldControls.tsx';
 import './ColumnHeader.css';
@@ -25,6 +26,8 @@ export function ColumnHeader({ boardId, column, titleId, onDeleted, dragHandle }
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const optionsId = useId();
   const rename = useUpdateColumn(boardId, column.id);
+  // A viewer gets the title and the count only.
+  const canEdit = useCanEdit();
 
   function handleEdit() {
     setDraft(column.title);
@@ -72,7 +75,7 @@ export function ColumnHeader({ boardId, column, titleId, onDeleted, dragHandle }
         {draft === null ? (
           <>
             {/* Mouse users click the text; the pencil button is the way in for the keyboard. */}
-            <h2 id={titleId} className="column-header__title" onClick={handleEdit}>
+            <h2 id={titleId} className="column-header__title" data-editable={canEdit || undefined} onClick={canEdit ? handleEdit : undefined}>
               {column.title}
             </h2>
             {/* Screen readers get the count from the list itself. */}
@@ -102,24 +105,26 @@ export function ColumnHeader({ boardId, column, titleId, onDeleted, dragHandle }
 
         <div className="column-header__tools">
           {dragHandle}
-          {draft === null && (
+          {draft === null && canEdit && (
             <EditButton label={`Rename ${column.title}`} autoFocus={focusPencil} onClick={handleEdit} />
           )}
-          <button
-            ref={optionsButtonRef}
-            type="button"
-            className="field-control__icon-button column-header__options-button"
-            aria-label={`${column.title} options`}
-            aria-expanded={optionsOpen}
-            aria-controls={optionsId}
-            onClick={handleToggleOptions}
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="3.5" cy="8" r="1.25" />
-              <circle cx="8" cy="8" r="1.25" />
-              <circle cx="12.5" cy="8" r="1.25" />
-            </svg>
-          </button>
+          {canEdit && (
+            <button
+              ref={optionsButtonRef}
+              type="button"
+              className="field-control__icon-button column-header__options-button"
+              aria-label={`${column.title} options`}
+              aria-expanded={optionsOpen}
+              aria-controls={optionsId}
+              onClick={handleToggleOptions}
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="3.5" cy="8" r="1.25" />
+                <circle cx="8" cy="8" r="1.25" />
+                <circle cx="12.5" cy="8" r="1.25" />
+              </svg>
+            </button>
+          )}
         </div>
       </header>
 

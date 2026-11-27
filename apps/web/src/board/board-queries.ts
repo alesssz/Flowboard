@@ -1,5 +1,5 @@
 // TanStack Query options for the board's data: each query's cache key beside the request that fills it.
-import type { Board, BoardSummary, CardComment } from '@flowboard/shared';
+import type { Board, BoardMember, BoardSummary, CardComment } from '@flowboard/shared';
 import { queryOptions } from '@tanstack/react-query';
 import { fetchJson } from '../api.ts';
 
@@ -12,6 +12,13 @@ export function boardQuery(boardId: string) {
   return queryOptions({
     queryKey: ['boards', boardId],
     queryFn: ({ signal }) => fetchJson<Board>(`/boards/${encodeURIComponent(boardId)}`, signal),
+  });
+}
+
+export function boardMembersQuery(boardId: string) {
+  return queryOptions({
+    queryKey: ['boards', boardId, 'members'],
+    queryFn: ({ signal }) => fetchJson<BoardMember[]>(`/boards/${encodeURIComponent(boardId)}/members`, signal),
   });
 }
 
