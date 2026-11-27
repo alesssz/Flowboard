@@ -77,7 +77,7 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
 
 ## Not covered yet
 
-- **Roles and invitations** (Roadmap: Collaboration). Every member of a board can do everything on it, and members come only from the seed: no owner, no read-only member, no way to invite one or to create a board.
+- **Roles and invitations** (Roadmap: Collaboration). Every member of a board can do everything on it, deleting it included. A board created in the app has its creator as its only member, and other members come only from the seed: no owner, no read-only member, no way to invite one.
 - **Account management**: changing the password (ending the account's other sessions), resetting a forgotten one, verifying the email, deleting the account.
 - **Rate limiting** beyond sign-up and sign-in: none yet on the other routes.
 - **Production** (Roadmap: Production):

@@ -1,0 +1,80 @@
+/* The board's options button, at the end of its header, and its menu: Rename board, then Delete board. */
+
+.board-menu__button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.board-menu__button:hover,
+.board-menu__button[data-open] {
+  color: var(--color-text);
+  background: var(--palette-gray-soft);
+}
+
+.board-menu__button svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.board-menu__button:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 1px;
+}
+
+/* A native popover, placed by usePopoverPanel under the button when it opens; a fixed width, so the
+   delete question, wider than the items, stays where it was placed. */
+.board-menu {
+  position: fixed;
+  inset: auto;
+  width: min(250px, 100vw - 16px);
+  margin: 0;
+  padding: 6px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.board-menu:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Rename and Delete as menu items; the confirmation keeps its own buttons. */
+.board-menu > .field-control__button {
+  width: 100%;
+  padding: 7px 10px;
+  font-weight: 500;
+  text-align: left;
+  border: none;
+  border-radius: 6px;
+}
+
+/* Between renaming and deleting. */
+.board-menu__separator {
+  width: 100%;
+  margin: 3px 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.board-menu > .field-control__confirm {
+  padding: 6px;
+}
+
+/* While Delete asks, the question is all the menu shows. */
+.board-menu:has(.field-control__confirm) > .field-control__button,
+.board-menu:has(.field-control__confirm) > .board-menu__separator {
+  display: none;
+}

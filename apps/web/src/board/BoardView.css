@@ -10,21 +10,42 @@
 .board__header {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 8px 12px;
-  padding: 16px var(--gutter) 12px;
+  padding: 14px var(--gutter) 12px;
 }
 
-.board__title {
-  margin: 0;
-  font-size: 1.35rem;
-  letter-spacing: -0.02em;
+/* Takes the room the tools leave, so a long title shortens instead of pushing them to another line. */
+.board__heading {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .board__meta {
+  flex-shrink: 0;
   margin: 0;
-  font-size: 0.85rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
   color: var(--color-text-muted);
+  background: var(--palette-gray-soft);
+}
+
+/* Out of sight on a phone, where the title needs the room; screen readers still hear it. */
+@media (max-width: 600px) {
+  .board__meta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
 }
 
 /* Fills the remaining height, so each column scrolls its own cards. */
@@ -47,6 +68,7 @@
 
 /* A refused move: the board is back as it was, and this says why. */
 .board__alert {
+  flex-basis: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -78,8 +100,9 @@
 /* At the right of the header row: the Columns button. */
 .board__tools {
   display: flex;
-  align-self: center;
-  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
   margin-left: auto;
 }
 

@@ -1,0 +1,65 @@
+/* The create-a-board form: a small heading, then the title field and Create on one line. */
+
+.create-board__label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.create-board__row {
+  display: flex;
+  gap: 6px;
+}
+
+.create-board__input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+}
+
+.create-board__input[readonly] {
+  color: var(--color-text-muted);
+}
+
+.create-board__submit {
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.create-board__submit:hover {
+  filter: brightness(1.1);
+}
+
+.create-board__submit[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.create-board__error {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+.create-board__input:focus-visible,
+.create-board__submit:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

@@ -27,6 +27,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { BoardCard } from './BoardCard.tsx';
 import { moveCardInBoard } from './board-cache.ts';
 import { BoardColumn, ColumnOverlay, type DragItem } from './BoardColumn.tsx';
+import { BoardMenu } from './BoardMenu.tsx';
+import { BoardTitle } from './BoardTitle.tsx';
 import { CardDialog, type DeletedCardPlace } from './CardDialog.tsx';
 import { ColumnsPanel } from './ColumnsPanel.tsx';
 import { useMoveCard, useMoveColumn } from './move-mutations.ts';
@@ -56,6 +58,7 @@ export function BoardView({ board }: BoardViewProps) {
   const titleId = useId();
   const columnsRef = useRef<HTMLDivElement>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [dropped, setDropped] = useState<Dropped | null>(null);
   const droppedAt = useRef(0);
@@ -202,20 +205,14 @@ export function BoardView({ board }: BoardViewProps) {
   return (
     <section className="board" aria-labelledby={titleId}>
       <header className="board__header">
-        <h1 id={titleId} className="board__title">
-          {board.title}
-        </h1>
-        <p className="board__meta">
-          {cardCount} {cardCount === 1 ? 'card' : 'cards'}
-        </p>
-        {moveError !== null && (
-          <p className="board__alert" role="alert">
-            Not moved: {moveError.message}
-            <button type="button" className="board__alert-dismiss" onClick={handleDismissError}>
-              Dismiss
-            </button>
-          </p>
-        )}
+        <div className="board__heading">
+          <BoardTitle board={board} titleId={titleId} renaming={renaming} onRenameEnd={() => setRenaming(false)} />
+          {!renaming && (
+            <p className="board__meta">
+              {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+            </p>
+          )}
+        </div>
         <div className="board__tools">
           <ColumnsPanel
             boardId={board.id}
@@ -224,7 +221,16 @@ export function BoardView({ board }: BoardViewProps) {
             onChangeHidden={setHiddenIds}
             onAdded={handleColumnAdded}
           />
+          <BoardMenu board={board} onRename={() => setRenaming(true)} />
         </div>
+        {moveError !== null && (
+          <p className="board__alert" role="alert">
+            Not moved: {moveError.message}
+            <button type="button" className="board__alert-dismiss" onClick={handleDismissError}>
+              Dismiss
+            </button>
+          </p>
+        )}
       </header>
 
       <DndContext

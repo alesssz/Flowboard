@@ -64,8 +64,8 @@ src/
 ├── validation.ts          parseBody(): a request body against a shared Zod schema, or a 400
 ├── boards/
 │   ├── access.ts          memberOf, cardOf, commentOf: what a user may reach, filtered in every query
-│   ├── board-routes.ts    GET /api/boards, GET /api/boards/:boardId
-│   └── board-queries.ts   board reads, mapped to the @flowboard/shared types
+│   ├── board-routes.ts    the user's boards, one board; create, rename, delete
+│   └── board-queries.ts   board reads and writes, mapped to the @flowboard/shared types
 ├── columns/
 │   ├── column-routes.ts   column create, update, delete
 │   └── column-queries.ts  column writes; columnFields and toColumn, shared with the board query
@@ -107,7 +107,10 @@ vitest.config.ts           test files, global setup, one file at a time
 | `POST` | `/api/auth/sign-out` | Ends the browser's session and clears its cookie | `204`, no body, with or without a session |
 | `GET` | `/api/auth/me` | The signed-in user | `200` `User` · `401` |
 | `GET` | `/api/boards` | The boards the user is a member of, oldest first | `200` `BoardSummary[]` |
+| `POST` | `/api/boards` | Creates a board with the user as its member and the columns To do, In progress and Done; body `CreateBoardRequest` | `201` `Board` · `400` |
 | `GET` | `/api/boards/:boardId` | A board with its columns and cards in display order, and the board's labels and members | `200` `Board` · `404` |
+| `PATCH` | `/api/boards/:boardId` | Renames the board; body `UpdateBoardRequest` | `200` `BoardSummary` · `400` · `404` |
+| `DELETE` | `/api/boards/:boardId` | Deletes the board with its columns, cards, comments, labels and members | `204`, no body · `404` |
 | `POST` | `/api/boards/:boardId/columns` | Adds a column after the board's last one, with no cards; body `CreateColumnRequest` | `201` `Column` · `400` · `404` |
 | `PATCH` | `/api/columns/:columnId` | Renames or recolours the column; body `UpdateColumnRequest` | `200` `Column` · `400` · `404` |
 | `POST` | `/api/columns/:columnId/move` | Moves the column to another place on its board; body `MoveColumnRequest` | `200` `Board` · `400` · `404` |
@@ -142,6 +145,8 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Moves.** A move names the place, not a position: `index` among the column's cards (or the board's columns) counted without the item itself, so `0` is the top, and an index past the end puts it last. The move renumbers the positions of the columns it touches from 0, in one `UPDATE` per column, which also closes gaps and ties. Moves on the same columns (or, for column moves, the same board) wait for each other through row locks taken in id order, so two at once neither interleave nor deadlock. The answer is the whole board, which the web app puts in place of the order it guessed.
 
+**Board writes.** Titles are trimmed and keep at least one character (limit: `boardTitleMaxLength` in `@flowboard/shared`). A new board's member is the user, under their account's name, with an avatar colour derived from their id, the same on every board they create; it starts with the columns To do (gray), In progress (blue) and Done (green), and no labels. Deleting a board deletes its comments first, in the same transaction, as their authors' `NoAction` would stop the cascade; columns, cards, labels and members go with the board.
+
 **Column writes.** Titles are trimmed and keep at least one character (limit: `columnTitleMaxLength` in `@flowboard/shared`). `color` is one of `paletteColors`; the API does not pick one, the client sends it.
 
 **Card writes.** Titles and descriptions are trimmed; a title must keep at least one character (limits: `cardTitleMaxLength`, `cardDescriptionMaxLength` in `@flowboard/shared`). `dueDate` is `'YYYY-MM-DD'` or `null` to remove it. `completed: true` sets `completedAt` to the time of the request, or keeps it when the card is already completed; `false` clears it. `labelIds` and `assigneeIds` replace the whole set, with no id twice; the card shows its labels in the board's order and its assignees by name, whatever the order sent.
@@ -152,7 +157,7 @@ Body types are in `@flowboard/shared`. Every error is an `ApiError`, `{ "error":
 
 **Accounts.** Emails are trimmed and lowercased; names are trimmed. A password is kept exactly as typed, 15 to 256 characters at sign-up (`passwordMinLength`, `passwordMaxLength`); sign-in checks no minimum, so a rule raised later does not lock out older passwords. Sign-up and sign-in set the session cookie: `HttpOnly`, `SameSite=Lax`, `Path=/`, 30 days; named `flowboard_session` over plain HTTP on the loopback (development), and `__Host-flowboard_session`, `Secure`, everywhere else. Design and reasons: [docs/security.md](../../docs/security.md#accounts).
 
-**Permissions.** Every route under `/api/boards`, `/api/columns`, `/api/cards`, `/api/comments` and `/api/labels` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column, card, comment or label is a `404`. Every member can do everything on a board, except edit or delete someone else's comment (`403`: they can see it, so there is nothing to hide); boards are created only by the seed for now. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
+**Permissions.** Every route under `/api/boards`, `/api/columns`, `/api/cards`, `/api/comments` and `/api/labels` needs a session (`requireSession`, mounted in `app.ts`; a new kind of resource adds its path there), and reaches only the boards the user is a member of (`memberOf` in `boards/access.ts`): each query filters on it while it reads or writes, so a check and a write never drift apart, and another user's board, column, card, comment or label is a `404`. Every member can do everything on a board, except edit or delete someone else's comment (`403`: they can see it, so there is nothing to hide); any member can rename or delete a board until board roles arrive. The threats this covers and their tests: [docs/security.md](../../docs/security.md#defences).
 
 ```powershell
 Invoke-RestMethod http://localhost:3700/api/boards
