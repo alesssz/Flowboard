@@ -36,6 +36,19 @@
   background: var(--palette-gray-soft);
 }
 
+/* Why a viewer finds no controls to change the board. */
+.board__view-only {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--palette-blue-text);
+  background: var(--palette-blue-soft);
+}
+
 /* Out of sight on a phone, where the title needs the room; screen readers still hear it. */
 @media (max-width: 600px) {
   .board__meta {

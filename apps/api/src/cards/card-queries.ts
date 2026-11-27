@@ -1,6 +1,6 @@
 // Card reads and writes, shaped as the @flowboard/shared types.
 import type { Card, CreateCardRequest, MoveCardRequest, UpdateCardRequest } from '@flowboard/shared';
-import { cardOf, memberOf } from '../boards/access.ts';
+import { cardOf, editorOf, editorsOnly, refuseByRole } from '../boards/access.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError } from '../errors.ts';
 import type { Prisma } from '../generated/prisma/client.ts';
@@ -32,11 +32,17 @@ export function toCard({ dueDate, completedAt, _count, ...card }: CardRow): Card
   };
 }
 
-/** The new card, at the bottom of the column, or null when there is no column with that id on a board of `userId`'s. */
+/**
+ * The new card, at the bottom of the column, or null when there is no column with that id on a board of
+ * `userId`'s; an HttpError 403 for a viewer, as for every card write.
+ */
 export function createCard(prisma: PrismaClient, userId: string, columnId: string, request: CreateCardRequest): Promise<Card | null> {
   return prisma.$transaction(async (tx) => {
-    const column = await tx.column.findFirst({ where: { id: columnId, board: memberOf(userId) }, select: { id: true } });
-    if (column === null) return null;
+    const column = await tx.column.findFirst({ where: { id: columnId, board: editorOf(userId) }, select: { id: true } });
+    if (column === null) {
+      await refuseByRole(tx, userId, { columns: { some: { id: columnId } } }, editorsOnly);
+      return null;
+    }
 
     // Two cards created at the same moment may share a position; reordering will renumber them.
     const { _max } = await tx.card.aggregate({ where: { columnId }, _max: { position: true } });
@@ -55,10 +61,13 @@ export function createCard(prisma: PrismaClient, userId: string, columnId: strin
 export function updateCard(prisma: PrismaClient, userId: string, cardId: string, changes: UpdateCardRequest): Promise<Card | null> {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.card.findFirst({
-      where: cardOf(userId, cardId),
+      where: cardOf(cardId, editorOf(userId)),
       select: { completedAt: true, column: { select: { boardId: true } } },
     });
-    if (existing === null) return null;
+    if (existing === null) {
+      await refuseByRole(tx, userId, cardBoard(cardId), editorsOnly);
+      return null;
+    }
     const { boardId } = existing.column;
 
     if (changes.labelIds !== undefined) {
@@ -102,8 +111,14 @@ function rejectUnknownIds(field: string, noun: string, requested: string[], foun
  */
 export function moveCard(prisma: PrismaClient, userId: string, cardId: string, { columnId, index }: MoveCardRequest): Promise<string | null> {
   return prisma.$transaction(async (tx) => {
-    const card = await tx.card.findFirst({ where: cardOf(userId, cardId), select: { columnId: true, column: { select: { boardId: true } } } });
-    if (card === null) return null;
+    const card = await tx.card.findFirst({
+      where: cardOf(cardId, editorOf(userId)),
+      select: { columnId: true, column: { select: { boardId: true } } },
+    });
+    if (card === null) {
+      await refuseByRole(tx, userId, cardBoard(cardId), editorsOnly);
+      return null;
+    }
     const { boardId } = card.column;
     const target = await tx.column.findFirst({ where: { id: columnId, boardId }, select: { id: true } });
     if (target === null) throw new HttpError(400, `columnId: no column with id ${columnId} on this card's board`);
@@ -139,6 +154,11 @@ async function placeCards(tx: Transaction, columnId: string, cardIds: string[]):
 
 /** Deletes the card and its comments; false when there is no card with that id on a board of `userId`'s. */
 export async function deleteCard(prisma: PrismaClient, userId: string, cardId: string): Promise<boolean> {
-  const { count } = await prisma.card.deleteMany({ where: cardOf(userId, cardId) });
+  const { count } = await prisma.card.deleteMany({ where: cardOf(cardId, editorOf(userId)) });
+  if (count === 0) await refuseByRole(prisma, userId, cardBoard(cardId), editorsOnly);
   return count > 0;
+}
+
+function cardBoard(cardId: string) {
+  return { columns: { some: { cards: { some: { id: cardId } } } } } satisfies Prisma.BoardWhereInput;
 }

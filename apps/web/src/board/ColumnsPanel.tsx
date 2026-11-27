@@ -2,6 +2,7 @@
 // column. The order is the board's, changed by dragging the columns themselves.
 import { type Column, columnTitleMaxLength, type PaletteColor, paletteColors } from '@flowboard/shared';
 import { type FormEvent, useId, useState } from 'react';
+import { useCanEdit } from './board-role.ts';
 import { useCreateColumn } from './column-mutations.ts';
 import { usePopoverPanel } from './use-popover-panel.ts';
 import './ColumnsPanel.css';
@@ -19,6 +20,8 @@ interface ColumnsPanelProps {
 export function ColumnsPanel({ boardId, columns, hiddenIds, onChangeHidden, onAdded }: ColumnsPanelProps) {
   const panelId = useId();
   const { buttonRef, panelRef, open, handleBeforeToggle, handleToggle } = usePopoverPanel();
+  // A viewer still chooses which columns this browser shows; adding and moving them is an editor's.
+  const canEdit = useCanEdit();
   // Only ids of columns that still exist, so a deleted one leaves nothing behind.
   const hidden = hiddenIds.filter((id) => columns.some((column) => column.id === id));
 
@@ -82,8 +85,10 @@ export function ColumnsPanel({ boardId, columns, hiddenIds, onChangeHidden, onAd
             Show all
           </button>
         )}
-        <p className="columns-panel__note">Hidden only in this browser. Drag a column by its grip to reorder.</p>
-        <AddColumnForm boardId={boardId} columns={columns} onAdded={onAdded} />
+        <p className="columns-panel__note">
+          Hidden only in this browser.{canEdit && ' Drag a column by its grip to reorder.'}
+        </p>
+        {canEdit && <AddColumnForm boardId={boardId} columns={columns} onAdded={onAdded} />}
       </div>
     </>
   );

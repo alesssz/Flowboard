@@ -6,6 +6,7 @@ import type { Card, Column } from '@flowboard/shared';
 import { type KeyboardEventHandler, useId } from 'react';
 import { AddCard } from './AddCard.tsx';
 import { BoardCard } from './BoardCard.tsx';
+import { useCanEdit } from './board-role.ts';
 import { ColumnHeader } from './ColumnHeader.tsx';
 import { DragHandle } from './DragHandle.tsx';
 import './BoardColumn.css';
@@ -23,9 +24,12 @@ interface BoardColumnProps {
 
 export function BoardColumn({ boardId, column, onOpenCard, onDeleted }: BoardColumnProps) {
   const titleId = useId();
+  const canEdit = useCanEdit();
+  // A viewer moves nothing: no grip, and the lane stays put.
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: column.id,
     data: { type: 'column', title: column.title } satisfies DragItem,
+    disabled: !canEdit,
   });
 
   return (
@@ -44,12 +48,14 @@ export function BoardColumn({ boardId, column, onOpenCard, onDeleted }: BoardCol
         titleId={titleId}
         onDeleted={onDeleted}
         dragHandle={
-          <DragHandle
-            ref={setActivatorNodeRef}
-            label={`Move column ${column.title}`}
-            {...attributes}
-            {...listeners}
-          />
+          canEdit && (
+            <DragHandle
+              ref={setActivatorNodeRef}
+              label={`Move column ${column.title}`}
+              {...attributes}
+              {...listeners}
+            />
+          )
         }
       />
 
@@ -66,7 +72,7 @@ export function BoardColumn({ boardId, column, onOpenCard, onDeleted }: BoardCol
         )}
       </SortableContext>
 
-      <AddCard boardId={boardId} columnId={column.id} columnTitle={column.title} />
+      {canEdit && <AddCard boardId={boardId} columnId={column.id} columnTitle={column.title} />}
     </section>
   );
 }
@@ -79,9 +85,11 @@ interface SortableCardProps {
 // The mouse drags the whole card, and a touch a long press on it; the keyboard uses the handle only, as
 // Enter on the card's title opens it.
 function SortableCard({ card, onOpen }: SortableCardProps) {
+  const canEdit = useCanEdit();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', title: card.title } satisfies DragItem,
+    disabled: !canEdit,
   });
   const { onKeyDown, ...pointerListeners } = listeners ?? {};
 
@@ -97,13 +105,15 @@ function SortableCard({ card, onOpen }: SortableCardProps) {
         card={card}
         onOpen={onOpen}
         dragHandle={
-          <DragHandle
-            ref={setActivatorNodeRef}
-            label={`Move ${card.title}`}
-            {...attributes}
-            // dnd-kit types its listeners loosely, as Function.
-            onKeyDown={onKeyDown as KeyboardEventHandler<HTMLButtonElement> | undefined}
-          />
+          canEdit ? (
+            <DragHandle
+              ref={setActivatorNodeRef}
+              label={`Move ${card.title}`}
+              {...attributes}
+              // dnd-kit types its listeners loosely, as Function.
+              onKeyDown={onKeyDown as KeyboardEventHandler<HTMLButtonElement> | undefined}
+            />
+          ) : undefined
         }
       />
     </li>

@@ -14,7 +14,7 @@ What the API defends against today, where each defence lives and what checks it,
 
 ## Status
 
-Flowboard is not deployed. Every board, column, card, comment and label route needs a session, and reaches only the boards the signed-in user is a member of. The API is reachable only from the computer running it; the accounts and sessions are protected against the usual attacks on them; input is strict, responses are JSON that cannot run as a page, and errors give nothing away. Roles within a board, inviting members and deployment are still to come ([Not covered yet](#not-covered-yet)).
+Flowboard is not deployed. Every board, column, card, comment, label and member route needs a session, reaches only the boards the signed-in user is a member of, and lets their role on each (owner, editor or viewer) do only what it may. The API is reachable only from the computer running it; the accounts and sessions are protected against the usual attacks on them; input is strict, responses are JSON that cannot run as a page, and errors give nothing away. Inviting members and deployment are still to come ([Not covered yet](#not-covered-yet)).
 
 ## Defences
 
@@ -28,6 +28,7 @@ Flowboard is not deployed. Every board, column, card, comment and label route ne
 | SQL injection | Queries go through Prisma; the few raw ones are tagged templates, which send every value as a parameter | `apps/api/src/*/…-queries.ts` | code review |
 | Someone without a session reads or changes a board | Every route under `/api/boards`, `/api/columns`, `/api/cards`, `/api/comments` and `/api/labels` needs a session: `401` otherwise, before the route runs | `requireSession` in `apps/api/src/auth/require-session.ts`, mounted in `app.ts` | `apps/api/test/permissions.test.ts` |
 | A signed-in user reads or changes another user's board (by guessing or reusing its ids) | Every query filters on the boards the user is a member of, in the query that reads or writes: another user's board, column, card, comment or label is a `404`, the answer for an id that does not exist, and is left unchanged; the board list leaves it out | `memberOf`, `cardOf` and `commentOf` in `apps/api/src/boards/access.ts`, every `*-queries.ts` | `permissions.test.ts`, for every route |
+| A member does more than their role allows: a viewer changes the board, an editor renames or deletes it or changes the members, a board is left without an owner | Writes filter on the role they need in the query that writes (`editorOf`, `ownerOf`): a member whose role does not allow it gets a `403`, and nothing changes. A change that would leave a board without an owner with an account is a `409`; member writes on a board take a lock on it first, so two at once cannot both remove the last owner | `apps/api/src/boards/access.ts`, every `*-queries.ts`, `apps/api/src/members/member-queries.ts` | `permissions.test.ts`, as a viewer and as an editor, for every route; `members.test.ts` |
 | A member changes or deletes someone else's comment, or writes one in another's name | A comment's author is the signed-in user's member on the board, never a field of the request; editing or deleting checks the author: `403` | `apps/api/src/comments/comment-queries.ts` | `apps/api/test/comments.test.ts` |
 | A card linked to another board's labels, members or columns | Every id in a write is checked against the card's board: `400` | `card-queries.ts` | `cards.test.ts` |
 | Script in user text (XSS) | React escapes all text it renders; the web app never sets HTML from data (`dangerouslySetInnerHTML`) | `apps/web/src` | code review |
@@ -53,7 +54,7 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
 
 ## Accounts
 
-**Data.** A `User` has an email, a name and a password hash. The email is stored trimmed and lowercased, so its unique index ignores case. A board's `Member` links to the user it stands for (`userId`, one member per user and board); deleting an account unlinks its members instead of deleting them, so the name stays on their comments and cards.
+**Data.** A `User` has an email, a name and a password hash. The email is stored trimmed and lowercased, so its unique index ignores case. A board's `Member` links to the user it stands for (`userId`, one member per user and board) and has a `role`; deleting an account, or removing a member from a board, unlinks the member instead of deleting it, so the name stays on their comments and cards.
 
 **Passwords** (`apps/api/src/auth/passwords.ts`) are hashed with scrypt from `node:crypto`. Argon2id was set aside because its package is native: an install script to allow, binaries to download, a wider supply chain, for an algorithm OWASP ranks alongside scrypt.
 - Parameters: N = 2¹⁴, r = 8, p = 5, one of OWASP's equivalent settings, the one using the least memory (16 MiB a hash), so sign-ins at the same moment fit a small server.
@@ -77,7 +78,7 @@ The session cookie is `Secure`, with the `__Host-` prefix, unless the API is rea
 
 ## Not covered yet
 
-- **Roles and invitations** (Roadmap: Collaboration). Every member of a board can do everything on it, deleting it included. A board created in the app has its creator as its only member, and other members come only from the seed: no owner, no read-only member, no way to invite one.
+- **Invitations** (Roadmap: Collaboration). A board created in the app has its creator as its only member, its owner; there is no way yet to add someone, and other members come only from the seed.
 - **Account management**: changing the password (ending the account's other sessions), resetting a forgotten one, verifying the email, deleting the account.
 - **Rate limiting** beyond sign-up and sign-in: none yet on the other routes.
 - **Production** (Roadmap: Production):

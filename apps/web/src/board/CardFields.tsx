@@ -13,6 +13,7 @@ import {
 import { type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
 import { Tooltip } from '../Tooltip.tsx';
 import { Avatar } from './Avatar.tsx';
+import { useCanEdit } from './board-role.ts';
 import { useDeleteCard, useUpdateCard } from './card-mutations.ts';
 import { DetailRow } from './DetailRow.tsx';
 import { formatDay } from './due-date.ts';
@@ -41,6 +42,7 @@ interface CardTitleFieldProps {
  * Enter or leaving the title saves it; Escape restores the saved title.
  */
 export function CardTitleField({ boardId, card, column, titleId }: CardTitleFieldProps) {
+  const canEdit = useCanEdit();
   const autosave = useAutosaveText({ boardId, card, field: 'title' });
   const areaRef = useAutoGrow(autosave.value);
 
@@ -80,11 +82,12 @@ export function CardTitleField({ boardId, card, column, titleId }: CardTitleFiel
         {card.title}
       </h2>
       <div className="card-field__title-row">
-        <CompletedBox boardId={boardId} card={card} />
+        <CompletedBox boardId={boardId} card={card} readOnly={!canEdit} />
         <textarea
           ref={areaRef}
           className="card-field__text card-field__text--title"
           aria-label="Title"
+          readOnly={!canEdit}
           rows={1}
           value={autosave.value}
           maxLength={cardTitleMaxLength}
@@ -101,11 +104,13 @@ export function CardTitleField({ boardId, card, column, titleId }: CardTitleFiel
 interface CompletedBoxProps {
   boardId: string;
   card: Card;
+  /** Shows the state only: for a viewer. */
+  readOnly: boolean;
 }
 
 // A round checkbox before the title. It shows what the API last returned, as the details' checkboxes do;
 // a refused change says so under the title.
-function CompletedBox({ boardId, card }: CompletedBoxProps) {
+function CompletedBox({ boardId, card, readOnly }: CompletedBoxProps) {
   const update = useUpdateCard(boardId, card.id);
   const completed = card.completedAt !== null;
 
@@ -121,13 +126,14 @@ function CompletedBox({ boardId, card }: CompletedBoxProps) {
           className="card-field__complete-box"
           aria-label="Completed"
           aria-busy={update.isPending}
+          disabled={readOnly}
           checked={completed}
           onChange={(event) => handleChange(event.target.checked)}
         />
         <svg className="card-field__complete-check" viewBox="0 0 16 16" aria-hidden="true">
           <path d="M4 8.5l2.5 2.5 5.5-6" />
         </svg>
-        <Tooltip text={completed ? 'Mark not completed' : 'Mark completed'} />
+        {!readOnly && <Tooltip text={completed ? 'Mark not completed' : 'Mark completed'} />}
       </span>
       <SaveNote error={update.error} />
     </>
@@ -142,6 +148,7 @@ interface CardDescriptionFieldProps {
 
 /** Plain text with its line breaks; saved a moment after typing stops, on leaving the field, or on Ctrl or ⌘ + Enter. */
 export function CardDescriptionField({ boardId, card, headingId }: CardDescriptionFieldProps) {
+  const canEdit = useCanEdit();
   const autosave = useAutosaveText({ boardId, card, field: 'description', idleDelay: DESCRIPTION_IDLE_MS });
   const areaRef = useAutoGrow(autosave.value);
 
@@ -172,7 +179,8 @@ export function CardDescriptionField({ boardId, card, headingId }: CardDescripti
         ref={areaRef}
         className="card-field__text card-field__text--description"
         aria-labelledby={headingId}
-        placeholder="Add a description…"
+        placeholder={canEdit ? 'Add a description…' : 'No description'}
+        readOnly={!canEdit}
         rows={3}
         value={autosave.value}
         maxLength={cardDescriptionMaxLength}
@@ -237,6 +245,7 @@ interface PlaceRowProps {
 // Moving without dragging, for the keyboard and small screens: another column (the card goes to its
 // bottom), or another position in this one. Shown at once, like a drop, and undone if the API refuses.
 function PlaceRow({ board, card }: PlaceRowProps) {
+  const canEdit = useCanEdit();
   const move = useMoveCard(board.id);
   const notice = useSavedNotice();
   const column = board.columns.find((candidate) => candidate.cards.some((other) => other.id === card.id));
@@ -250,6 +259,7 @@ function PlaceRow({ board, card }: PlaceRowProps) {
 
   return (
     <DetailRow
+      readOnly={!canEdit}
       name="Column"
       value={
         <span className="card-field__place">
@@ -316,6 +326,7 @@ interface DueRowProps {
 // The date is saved when the panel closes (Done, Enter, a click outside), not on each change: typing a
 // date by hand passes through valid but unwanted days (year 0002 on the way to 2026).
 function DueRow({ boardId, card, today }: DueRowProps) {
+  const canEdit = useCanEdit();
   const update = useUpdateCard(boardId, card.id);
   const notice = useSavedNotice();
   const [draft, setDraft] = useState('');
@@ -340,6 +351,7 @@ function DueRow({ boardId, card, today }: DueRowProps) {
 
   return (
     <DetailRow
+      readOnly={!canEdit}
       name="Due"
       value={
         card.dueDate === null ? <None /> : <DueDate date={card.dueDate} today={today} as="span" completed={card.completedAt !== null} />
@@ -402,6 +414,7 @@ interface LabelsRowProps {
 // The board's labels to tick, as in ChoiceRow, each with a pencil that edits it, and Create label: both turn
 // the panel into the label's editor. A label created here goes on the card.
 function LabelsRow({ board, card }: LabelsRowProps) {
+  const canEdit = useCanEdit();
   const update = useUpdateCard(board.id, card.id);
   const notice = useSavedNotice();
   const [view, setView] = useState<LabelsView>({ kind: 'list', focus: null });
@@ -438,6 +451,7 @@ function LabelsRow({ board, card }: LabelsRowProps) {
 
   return (
     <DetailRow
+      readOnly={!canEdit}
       name="Labels"
       value={
         card.labels.length === 0 ? (
@@ -536,6 +550,7 @@ function ChoiceRow<T extends { id: string }>({
   value,
   renderOption,
 }: ChoiceRowProps<T>) {
+  const canEdit = useCanEdit();
   const update = useUpdateCard(boardId, card.id);
   const notice = useSavedNotice();
 
@@ -550,6 +565,7 @@ function ChoiceRow<T extends { id: string }>({
 
   return (
     <DetailRow
+      readOnly={!canEdit}
       name={name}
       value={value ?? <None />}
       onOpen={update.reset}

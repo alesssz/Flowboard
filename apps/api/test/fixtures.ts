@@ -1,5 +1,6 @@
 // Test data, written through Prisma. Rows are created out of display order, so the tests see the API sort them.
 import { createHash, randomBytes } from 'node:crypto';
+import type { MemberRole } from '@flowboard/shared';
 import type { PrismaClient } from '../src/db/client.ts';
 
 const memberToken = randomBytes(32).toString('base64url');
@@ -24,20 +25,42 @@ export function createMemberAccount(prisma: PrismaClient) {
   });
 }
 
+/** Another account, with a session of its own: its id, and the Cookie header that signs a request in as it. */
+export async function createAccount(prisma: PrismaClient, name: string, email: string) {
+  const token = randomBytes(32).toString('base64url');
+  const user = await prisma.user.create({
+    data: {
+      email,
+      name,
+      passwordHash: 'unused',
+      sessions: { create: { id: createHash('sha256').update(token).digest('hex'), expiresAt: new Date('2099-01-01') } },
+    },
+    select: { id: true },
+  });
+  return { id: user.id, cookie: `flowboard_session=${token}` };
+}
+
+interface BoardOptions {
+  /** No member has an account, so memberCookie cannot reach the board. */
+  ofAnotherUser?: boolean;
+  /** Robin Park's role. */
+  role?: MemberRole;
+}
+
 /**
  * A board with two columns (To do with two cards, Done with none), two labels and two members.
  * The first card has a description, a due date, both labels, both members and two comments.
- * Its member Robin Park is the account memberCookie signs in, unless `ofAnotherUser`: then no member has an account,
- * and memberCookie cannot reach the board.
+ * Its member Robin Park, its owner unless `role` says otherwise, is the account memberCookie signs in; Alex
+ * Moreno has no account.
  */
-export async function createBoard(prisma: PrismaClient, title = 'Launch', { ofAnotherUser = false } = {}) {
+export async function createBoard(prisma: PrismaClient, title = 'Launch', { ofAnotherUser = false, role = 'owner' }: BoardOptions = {}) {
   const board = await prisma.board.create({ data: { title } });
   const boardId = board.id;
   const robinUserId = ofAnotherUser ? undefined : (await createMemberAccount(prisma)).id;
 
   const backend = await prisma.label.create({ data: { boardId, name: 'Backend', color: 'blue', position: 1 } });
   const design = await prisma.label.create({ data: { boardId, name: 'Design', color: 'violet', position: 0 } });
-  const robin = await prisma.member.create({ data: { boardId, name: 'Robin Park', color: 'green', userId: robinUserId } });
+  const robin = await prisma.member.create({ data: { boardId, name: 'Robin Park', color: 'green', userId: robinUserId, role } });
   const alex = await prisma.member.create({ data: { boardId, name: 'Alex Moreno', color: 'amber' } });
 
   const done = await prisma.column.create({ data: { boardId, title: 'Done', color: 'green', position: 1 } });

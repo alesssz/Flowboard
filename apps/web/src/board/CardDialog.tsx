@@ -2,6 +2,7 @@
 // details and Delete card on the right (below the title on a phone). Every field edits where it is.
 import type { Board, Card, Column } from '@flowboard/shared';
 import { type MouseEvent, type PointerEvent, useEffect, useId, useRef } from 'react';
+import { useCanEdit } from './board-role.ts';
 import { CardComments } from './CardComments.tsx';
 import { CardDescriptionField, CardDetails, CardTitleField, DeleteCard } from './CardFields.tsx';
 import './CardDialog.css';
@@ -31,6 +32,7 @@ export function CardDialog({ board, card, column, onClose, onDeleted }: CardDial
   const descriptionId = useId();
   const commentsId = useId();
   const now = new Date();
+  const canEdit = useCanEdit();
 
   // showModal(), not the open attribute: it makes the rest of the page inert, closes on Escape
   // and shows ::backdrop. The check skips StrictMode's second run, as showModal() on an open dialog throws.
@@ -104,9 +106,11 @@ export function CardDialog({ board, card, column, onClose, onDeleted }: CardDial
         </section>
 
         {/* Last in the page's order, after the comments; drawn at the foot of the details column. */}
-        <div className="card-dialog__delete">
-          <DeleteCard boardId={board.id} card={card} onDeleted={handleDeleted} />
-        </div>
+        {canEdit && (
+          <div className="card-dialog__delete">
+            <DeleteCard boardId={board.id} card={card} onDeleted={handleDeleted} />
+          </div>
+        )}
       </div>
     </dialog>
   );

@@ -1,0 +1,127 @@
+/* The members dialog: a heading with Close, a line on the roles, then a row per member. */
+
+.members-dialog {
+  width: min(520px, 100% - 2 * var(--gutter));
+  max-height: min(640px, 100dvh - 2 * var(--gutter));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-dialog);
+  overflow-y: auto;
+}
+
+.members-dialog::backdrop {
+  background: var(--color-backdrop);
+}
+
+/* Fills the dialog: a click that reaches the dialog element itself came from the backdrop. */
+.members-dialog__content {
+  min-height: 100%;
+  padding: 18px 20px 20px;
+}
+
+.members-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.members-dialog__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.members-dialog__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -8px;
+  padding: 0;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.members-dialog__close:hover {
+  color: var(--color-text);
+  background: var(--palette-gray-soft);
+}
+
+.members-dialog__close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.members-dialog__roles,
+.members-dialog__message {
+  margin: 6px 0 14px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.members-dialog__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Avatar, name, role and its action on one line; a confirmation or an error takes a line of its own. */
+.members-dialog__member {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.members-dialog__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.members-dialog__you {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.members-dialog__role {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.members-dialog__role-select {
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+}
+
+.members-dialog__actions:has(.field-control__confirm),
+.members-dialog__member > .field-control__error {
+  flex-basis: 100%;
+}
+
+.members-dialog__close:focus-visible,
+.members-dialog__role-select:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

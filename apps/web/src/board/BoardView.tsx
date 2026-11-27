@@ -28,6 +28,7 @@ import { BoardCard } from './BoardCard.tsx';
 import { moveCardInBoard } from './board-cache.ts';
 import { BoardColumn, ColumnOverlay, type DragItem } from './BoardColumn.tsx';
 import { BoardMenu } from './BoardMenu.tsx';
+import { BoardRoleContext } from './board-role.ts';
 import { BoardTitle } from './BoardTitle.tsx';
 import { CardDialog, type DeletedCardPlace } from './CardDialog.tsx';
 import { ColumnsPanel } from './ColumnsPanel.tsx';
@@ -203,97 +204,100 @@ export function BoardView({ board }: BoardViewProps) {
   };
 
   return (
-    <section className="board" aria-labelledby={titleId}>
-      <header className="board__header">
-        <div className="board__heading">
-          <BoardTitle board={board} titleId={titleId} renaming={renaming} onRenameEnd={() => setRenaming(false)} />
-          {!renaming && (
-            <p className="board__meta">
-              {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+    <BoardRoleContext value={board.role}>
+      <section className="board" aria-labelledby={titleId}>
+        <header className="board__header">
+          <div className="board__heading">
+            <BoardTitle board={board} titleId={titleId} renaming={renaming} onRenameEnd={() => setRenaming(false)} />
+            {!renaming && (
+              <p className="board__meta">
+                {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+              </p>
+            )}
+            {board.role === 'viewer' && <p className="board__view-only">View only</p>}
+          </div>
+          <div className="board__tools">
+            <ColumnsPanel
+              boardId={board.id}
+              columns={board.columns}
+              hiddenIds={hiddenIds}
+              onChangeHidden={setHiddenIds}
+              onAdded={handleColumnAdded}
+            />
+            <BoardMenu board={board} onRename={() => setRenaming(true)} />
+          </div>
+          {moveError !== null && (
+            <p className="board__alert" role="alert">
+              Not moved: {moveError.message}
+              <button type="button" className="board__alert-dismiss" onClick={handleDismissError}>
+                Dismiss
+              </button>
             </p>
           )}
-        </div>
-        <div className="board__tools">
-          <ColumnsPanel
-            boardId={board.id}
-            columns={board.columns}
-            hiddenIds={hiddenIds}
-            onChangeHidden={setHiddenIds}
-            onAdded={handleColumnAdded}
+        </header>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={detectCollisions}
+          accessibility={{
+            announcements,
+            screenReaderInstructions: {
+              draggable:
+                'To move it, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.',
+            },
+          }}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          {/* Focusable so the keyboard can scroll it sideways. */}
+          <div ref={columnsRef} className="board__columns" tabIndex={0} aria-label="Columns">
+            <SortableContext items={shownColumns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
+              {shownColumns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  boardId={board.id}
+                  column={column}
+                  onOpenCard={handleOpenCard}
+                  onDeleted={handleColumnDeleted}
+                />
+              ))}
+            </SortableContext>
+            {shownColumns.length === 0 && (
+              <div className="board__empty">
+                {board.columns.length === 0 ? (
+                  <p>This board has no columns yet: add the first one from Columns.</p>
+                ) : (
+                  <>
+                    <p>Every column is hidden in this browser.</p>
+                    <button type="button" className="board__empty-action" onClick={handleShowAllColumns}>
+                      Show all columns
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DragOverlay>
+            {drag?.kind === 'card' && <BoardCard card={drag.card} onOpen={() => {}} lifted />}
+            {drag?.kind === 'column' && <ColumnOverlay column={drag.column} />}
+          </DragOverlay>
+        </DndContext>
+
+        {openCard !== undefined && (
+          <CardDialog
+            key={openCard.card.id}
+            board={board}
+            card={openCard.card}
+            column={openCard.column}
+            onClose={handleCloseCard}
+            onDeleted={handleCardDeleted}
           />
-          <BoardMenu board={board} onRename={() => setRenaming(true)} />
-        </div>
-        {moveError !== null && (
-          <p className="board__alert" role="alert">
-            Not moved: {moveError.message}
-            <button type="button" className="board__alert-dismiss" onClick={handleDismissError}>
-              Dismiss
-            </button>
-          </p>
         )}
-      </header>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={detectCollisions}
-        accessibility={{
-          announcements,
-          screenReaderInstructions: {
-            draggable:
-              'To move it, press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, and Escape to cancel.',
-          },
-        }}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        {/* Focusable so the keyboard can scroll it sideways. */}
-        <div ref={columnsRef} className="board__columns" tabIndex={0} aria-label="Columns">
-          <SortableContext items={shownColumns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
-            {shownColumns.map((column) => (
-              <BoardColumn
-                key={column.id}
-                boardId={board.id}
-                column={column}
-                onOpenCard={handleOpenCard}
-                onDeleted={handleColumnDeleted}
-              />
-            ))}
-          </SortableContext>
-          {shownColumns.length === 0 && (
-            <div className="board__empty">
-              {board.columns.length === 0 ? (
-                <p>This board has no columns yet: add the first one from Columns.</p>
-              ) : (
-                <>
-                  <p>Every column is hidden in this browser.</p>
-                  <button type="button" className="board__empty-action" onClick={handleShowAllColumns}>
-                    Show all columns
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <DragOverlay>
-          {drag?.kind === 'card' && <BoardCard card={drag.card} onOpen={() => {}} lifted />}
-          {drag?.kind === 'column' && <ColumnOverlay column={drag.column} />}
-        </DragOverlay>
-      </DndContext>
-
-      {openCard !== undefined && (
-        <CardDialog
-          key={openCard.card.id}
-          board={board}
-          card={openCard.card}
-          column={openCard.column}
-          onClose={handleCloseCard}
-          onDeleted={handleCardDeleted}
-        />
-      )}
-    </section>
+      </section>
+    </BoardRoleContext>
   );
 }
 

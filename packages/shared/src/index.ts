@@ -1,7 +1,7 @@
 // Public entry point of @flowboard/shared: the types, limits and palette both apps use. The schemas are in ./schemas.ts.
 export type { User } from './auth.ts';
 export type { SignInRequest, SignUpRequest } from './auth-requests.ts';
-export type { Board, BoardSummary, Card, CardComment, Column, Label, Member } from './board.ts';
+export type { Board, BoardMember, BoardSummary, Card, CardComment, Column, Label, Member } from './board.ts';
 export type { CreateBoardRequest, UpdateBoardRequest } from './board-requests.ts';
 export type { CreateCardRequest, MoveCardRequest, UpdateCardRequest } from './card-requests.ts';
 export type { CreateCommentRequest, UpdateCommentRequest } from './comment-requests.ts';
@@ -9,6 +9,7 @@ export type { CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from
 export type { ApiError } from './error.ts';
 export type { HealthResponse } from './health.ts';
 export type { CreateLabelRequest, UpdateLabelRequest } from './label-requests.ts';
+export type { UpdateMemberRequest } from './member-requests.ts';
 export {
   boardTitleMaxLength,
   cardDescriptionMaxLength,
@@ -22,3 +23,4 @@ export {
   userNameMaxLength,
 } from './limits.ts';
 export { type PaletteColor, paletteColors } from './palette.ts';
+export { type MemberRole, memberRoles } from './roles.ts';

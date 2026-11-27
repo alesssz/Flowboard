@@ -1,5 +1,5 @@
 // One entry of the card's details: its name, its value as a button, and the panel the button opens to
-// change it (usePopoverPanel), floating over the dialog.
+// change it (usePopoverPanel), floating over the dialog; or, read-only, the value alone.
 import { type ReactNode, useId } from 'react';
 import { usePopoverPanel } from './use-popover-panel.ts';
 import './DetailRow.css';
@@ -17,13 +17,26 @@ interface DetailRowProps {
   status?: ReactNode;
   /** Under the value: what still needs saying once the panel is closed, such as a failed save. */
   note?: ReactNode;
+  /** The value as text, with no button or panel: for a viewer. */
+  readOnly?: boolean;
 }
 
-export function DetailRow({ name, value, children, onOpen, onClose, status, note }: DetailRowProps) {
+export function DetailRow({ name, value, children, onOpen, onClose, status, note, readOnly = false }: DetailRowProps) {
   const nameId = useId();
   const buttonId = useId();
   const panelId = useId();
   const { buttonRef, panelRef, open, close, handleBeforeToggle, handleToggle } = usePopoverPanel({ onOpen, onClose });
+
+  if (readOnly) {
+    return (
+      <div className="detail-row">
+        <dt className="detail-row__name">{name}</dt>
+        <dd className="detail-row__value">
+          <div className="detail-row__static">{value}</div>
+        </dd>
+      </div>
+    );
+  }
 
   return (
     <div className="detail-row">

@@ -22,6 +22,13 @@ enum PaletteColor {
   violet
 }
 
+// What a member may do on their board; mirrors memberRoles in @flowboard/shared. Every board keeps an owner.
+enum MemberRole {
+  owner // everything, and the board's members, title and deletion
+  editor // columns, cards, labels and comments
+  viewer // reads, and writes comments
+}
+
 model Board {
   id        String   @id @default(cuid())
   title     String
@@ -100,8 +107,8 @@ model Session {
   @@index([userId])
 }
 
-// Someone who works on a board, linked to their account once they have one. A deleted account
-// leaves the member, so their name stays on their comments and cards.
+// Someone who works on a board, linked to their account once they have one. A deleted account, or a member
+// removed from the board, leaves the member without one, so their name stays on their comments and cards.
 model Member {
   id       String       @id @default(cuid())
   board    Board        @relation(fields: [boardId], references: [id], onDelete: Cascade)
@@ -110,6 +117,7 @@ model Member {
   userId   String?
   name     String
   color    PaletteColor
+  role     MemberRole   @default(editor)
   cards    Card[]
   comments Comment[]
 

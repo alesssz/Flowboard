@@ -1,11 +1,14 @@
-// The board's options button (⋯) and its menu: Rename board, which turns the title into a field, and Delete
-// board, which asks first, then opens the first remaining board in place of the deleted one's address.
+// The board's options button (⋯) and its menu: Members, which opens their dialog; for an owner, Rename board,
+// which turns the title into a field, and Delete board, which asks first. Deleting or leaving the board opens
+// the first remaining one in place of its address.
 import type { Board } from '@flowboard/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { useDeleteBoard } from './board-mutations.ts';
+import { useIsOwner } from './board-role.ts';
 import { boardsQuery } from './board-queries.ts';
 import { ConfirmDelete } from './FieldControls.tsx';
+import { MembersDialog } from './MembersDialog.tsx';
 import { openBoard } from './use-board-route.ts';
 import { usePopoverPanel } from './use-popover-panel.ts';
 import './BoardMenu.css';
@@ -19,6 +22,8 @@ export function BoardMenu({ board, onRename }: BoardMenuProps) {
   const queryClient = useQueryClient();
   const menuId = useId();
   const [menuOpenings, setMenuOpenings] = useState(0);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const isOwner = useIsOwner();
   const remove = useDeleteBoard(board.id);
   const { buttonRef, panelRef, open, close, handleBeforeToggle, handleToggle } = usePopoverPanel({
     onOpen: () => {
@@ -33,10 +38,24 @@ export function BoardMenu({ board, onRename }: BoardMenuProps) {
     onRename();
   }
 
+  function handleMembers() {
+    close();
+    setMembersOpen(true);
+  }
+
+  // The menu item that opened the dialog is hidden by now: the focus goes back to the options button.
+  function handleMembersClosed() {
+    setMembersOpen(false);
+    buttonRef.current?.focus();
+  }
+
+  // The board is gone from the user's list: the first remaining one takes its place in the address.
+  function openFirstBoard() {
+    openBoard(queryClient.getQueryData(boardsQuery.queryKey)?.[0]?.id ?? null, { replace: true });
+  }
+
   function handleDelete() {
-    remove.mutate(undefined, {
-      onSuccess: () => openBoard(queryClient.getQueryData(boardsQuery.queryKey)?.[0]?.id ?? null, { replace: true }),
-    });
+    remove.mutate(undefined, { onSuccess: openFirstBoard });
   }
 
   const cardCount = board.columns.reduce((total, column) => total + column.cards.length, 0);
@@ -71,26 +90,34 @@ export function BoardMenu({ board, onRename }: BoardMenuProps) {
         onBeforeToggle={handleBeforeToggle}
         onToggle={handleToggle}
       >
-        <button type="button" className="field-control__button" onClick={handleRename}>
-          Rename board
+        <button type="button" className="field-control__button" onClick={handleMembers}>
+          Members
         </button>
-        <hr className="board-menu__separator" />
-        <ConfirmDelete
-          key={menuOpenings}
-          label="Delete board"
-          question={
-            parts.length === 0
-              ? 'Delete this board?'
-              : parts.length === 1
-                ? `Delete this board and its ${parts.join('')}?`
-                : `Delete this board, its ${parts.join(' and ')}?`
-          }
-          pending={remove.isPending}
-          error={remove.error}
-          onDelete={handleDelete}
-          onCancel={remove.reset}
-        />
+        {isOwner && (
+          <>
+            <button type="button" className="field-control__button" onClick={handleRename}>
+              Rename board
+            </button>
+            <hr className="board-menu__separator" />
+            <ConfirmDelete
+              key={menuOpenings}
+              label="Delete board"
+              question={
+                parts.length === 0
+                  ? 'Delete this board?'
+                  : parts.length === 1
+                    ? `Delete this board and its ${parts.join('')}?`
+                    : `Delete this board, its ${parts.join(' and ')}?`
+              }
+              pending={remove.isPending}
+              error={remove.error}
+              onDelete={handleDelete}
+              onCancel={remove.reset}
+            />
+          </>
+        )}
       </div>
+      {membersOpen && <MembersDialog boardId={board.id} onClose={handleMembersClosed} onLeft={openFirstBoard} />}
     </>
   );
 }
