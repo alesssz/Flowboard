@@ -1,14 +1,25 @@
-// The board on screen: the first board from the API, or the state that stands in for it (loading, error, none).
+// The board on screen: the one in the address (/boards/<id>), else the user's first; or what stands in for it
+// (loading, an error, a board that is not there, none yet).
 import { useQuery } from '@tanstack/react-query';
+import type { MouseEvent } from 'react';
 import { PageMessage } from '../PageMessage.tsx';
 import { boardQuery, boardsQuery } from './board-queries.ts';
 import { BoardView } from './BoardView.tsx';
+import { CreateBoardForm } from './CreateBoardForm.tsx';
+import { openBoard, useBoardRoute } from './use-board-route.ts';
+import './BoardPage.css';
 
 export function BoardPage() {
   const boards = useQuery(boardsQuery);
+  const routeId = useBoardRoute();
 
   function handleRetry() {
     void boards.refetch();
+  }
+
+  function handleFirstBoard(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    openBoard(null);
   }
 
   if (boards.data === undefined) {
@@ -24,13 +35,35 @@ export function BoardPage() {
     );
   }
 
-  // One board for now; a board switcher comes with board editing.
   const firstBoard = boards.data[0];
-  if (firstBoard === undefined) {
-    return <PageMessage title="No boards yet" detail="A board shows here once you are one of its members." />;
+  if (firstBoard === undefined) return <FirstBoard />;
+
+  // The list is checked first: a board deleted, or never the user's, needs no request to say so.
+  const boardId = routeId ?? firstBoard.id;
+  if (!boards.data.some((board) => board.id === boardId)) {
+    return (
+      <PageMessage title="This board is not here" detail="It was deleted, or you are not one of its members.">
+        <a href="/" className="page-message__action" onClick={handleFirstBoard}>
+          Open {firstBoard.title}
+        </a>
+      </PageMessage>
+    );
   }
 
-  return <LoadedBoard boardId={firstBoard.id} />;
+  return <LoadedBoard boardId={boardId} />;
+}
+
+// Before the user has any board: what one is, and the field to create it.
+function FirstBoard() {
+  return (
+    <section className="first-board" aria-labelledby="first-board-title">
+      <h1 id="first-board-title" className="first-board__title">
+        Create your first board
+      </h1>
+      <p className="first-board__detail">It starts with three columns, To do, In progress and Done, which you can rename, recolour or delete.</p>
+      <CreateBoardForm label="Board title" autoFocus onCreated={(board) => openBoard(board.id)} />
+    </section>
+  );
 }
 
 interface LoadedBoardProps {

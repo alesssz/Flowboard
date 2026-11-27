@@ -1,4 +1,4 @@
-// Board reads: the user's boards, and one board with its columns, cards, labels and members in display order.
+// Boards: the user's boards; one board with its columns, cards, labels and members in display order; create, rename, delete.
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createBoard, createMemberAccount } from './fixtures.ts';
 import { useTestApp } from './test-app.ts';
@@ -79,5 +79,103 @@ describe('GET /api/boards/:boardId', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: 'Not Found', message: 'No board with id missing' });
+  });
+});
+
+describe('POST /api/boards', () => {
+  it('creates a trimmed board with the user as its member and the starter columns, last in the list', async () => {
+    const { board: older } = await createBoard(prisma);
+    const { id: userId } = await createMemberAccount(prisma);
+
+    const response = await member.post('/api/boards').send({ title: '  Roadmap  ' });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      id: expect.any(String),
+      title: 'Roadmap',
+      columns: [
+        { id: expect.any(String), title: 'To do', color: 'gray', cards: [] },
+        { id: expect.any(String), title: 'In progress', color: 'blue', cards: [] },
+        { id: expect.any(String), title: 'Done', color: 'green', cards: [] },
+      ],
+      labels: [],
+      members: [{ id: expect.any(String), name: 'Robin Park', color: expect.any(String) }],
+    });
+    expect(await prisma.member.findUniqueOrThrow({ where: { id: response.body.members[0].id } })).toMatchObject({ userId });
+    const list = await member.get('/api/boards');
+    expect(list.body).toEqual([
+      { id: older.id, title: 'Launch' },
+      { id: response.body.id, title: 'Roadmap' },
+    ]);
+  });
+
+  it.each([
+    [{ title: '   ' }, 'title: must not be empty'],
+    [{ title: 'x'.repeat(101) }, 'title: Too big: expected string to have <=100 characters'],
+    [{}, expect.stringMatching(/^title: /)],
+    [{ title: 'Roadmap', members: [] }, 'Unrecognized key: "members"'],
+  ])('refuses %j with a 400 naming the field', async (body, message) => {
+    const response = await member.post('/api/boards').send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Bad Request', message });
+    expect(await prisma.board.count()).toBe(0);
+  });
+});
+
+describe('PATCH /api/boards/:boardId', () => {
+  it('renames the board, trimmed', async () => {
+    const { board } = await createBoard(prisma);
+
+    const response = await member.patch(`/api/boards/${board.id}`).send({ title: ' Relaunch ' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ id: board.id, title: 'Relaunch' });
+    expect((await member.get(`/api/boards/${board.id}`)).body.title).toBe('Relaunch');
+  });
+
+  it.each([
+    [{ title: '' }, 'title: must not be empty'],
+    [{}, expect.stringMatching(/^title: /)],
+  ])('refuses %j with a 400', async (body, message) => {
+    const { board } = await createBoard(prisma);
+
+    const response = await member.patch(`/api/boards/${board.id}`).send(body);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toEqual(message);
+  });
+
+  it('answers 404 for a board that does not exist', async () => {
+    const response = await member.patch('/api/boards/missing').send({ title: 'Relaunch' });
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('No board with id missing');
+  });
+});
+
+describe('DELETE /api/boards/:boardId', () => {
+  it('deletes the board with its columns, cards, comments, labels and members, and nothing else', async () => {
+    const { board } = await createBoard(prisma);
+    const other = await createBoard(prisma, 'Other');
+
+    const response = await member.delete(`/api/boards/${board.id}`);
+
+    expect(response.status).toBe(204);
+    expect(response.body).toEqual({});
+    expect(await prisma.board.findUnique({ where: { id: board.id } })).toBeNull();
+    const left = { where: { boardId: board.id } };
+    expect([await prisma.column.count(left), await prisma.label.count(left), await prisma.member.count(left)]).toEqual([0, 0, 0]);
+    expect(await prisma.comment.count()).toBe(2);
+    expect((await member.get('/api/boards')).body).toEqual([{ id: other.board.id, title: 'Other' }]);
+    // The user's account stays.
+    expect(await prisma.user.count()).toBe(1);
+  });
+
+  it('answers 404 for a board that does not exist', async () => {
+    const response = await member.delete('/api/boards/missing');
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('No board with id missing');
   });
 });

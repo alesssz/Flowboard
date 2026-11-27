@@ -5,6 +5,8 @@
 import { type ToggleEvent, useEffect, useRef, useState } from 'react';
 
 interface PopoverPanelOptions {
+  /** The panel's edge lined up with the button's: 'end' (the default) for buttons at the right of their row. */
+  align?: 'start' | 'end';
   onOpen?: () => void;
   /** After the panel closes; `cancelled` when Escape closed it. */
   onClose?: (cancelled: boolean) => void;
@@ -13,7 +15,7 @@ interface PopoverPanelOptions {
 /** Space kept between the panel and the window's edges, in pixels. */
 const EDGE = 8;
 
-export function usePopoverPanel({ onOpen, onClose }: PopoverPanelOptions = {}) {
+export function usePopoverPanel({ align = 'end', onOpen, onClose }: PopoverPanelOptions = {}) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const cancelledRef = useRef(false);
@@ -27,7 +29,7 @@ export function usePopoverPanel({ onOpen, onClose }: PopoverPanelOptions = {}) {
       if (panel?.matches(':popover-open') && !panel.contains(event.target as Node)) panel.hidePopover();
     }
     function handleResize() {
-      if (panel?.matches(':popover-open')) place();
+      if (panel?.matches(':popover-open') && buttonRef.current !== null) placePanel(panel, buttonRef.current, align);
     }
     // Wherever the focus is: it reaches the panel only once the browser reports it open.
     function handleKeyDown(event: KeyboardEvent) {
@@ -41,22 +43,7 @@ export function usePopoverPanel({ onOpen, onClose }: PopoverPanelOptions = {}) {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, []);
-
-  // Below the button and ending where it ends (buttons sit at the right of their row), or above it when
-  // there is no room below; inside the window either way.
-  function place() {
-    const button = buttonRef.current;
-    const panel = panelRef.current;
-    if (button === null || panel === null) return;
-    const anchor = button.getBoundingClientRect();
-    const left = Math.max(EDGE, Math.min(anchor.right - panel.offsetWidth, window.innerWidth - panel.offsetWidth - EDGE));
-    const below = anchor.bottom + 6;
-    const top =
-      below + panel.offsetHeight > window.innerHeight - EDGE ? Math.max(EDGE, anchor.top - 6 - panel.offsetHeight) : below;
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-  }
+  }, [align]);
 
   /** Hides the panel as a click outside would. */
   function close() {
@@ -73,8 +60,8 @@ export function usePopoverPanel({ onOpen, onClose }: PopoverPanelOptions = {}) {
     const panel = event.currentTarget;
     setOpen(event.newState === 'open');
     if (event.newState === 'open') {
-      place();
-      panel.querySelector<HTMLElement>('input, button, select')?.focus();
+      if (buttonRef.current !== null) placePanel(panel, buttonRef.current, align);
+      panel.querySelector<HTMLElement>('a[href], input, button, select')?.focus();
       return;
     }
     // Back to the button, unless a click outside put the focus somewhere on purpose.
@@ -83,4 +70,16 @@ export function usePopoverPanel({ onOpen, onClose }: PopoverPanelOptions = {}) {
   }
 
   return { buttonRef, panelRef, open, close, handleBeforeToggle, handleToggle };
+}
+
+// Below the button and lined up with its end or its start, or above it when there is no room below;
+// inside the window either way.
+function placePanel(panel: HTMLElement, button: HTMLElement, align: 'start' | 'end'): void {
+  const anchor = button.getBoundingClientRect();
+  const wanted = align === 'start' ? anchor.left : anchor.right - panel.offsetWidth;
+  const left = Math.max(EDGE, Math.min(wanted, window.innerWidth - panel.offsetWidth - EDGE));
+  const below = anchor.bottom + 6;
+  const top = below + panel.offsetHeight > window.innerHeight - EDGE ? Math.max(EDGE, anchor.top - 6 - panel.offsetHeight) : below;
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
 }

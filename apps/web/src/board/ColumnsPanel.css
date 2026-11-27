@@ -26,6 +26,18 @@
   fill: var(--color-text-muted);
 }
 
+/* A phone shows the icon alone, so the board's header keeps to one line; screen readers still hear it. */
+@media (max-width: 600px) {
+  .columns-panel__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .columns-panel__hidden {
   padding: 0 7px;
   border-radius: 999px;

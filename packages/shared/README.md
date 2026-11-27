@@ -46,6 +46,7 @@ src/
 ├── board.ts            Board, BoardSummary, Column, Card, CardComment, Label, Member
 ├── auth.ts             User, the signed-in user
 ├── auth-requests.ts    sign-up and sign-in schemas, and SignUpRequest, SignInRequest
+├── board-requests.ts   board request schemas, and CreateBoardRequest, UpdateBoardRequest
 ├── column-requests.ts  column request schemas, and CreateColumnRequest, UpdateColumnRequest
 ├── card-requests.ts    card request schemas, and CreateCardRequest, UpdateCardRequest
 ├── comment-requests.ts comment request schemas, and CreateCommentRequest, UpdateCommentRequest

@@ -1,10 +1,12 @@
-// Board routes, read-only: the user's boards, and one board with its columns, cards, labels and members.
+// Board routes: the user's boards; one board with its columns, cards, labels and members; create, rename, delete.
 import type { Board, BoardSummary } from '@flowboard/shared';
+import { createBoardRequestSchema, updateBoardRequestSchema } from '@flowboard/shared/schemas';
 import { Router } from 'express';
-import type { PrismaClient } from '../db/client.ts';
 import { signedInUser } from '../auth/require-session.ts';
+import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
-import { findBoard, listBoards } from './board-queries.ts';
+import { parseBody } from '../validation.ts';
+import { createBoard, deleteBoard, findBoard, listBoards, updateBoard } from './board-queries.ts';
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
 export function boardRoutes(prisma: PrismaClient): Router {
@@ -16,6 +18,13 @@ export function boardRoutes(prisma: PrismaClient): Router {
     res.json(body);
   });
 
+  /** POST /api/boards — CreateBoardRequest → 201 Board, the user its member, with the starter columns · 400 */
+  router.post('/boards', async (req, res) => {
+    const request = parseBody(createBoardRequestSchema, req.body);
+    const body: Board = await createBoard(prisma, signedInUser(res), request);
+    res.status(201).json(body);
+  });
+
   /** GET /api/boards/:boardId — 200 → Board · 404 → ApiError */
   router.get('/boards/:boardId', async (req, res) => {
     const body: Board | null = await findBoard(prisma, signedInUser(res).id, req.params.boardId);
@@ -24,6 +33,26 @@ export function boardRoutes(prisma: PrismaClient): Router {
       return;
     }
     res.json(body);
+  });
+
+  /** PATCH /api/boards/:boardId — UpdateBoardRequest → 200 BoardSummary · 400 · 404 */
+  router.patch('/boards/:boardId', async (req, res) => {
+    const request = parseBody(updateBoardRequestSchema, req.body);
+    const body: BoardSummary | null = await updateBoard(prisma, signedInUser(res).id, req.params.boardId, request);
+    if (body === null) {
+      sendError(res, 404, `No board with id ${req.params.boardId}`);
+      return;
+    }
+    res.json(body);
+  });
+
+  /** DELETE /api/boards/:boardId — 204, with its columns, cards, comments, labels and members · 404 */
+  router.delete('/boards/:boardId', async (req, res) => {
+    if (!(await deleteBoard(prisma, signedInUser(res).id, req.params.boardId))) {
+      sendError(res, 404, `No board with id ${req.params.boardId}`);
+      return;
+    }
+    res.status(204).end();
   });
 
   return router;

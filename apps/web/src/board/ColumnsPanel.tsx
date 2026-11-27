@@ -44,7 +44,7 @@ export function ColumnsPanel({ boardId, columns, hiddenIds, onChangeHidden, onAd
           <rect x="6.4" y="3" width="3.2" height="7" rx="1" />
           <rect x="10.8" y="3" width="3.2" height="8.5" rx="1" />
         </svg>
-        Columns
+        <span className="columns-panel__label">Columns</span>
         {hidden.length > 0 && <span className="columns-panel__hidden">{hidden.length} hidden</span>}
       </button>
 

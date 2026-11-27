@@ -13,6 +13,8 @@ type Fixture = Awaited<ReturnType<typeof createBoard>>;
 // Every route behind the session check, each with a body it accepts: only who sends it decides the answer.
 const routes: [string, (client: Client, fixture: Fixture) => Test][] = [
   ['GET /api/boards/:boardId', (client, { board }) => client.get(`/api/boards/${board.id}`)],
+  ['PATCH /api/boards/:boardId', (client, { board }) => client.patch(`/api/boards/${board.id}`).send({ title: 'Renamed' })],
+  ['DELETE /api/boards/:boardId', (client, { board }) => client.delete(`/api/boards/${board.id}`)],
   ['POST /api/boards/:boardId/columns', (client, { board }) => client.post(`/api/boards/${board.id}/columns`).send({ title: 'Review', color: 'blue' })],
   ['PATCH /api/columns/:columnId', (client, { columns }) => client.patch(`/api/columns/${columns.todo.id}`).send({ title: 'Renamed' })],
   ['POST /api/columns/:columnId/move', (client, { columns }) => client.post(`/api/columns/${columns.todo.id}/move`).send({ index: 1 })],
@@ -64,6 +66,13 @@ describe('without a session', () => {
     await createBoard(prisma);
 
     expect((await api.get('/api/boards')).status).toBe(401);
+  });
+
+  it('POST /api/boards answers 401 and creates nothing', async () => {
+    const response = await api.post('/api/boards').send({ title: 'Roadmap' });
+
+    expect(response.status).toBe(401);
+    expect(await prisma.board.count()).toBe(0);
   });
 
   it('a session that has ended answers 401', async () => {

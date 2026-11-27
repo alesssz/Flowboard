@@ -1,6 +1,9 @@
 // Field limits: enforced by the request schemas, and given to the web app's inputs as maxLength.
 // Kept free of Zod, so importing them does not bring the schemas into the browser bundle.
 
+/** Longest board title, in characters, after trimming. */
+export const boardTitleMaxLength = 100;
+
 /** Longest card title, in characters, after trimming. */
 export const cardTitleMaxLength = 200;
 

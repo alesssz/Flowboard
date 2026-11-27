@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows the account's board from the API, which stores it in PostgreSQL. Columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees), marked completed and deleted; members comment on cards, and edit or delete their own comments; the board's labels are created, renamed, recoloured and deleted from a card's labels. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Each account reaches only the boards it is a member of. Next: creating, renaming and deleting boards. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows the account's boards from the API, which stores them in PostgreSQL. Boards are created, renamed and deleted, the open one in the address; columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees), marked completed and deleted; members comment on cards, and edit or delete their own comments; the board's labels are created, renamed, recoloured and deleted from a card's labels. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Each account reaches only the boards it is a member of. Next: board roles and inviting members. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -194,6 +194,7 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 - [x] Column editing: add, rename, recolour, delete
 - [x] Label editing, from a card's labels: create, rename, recolour, delete
 - [x] Completed cards: a checkbox before the title; a completed card is never overdue
+- [x] Boards: create (with starter columns), rename, delete, switch; the open board in the address
 - [x] Comments: written by the signed-in member, edited or deleted by their author
 - [x] Shared types (`@flowboard/shared`)
 - [x] Request validation with Zod, in the shared package
