@@ -1,16 +1,20 @@
-// App shell: for a signed-in user the header, then the board; otherwise the sign-in page alone.
+// App shell: for a signed-in user the header, then the board or the invitation in the address; otherwise the
+// sign-in page alone, which keeps the invitation's address for after signing in.
 import { useQuery } from '@tanstack/react-query';
 import { ApiStatusBadge } from './api-status/ApiStatusBadge.tsx';
 import { AccountMenu } from './auth/AccountMenu.tsx';
 import { AuthPage } from './auth/AuthPage.tsx';
 import { meQuery } from './auth/auth-queries.ts';
 import { BoardPage } from './board/BoardPage.tsx';
+import { useInviteToken } from './board/use-board-route.ts';
+import { InvitePage } from './invite/InvitePage.tsx';
 import { Logo } from './Logo.tsx';
 import { PageMessage } from './PageMessage.tsx';
 import './App.css';
 
 export default function App() {
   const me = useQuery(meQuery);
+  const inviteToken = useInviteToken();
 
   function handleRetry() {
     void me.refetch();
@@ -34,7 +38,7 @@ export default function App() {
         </header>
 
         <main className="app__main">
-          <BoardPage />
+          {inviteToken === null ? <BoardPage /> : <InvitePage token={inviteToken} />}
         </main>
       </div>
     );
@@ -44,7 +48,7 @@ export default function App() {
     <div className="app">
       <main className="app__main">
         {me.data?.status === 'signed-out' ? (
-          <AuthPage sessionEnded={me.data.ended} />
+          <AuthPage sessionEnded={me.data.ended} invited={inviteToken !== null} />
         ) : me.isError ? (
           <PageMessage
             title="Cannot reach Flowboard"

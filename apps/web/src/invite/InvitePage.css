@@ -1,0 +1,89 @@
+/* The invitation page: who invites, the board, the role, then Join board and Not now, centred. */
+
+.invite {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  width: min(460px, 100%);
+  margin: 0 auto;
+  padding: 24px var(--gutter);
+}
+
+.invite__from {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.invite__board {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.invite__detail {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.invite__join,
+.invite__later {
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.invite__join {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.invite__join:hover {
+  filter: brightness(1.1);
+}
+
+.invite__join[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.invite__later {
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+}
+
+.invite__later:hover {
+  background: var(--palette-gray-soft);
+}
+
+.invite__error {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.invite__join:focus-visible,
+.invite__later:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}

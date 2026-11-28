@@ -29,9 +29,11 @@ function toFormError(message: string): FormError {
 interface AuthPageProps {
   /** The session ended while the app was in use: says so above the form. */
   sessionEnded: boolean;
+  /** The address holds an invitation, which opens once the user is signed in: says so above the form. */
+  invited?: boolean;
 }
 
-export function AuthPage({ sessionEnded }: AuthPageProps) {
+export function AuthPage({ sessionEnded, invited = false }: AuthPageProps) {
   const [mode, setMode] = useState<Mode>('sign-in');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -91,6 +93,11 @@ export function AuthPage({ sessionEnded }: AuthPageProps) {
         {sessionEnded && (
           <p className="auth__notice" role="status">
             Your session has ended. Sign in again to go on.
+          </p>
+        )}
+        {invited && !sessionEnded && (
+          <p className="auth__notice auth__notice--invite" role="status">
+            You are invited to a board. Sign in, or create an account, to see it and join.
           </p>
         )}
 

@@ -7,3 +7,4 @@ export { createCommentRequestSchema, updateCommentRequestSchema } from './commen
 export { createColumnRequestSchema, moveColumnRequestSchema, updateColumnRequestSchema } from './column-requests.ts';
 export { createLabelRequestSchema, updateLabelRequestSchema } from './label-requests.ts';
 export { updateMemberRequestSchema } from './member-requests.ts';
+export { createInvitationRequestSchema, invitationTokenRequestSchema } from './invitation-requests.ts';

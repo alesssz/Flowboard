@@ -1,4 +1,4 @@
-// Permissions: every board, column, card, comment, label and member route needs a session, reaches only the
+// Permissions: every board, column, card, comment, label, member and invitation route needs a session, reaches only the
 // user's boards, and lets each role do only what it may.
 import type { Test } from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -43,18 +43,22 @@ const routes: [string, Needs, (client: Client, fixture: Fixture) => Test][] = [
   ['PATCH /api/members/:memberId', 'owner', (client, { members }) => client.patch(`/api/members/${members.robin.id}`).send({ role: 'owner' })],
   // Robin Park leaving: any member may.
   ['DELETE /api/members/:memberId', 'member', (client, { members }) => client.delete(`/api/members/${members.robin.id}`)],
+  ['POST /api/boards/:boardId/invitations', 'owner', (client, { board }) => client.post(`/api/boards/${board.id}/invitations`).send({ role: 'editor' })],
+  ['GET /api/boards/:boardId/invitations', 'owner', (client, { board }) => client.get(`/api/boards/${board.id}/invitations`)],
+  ['DELETE /api/invitations/:invitationId', 'owner', (client, { invitations }) => client.delete(`/api/invitations/${invitations.pending.id}`)],
 ];
 
 /** What each role below owner may not do. */
 const beyond: Record<'viewer' | 'editor', Needs[]> = { viewer: ['editor', 'owner'], editor: ['owner'] };
 
-/** Everything a route could change on the board: its title, labels, members, columns, cards with their labels, and comments. */
+/** Everything a route could change on the board: its title, labels, members, invitations, columns, cards with their labels, and comments. */
 function snapshot(boardId: string) {
   return prisma.board.findUniqueOrThrow({
     where: { id: boardId },
     include: {
       labels: { orderBy: { id: 'asc' } },
       members: { orderBy: { id: 'asc' } },
+      invitations: { orderBy: { id: 'asc' } },
       columns: {
         orderBy: { id: 'asc' },
         include: { cards: { orderBy: { id: 'asc' }, include: { labels: { orderBy: { id: 'asc' } }, comments: { orderBy: { id: 'asc' } } } } },
@@ -106,7 +110,7 @@ describe("on another user's board", () => {
     const response = await send(member, fixture);
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: 'Not Found', message: expect.stringMatching(/^No (board|column|card|comment|label|member) with id /) });
+    expect(response.body).toEqual({ error: 'Not Found', message: expect.stringMatching(/^No (board|column|card|comment|label|member|invitation) with id /) });
     expect(await snapshot(fixture.board.id)).toEqual(before);
   });
 

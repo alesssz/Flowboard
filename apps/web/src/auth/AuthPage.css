@@ -61,6 +61,11 @@
   border-radius: 9px;
 }
 
+.auth__notice--invite {
+  color: var(--palette-blue-text);
+  background: var(--palette-blue-soft);
+}
+
 .auth__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

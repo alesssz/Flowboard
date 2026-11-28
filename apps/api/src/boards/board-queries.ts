@@ -100,8 +100,8 @@ export function deleteBoard(prisma: PrismaClient, userId: string, boardId: strin
   });
 }
 
-// The same colour on every board the user creates; gray, the neutral one, left out.
-function avatarColor(userId: string): PaletteColor {
+/** The user's avatar colour on a board they create or join: the same on every one; gray, the neutral one, left out. */
+export function avatarColor(userId: string): PaletteColor {
   const colors = paletteColors.filter((color) => color !== 'gray');
   const sum = [...userId].reduce((total, character) => total + character.charCodeAt(0), 0);
   return colors[sum % colors.length] ?? 'blue';
