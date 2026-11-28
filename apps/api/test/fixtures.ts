@@ -48,7 +48,7 @@ interface BoardOptions {
 }
 
 /**
- * A board with two columns (To do with two cards, Done with none), two labels and two members.
+ * A board with two columns (To do with two cards, Done with none), two labels, two members and an invitation.
  * The first card has a description, a due date, both labels, both members and two comments.
  * Its member Robin Park, its owner unless `role` says otherwise, is the account memberCookie signs in; Alex
  * Moreno has no account.
@@ -86,6 +86,11 @@ export async function createBoard(prisma: PrismaClient, title = 'Launch', { ofAn
     data: { cardId: first.id, authorId: alex.id, body: 'Who takes this?', createdAt: new Date('2026-11-19T09:00:00Z') },
   });
 
+  // Made by Robin Park; its token is unknown to the tests, which make their own through the API.
+  const invitation = await prisma.invitation.create({
+    data: { tokenHash: `fixture-${boardId}`, boardId, role: 'editor', invitedById: robin.id, expiresAt: new Date('2099-01-01') },
+  });
+
   return {
     board,
     columns: { todo, done },
@@ -93,5 +98,6 @@ export async function createBoard(prisma: PrismaClient, title = 'Launch', { ofAn
     labels: { design, backend },
     members: { alex, robin },
     comments: { question, reply },
+    invitations: { pending: invitation },
   };
 }

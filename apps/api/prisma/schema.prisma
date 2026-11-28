@@ -30,12 +30,13 @@ enum MemberRole {
 }
 
 model Board {
-  id        String   @id @default(cuid())
-  title     String
-  createdAt DateTime @default(now())
-  columns   Column[]
-  labels    Label[]
-  members   Member[]
+  id          String       @id @default(cuid())
+  title       String
+  createdAt   DateTime     @default(now())
+  columns     Column[]
+  labels      Label[]
+  members     Member[]
+  invitations Invitation[]
 }
 
 // Positions order siblings (columns on a board, cards in a column); gaps are allowed.
@@ -120,6 +121,7 @@ model Member {
   role     MemberRole   @default(editor)
   cards    Card[]
   comments Comment[]
+  invited  Invitation[]
 
   // Also serves the lookups by board, so boardId needs no index of its own.
   @@unique([boardId, userId])
@@ -141,4 +143,23 @@ model Comment {
 
   @@index([cardId, createdAt])
   @@index([authorId])
+}
+
+// A single-use link to join a board with a role: src/invitations/invitation-queries.ts. The link holds the
+// token, the table only its hash. Accepting it deletes it; so does revoking it.
+model Invitation {
+  id          String     @id @default(cuid())
+  // SHA-256 of the link's token, hex: a copy of the table lets nobody in.
+  tokenHash   String     @unique
+  board       Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId     String
+  role        MemberRole
+  // The owner who made it, for "invited by"; members go only with their board.
+  invitedBy   Member     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedById String
+  createdAt   DateTime   @default(now())
+  expiresAt   DateTime
+
+  @@index([boardId])
+  @@index([invitedById])
 }

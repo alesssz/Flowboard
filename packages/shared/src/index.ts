@@ -8,6 +8,8 @@ export type { CreateCommentRequest, UpdateCommentRequest } from './comment-reque
 export type { CreateColumnRequest, MoveColumnRequest, UpdateColumnRequest } from './column-requests.ts';
 export type { ApiError } from './error.ts';
 export type { HealthResponse } from './health.ts';
+export type { CreatedInvitation, Invitation, InvitationPreview } from './invitation.ts';
+export type { CreateInvitationRequest, InvitationTokenRequest } from './invitation-requests.ts';
 export type { CreateLabelRequest, UpdateLabelRequest } from './label-requests.ts';
 export type { UpdateMemberRequest } from './member-requests.ts';
 export {
