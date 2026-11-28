@@ -28,6 +28,7 @@ import { BoardCard } from './BoardCard.tsx';
 import { moveCardInBoard } from './board-cache.ts';
 import { BoardColumn, ColumnOverlay, type DragItem } from './BoardColumn.tsx';
 import { BoardMenu } from './BoardMenu.tsx';
+import { useLiveBoard } from '../live.ts';
 import { BoardRoleContext } from './board-role.ts';
 import { BoardTitle } from './BoardTitle.tsx';
 import { CardDialog, type DeletedCardPlace } from './CardDialog.tsx';
@@ -60,6 +61,7 @@ export function BoardView({ board }: BoardViewProps) {
   const columnsRef = useRef<HTMLDivElement>(null);
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
+  useLiveBoard(board.id);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [dropped, setDropped] = useState<Dropped | null>(null);
   const droppedAt = useRef(0);
