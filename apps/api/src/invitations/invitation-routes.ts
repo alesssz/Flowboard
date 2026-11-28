@@ -7,13 +7,14 @@ import { signedInUser } from '../auth/require-session.ts';
 import type { PrismaClient } from '../db/client.ts';
 import { sendError } from '../errors.ts';
 import { parseBody } from '../validation.ts';
+import { type Live, writerOf } from '../live/live.ts';
 import { acceptInvitation, createInvitation, listInvitations, previewInvitation, revokeInvitation } from './invitation-queries.ts';
 
 /** One message for a token used, revoked, expired or unknown: the holder learns nothing more from it. */
 const notValid = 'This invitation is not valid: it was used or revoked, or it expired';
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
-export function invitationRoutes(prisma: PrismaClient): Router {
+export function invitationRoutes(prisma: PrismaClient, live: Live): Router {
   const router = Router();
 
   /** POST /api/boards/:boardId/invitations — CreateInvitationRequest → 201 CreatedInvitation · 400 · 403, not an owner · 404 */
@@ -65,6 +66,8 @@ export function invitationRoutes(prisma: PrismaClient): Router {
       sendError(res, 404, notValid);
       return;
     }
+    // A new member: a new name to assign cards to, and a new row in the members list.
+    live.boardChanged(body.id, writerOf(req, res));
     res.json(body);
   });
 

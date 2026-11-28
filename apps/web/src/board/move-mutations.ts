@@ -14,8 +14,9 @@ export interface MoveColumnVariables extends MoveColumnRequest {
   columnId: string;
 }
 
-// One key for every move on a board, so a move's answer can tell whether others are still on their way.
-function moveKey(boardId: string) {
+// One key for every move on a board, so a move's answer, or a live notice (live.ts), can tell whether moves
+// are still on their way.
+export function moveKey(boardId: string) {
   return ['boards', boardId, 'move'] as const;
 }
 

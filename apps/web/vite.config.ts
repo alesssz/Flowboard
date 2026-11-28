@@ -17,10 +17,12 @@ export default defineConfig({
     // from one domain to keep the same contract.
     // The target is the API's HOST and PORT (apps/api/src/index.ts): 127.0.0.1, not localhost,
     // which may resolve to ::1 first, where the API does not listen.
+    // ws: the live updates' WebSocket, under /api/socket.io, goes the same way.
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:3700',
         changeOrigin: true,
+        ws: true,
       },
     },
   },

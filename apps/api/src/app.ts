@@ -14,16 +14,19 @@ import type { PrismaClient } from './db/client.ts';
 import { handleError, sendError } from './errors.ts';
 import { invitationRoutes } from './invitations/invitation-routes.ts';
 import { labelRoutes } from './labels/label-routes.ts';
+import { type Live, noLive } from './live/live.ts';
 import { memberRoutes } from './members/member-routes.ts';
 import { checkHost, checkOrigin, setSecurityHeaders } from './security.ts';
 
 export interface AppOptions {
   /** Host names accepted besides localhost, 127.0.0.1 and [::1] (ALLOWED_HOSTS). */
   allowedHosts?: readonly string[];
+  /** Where writes send their notices; none by default, as in the HTTP tests. */
+  live?: Live;
 }
 
 /** A new, independent app instance, reading and writing through `prisma`. */
-export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOptions = {}): Express {
+export function createApp(prisma: PrismaClient, { allowedHosts = [], live = noLive }: AppOptions = {}): Express {
   const app = express();
 
   // No framework fingerprint in response headers.
@@ -49,16 +52,16 @@ export function createApp(prisma: PrismaClient, { allowedHosts = [] }: AppOption
     res.json(body);
   });
 
-  app.use('/api', authRoutes(prisma));
+  app.use('/api', authRoutes(prisma, live));
   // Every route under these paths needs a session; a new kind of resource adds its path here.
   app.use(['/api/boards', '/api/columns', '/api/cards', '/api/comments', '/api/labels', '/api/members', '/api/invitations'], requireSession(prisma));
-  app.use('/api', boardRoutes(prisma));
-  app.use('/api', columnRoutes(prisma));
-  app.use('/api', cardRoutes(prisma));
-  app.use('/api', commentRoutes(prisma));
-  app.use('/api', labelRoutes(prisma));
-  app.use('/api', memberRoutes(prisma));
-  app.use('/api', invitationRoutes(prisma));
+  app.use('/api', boardRoutes(prisma, live));
+  app.use('/api', columnRoutes(prisma, live));
+  app.use('/api', cardRoutes(prisma, live));
+  app.use('/api', commentRoutes(prisma, live));
+  app.use('/api', labelRoutes(prisma, live));
+  app.use('/api', memberRoutes(prisma, live));
+  app.use('/api', invitationRoutes(prisma, live));
 
   // Unmatched routes: a JSON 404 in the API's error shape, not Express's HTML page.
   app.use((req, res) => {

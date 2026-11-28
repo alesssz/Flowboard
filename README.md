@@ -9,7 +9,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 
 ## Status
 
-🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows the account's boards from the API, which stores them in PostgreSQL. Boards are created, renamed and deleted, the open one in the address; columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees), marked completed and deleted; members comment on cards, and edit or delete their own comments; the board's labels are created, renamed, recoloured and deleted from a card's labels. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Each account reaches only the boards it is a member of, with a role on each: owner, editor or viewer; owners invite people with single-use links. Next: live updates between the people on a board. See the [roadmap](#roadmap).
+🚧 **Early development.** The web app opens on a sign-in page (accounts with a session cookie), then shows the account's boards from the API, which stores them in PostgreSQL. Boards are created, renamed and deleted, the open one in the address; columns can be added, renamed, recoloured and deleted, and cards added, edited in place (title, description, due date, labels, assignees), marked completed and deleted; members comment on cards, and edit or delete their own comments; the board's labels are created, renamed, recoloured and deleted from a card's labels. Cards and columns move by drag and drop, with the mouse, touch or the keyboard. The API's routes are covered by integration tests. Each account reaches only the boards it is a member of, with a role on each: owner, editor or viewer; owners invite people with single-use links. A change made by one person shows at once to the others on the board (Socket.IO). Next: who else is on the board, and on which card. See the [roadmap](#roadmap).
 
 **This repository.** A personal project, in development and not deployed, made public to be read. There is no licence: the code can be read and studied, but all rights are reserved, so it may not be reused or redistributed without permission. Contributions are not expected for now; a security problem is reported privately, as [SECURITY.md](SECURITY.md) explains.
 
@@ -33,6 +33,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 | Web app | [React](https://react.dev/) 19 | The board's libraries: dnd-kit for drag and drop, TanStack Query for optimistic updates |
 | Server state | [TanStack Query](https://tanstack.com/query) 5 | Caching, retries and background refresh of API data; each write's answer updates the cached board; moves are optimistic |
 | Drag and drop | [dnd-kit](https://dndkit.com/) 6 (`core`, `sortable`) | Sortable lists across containers, mouse, touch and keyboard sensors, screen-reader announcements |
+| Live updates | [Socket.IO](https://socket.io/) 4 | A connection per tab on the API's own server; after a write, the others on the board get a notice and read again, reconnecting by themselves |
 | Build tool | [Vite](https://vite.dev/) 8 | Its dev proxy gives the app and the API one origin; a static production build |
 | API | [Node.js](https://nodejs.org/) 24 LTS + [Express](https://expressjs.com/) 5 | Minimal, well-understood HTTP layer; Express 5 forwards async errors natively |
 | Database | [PostgreSQL](https://www.postgresql.org/) 18, in Docker for development | Relational data (boards own columns, columns own cards) with constraints and cascades |
@@ -42,7 +43,7 @@ React and TypeScript in the browser, Node.js and TypeScript on the server, in a 
 | Tests | [Vitest](https://vitest.dev/) 5 + [Supertest](https://github.com/forwardemail/supertest) | The API tested through HTTP against a PostgreSQL database of its own; Vitest runs TypeScript and ESM as they are |
 | Package manager | [pnpm](https://pnpm.io/) workspaces | One lockfile, strict dependency resolution, internal packages without publishing |
 
-Planned: Socket.IO, Playwright, Docker for the whole stack.
+Planned: Playwright, Docker for the whole stack.
 
 ## Architecture
 
@@ -204,7 +205,8 @@ The directions; the points ready to be picked up are in [docs/backlog.md](docs/b
 
 **Collaboration**
 - [x] Accounts and sign-in, with a session cookie ([docs/security.md](docs/security.md#accounts)); each account reaches only the boards it is a member of
-- [ ] Live updates and presence (Socket.IO)
+- [x] Live updates (Socket.IO): a change shows at once to the others on the board
+- [ ] Presence: who else is on the board, and on which card
 - [x] Board roles: owner (members, title, deletion), editor (columns, cards, labels), viewer (reads and comments)
 - [x] Inviting members, with a single-use link
 - [ ] Concurrent editing of card descriptions (Yjs)

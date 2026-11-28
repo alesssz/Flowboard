@@ -8,6 +8,7 @@ import { meQuery } from './auth/auth-queries.ts';
 import { BoardPage } from './board/BoardPage.tsx';
 import { useInviteToken } from './board/use-board-route.ts';
 import { InvitePage } from './invite/InvitePage.tsx';
+import { useLiveConnection } from './live.ts';
 import { Logo } from './Logo.tsx';
 import { PageMessage } from './PageMessage.tsx';
 import './App.css';
@@ -15,6 +16,7 @@ import './App.css';
 export default function App() {
   const me = useQuery(meQuery);
   const inviteToken = useInviteToken();
+  useLiveConnection(me.data?.status === 'signed-in');
 
   function handleRetry() {
     void me.refetch();

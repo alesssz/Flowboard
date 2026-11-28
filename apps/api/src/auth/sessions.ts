@@ -15,12 +15,23 @@ const extendEvery = day;
 
 export const userFields = { id: true, email: true, name: true } as const;
 
+/** What a request says about its session: its Cookie header, and where it came in, which names the cookie. */
+export interface SessionSource {
+  cookie: string | undefined;
+  protocol: string;
+  hostname: string;
+}
+
+function sourceOf(req: Request): SessionSource {
+  return { cookie: req.get('Cookie'), protocol: req.protocol, hostname: req.hostname };
+}
+
 /**
  * Secure, with the __Host- prefix (no Domain, Path=/, so no other subdomain can set or read it), except
  * over plain HTTP on the loopback, where development runs and a Secure cookie would not come back.
  */
-function cookieFor(req: Request): { name: string; options: CookieOptions } {
-  const secure = !(req.protocol === 'http' && isLocalHost(req.hostname));
+function cookieFor({ protocol, hostname }: SessionSource): { name: string; options: CookieOptions } {
+  const secure = !(protocol === 'http' && isLocalHost(hostname));
   return {
     name: secure ? '__Host-flowboard_session' : 'flowboard_session',
     options: { httpOnly: true, secure, sameSite: 'lax', path: '/' },
@@ -31,9 +42,9 @@ function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function readToken(req: Request): string | undefined {
-  const { name } = cookieFor(req);
-  for (const pair of (req.get('Cookie') ?? '').split(';')) {
+function readToken(source: SessionSource): string | undefined {
+  const { name } = cookieFor(source);
+  for (const pair of (source.cookie ?? '').split(';')) {
     const [key, value] = pair.trim().split('=');
     // 32 random bytes in base64url; anything else cannot be a token, and is not looked up.
     if (key === name && value !== undefined && /^[A-Za-z0-9_-]{43}$/.test(value)) return value;
@@ -43,7 +54,7 @@ function readToken(req: Request): string | undefined {
 
 /** Signs `userId` in: a new session and its cookie. Any session the browser held ends first (no fixation). */
 export async function startSession(prisma: PrismaClient, req: Request, res: Response, userId: string): Promise<void> {
-  const previous = readToken(req);
+  const previous = readToken(sourceOf(req));
   const now = Date.now();
   const token = randomBytes(32).toString('base64url');
   // The user's ended sessions go too, so the table does not keep every one ever started.
@@ -52,13 +63,18 @@ export async function startSession(prisma: PrismaClient, req: Request, res: Resp
     prisma.session.deleteMany({ where: { OR: ended } }),
     prisma.session.create({ data: { id: hashToken(token), userId, expiresAt: new Date(now + idleTimeout) } }),
   ]);
-  const { name, options } = cookieFor(req);
+  const { name, options } = cookieFor(sourceOf(req));
   res.cookie(name, token, { ...options, maxAge: absoluteTimeout });
 }
 
 /** The signed-in user, or null with no cookie, an unknown token or an ended session. Pushes the end back. */
-export async function readSession(prisma: PrismaClient, req: Request): Promise<{ id: string; user: User } | null> {
-  const token = readToken(req);
+export function readSession(prisma: PrismaClient, req: Request): Promise<{ id: string; user: User } | null> {
+  return readSessionFrom(prisma, sourceOf(req));
+}
+
+/** readSession for a request Express did not parse, such as a live connection's handshake. */
+export async function readSessionFrom(prisma: PrismaClient, source: SessionSource): Promise<{ id: string; user: User } | null> {
+  const token = readToken(source);
   if (token === undefined) return null;
   const id = hashToken(token);
   const session = await prisma.session.findUnique({ where: { id }, select: { createdAt: true, expiresAt: true, user: { select: userFields } } });
@@ -77,10 +93,13 @@ export async function readSession(prisma: PrismaClient, req: Request): Promise<{
   return { id, user: session.user };
 }
 
-/** Signs the browser out: its session ends and its cookie is cleared, whether or not it had one. */
-export async function endSession(prisma: PrismaClient, req: Request, res: Response): Promise<void> {
-  const token = readToken(req);
-  if (token !== undefined) await prisma.session.deleteMany({ where: { id: hashToken(token) } });
-  const { name, options } = cookieFor(req);
+/** Signs the browser out: its session ends and its cookie is cleared, whether or not it had one. The session's id, if any. */
+export async function endSession(prisma: PrismaClient, req: Request, res: Response): Promise<string | undefined> {
+  const source = sourceOf(req);
+  const token = readToken(source);
+  const id = token === undefined ? undefined : hashToken(token);
+  if (id !== undefined) await prisma.session.deleteMany({ where: { id } });
+  const { name, options } = cookieFor(source);
   res.clearCookie(name, options);
+  return id;
 }

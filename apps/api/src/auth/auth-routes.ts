@@ -5,6 +5,7 @@ import { type Response, Router } from 'express';
 import type { PrismaClient } from '../db/client.ts';
 import { HttpError, sendError } from '../errors.ts';
 import { Prisma } from '../generated/prisma/client.ts';
+import type { Live } from '../live/live.ts';
 import { parseBody } from '../validation.ts';
 import { hashPassword, needsRehash, verifyPassword } from './passwords.ts';
 import { RateLimiter } from './rate-limit.ts';
@@ -13,7 +14,7 @@ import { endSession, readSession, startSession, userFields } from './sessions.ts
 const fifteenMinutes = 15 * 60 * 1000;
 
 /** Mounted under /api. A rejected handler reaches the app's error handler (Express 5). */
-export function authRoutes(prisma: PrismaClient): Router {
+export function authRoutes(prisma: PrismaClient, live: Live): Router {
   const router = Router();
   // Per address: sign-ups and sign-ins together. Per email: sign-ins until one succeeds, so a guessing
   // run from many addresses still stops; it slows the account's owner only while the run lasts.
@@ -61,7 +62,9 @@ export function authRoutes(prisma: PrismaClient): Router {
 
   /** POST /api/auth/sign-out — 204, signed out, with or without a session */
   router.post('/auth/sign-out', async (req, res) => {
-    await endSession(prisma, req, res);
+    const sessionId = await endSession(prisma, req, res);
+    // The session's live connections close with it.
+    if (sessionId !== undefined) live.sessionEnded(sessionId);
     res.status(204).end();
   });
 

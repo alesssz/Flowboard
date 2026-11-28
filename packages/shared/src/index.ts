@@ -24,5 +24,6 @@ export {
   passwordMinLength,
   userNameMaxLength,
 } from './limits.ts';
+export { type LiveClientEvents, type LiveServerEvents, liveSocketHeader, liveSocketPath, type WatchAnswer } from './live.ts';
 export { type PaletteColor, paletteColors } from './palette.ts';
 export { type MemberRole, memberRoles } from './roles.ts';

@@ -55,6 +55,7 @@ src/
 ├── label-requests.ts      label request schemas, and CreateLabelRequest, UpdateLabelRequest
 ├── member-requests.ts     the member request schema, and UpdateMemberRequest
 ├── limits.ts              field and password limits, free of Zod
+├── live.ts                the Socket.IO events of live updates, their path and the writer's header
 ├── palette.ts             paletteColors and PaletteColor, free of Zod; mirrored by the database enum
 ├── roles.ts               memberRoles and MemberRole, free of Zod; mirrored by the database enum
 ├── error.ts               ApiError, the body of every API error response

@@ -1,5 +1,17 @@
 // Requests to the API: relative /api URLs, JSON bodies, failures thrown as errors with a readable message.
-import type { ApiError } from '@flowboard/shared';
+import { type ApiError, liveSocketHeader } from '@flowboard/shared';
+
+// The tab's live connection, named in each write so the notice of that write skips this tab, which has the
+// answer already; set by live.ts while connected.
+let liveSocketId: string | undefined;
+
+export function setLiveSocketId(id: string | undefined): void {
+  liveSocketId = id;
+}
+
+function writeHeaders(): Record<string, string> {
+  return liveSocketId === undefined ? {} : { [liveSocketHeader]: liveSocketId };
+}
 
 /** A response with an error status; `message` is the API's own when it sent one. */
 export class ApiRequestError extends Error {
@@ -23,7 +35,7 @@ export async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<
 export async function sendJson<T>(method: 'POST' | 'PATCH', path: string, body: unknown): Promise<T> {
   const response = await request(path, {
     method,
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...writeHeaders() },
     body: JSON.stringify(body),
   });
   return (await response.json()) as T;
@@ -31,7 +43,7 @@ export async function sendJson<T>(method: 'POST' | 'PATCH', path: string, body: 
 
 /** POST or DELETE `/api${path}` with no body, to a route that answers 204 with none. */
 export async function sendEmpty(method: 'POST' | 'DELETE', path: string): Promise<void> {
-  await request(path, { method, headers: { Accept: 'application/json' } });
+  await request(path, { method, headers: { Accept: 'application/json', ...writeHeaders() } });
 }
 
 async function request(path: string, init: RequestInit): Promise<Response> {
